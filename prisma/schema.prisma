@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum InternalOrderStatus {
+  NOVO
+  EMBALADO
+  RETIRADO
+}
+
+enum SyncJobType {
+  MARK_AS_SHIPPED
+}
+
+enum SyncJobStatus {
+  PENDING
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
+enum ModulePermission {
+  ADMIN
+  SETTINGS
+  EXPEDICAO
+}
+
+model Workspace {
+  id           String         @id @default(cuid())
+  name         String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  members      Membership[]
+  tinySettings TinySettings?
+
+  @@unique([name])
+}
+
+model Membership {
+  id          String             @id @default(cuid())
+  workspaceId String
+  userId      String
+  email       String?
+  permissions ModulePermission[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  workspace   Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@index([userId])
+}
+
+model TinySettings {
+  id                    String    @id @default(cuid())
+  workspaceId           String    @unique
+  clientId              String
+  clientSecretEncrypted String
+  isActive              Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  workspace             Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model Order {
+  id              String              @id @default(cuid())
+  tinyOrderId     String              @unique
+  orderNumber     String?
+  customerName    String?
+  customerCpfHash String?
+  statusTiny      String?
+  statusInterno   InternalOrderStatus @default(NOVO)
+
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  pickups         Pickup[]
+  syncJobs        SyncJob[]
+
+  @@index([customerCpfHash])
+  @@index([statusInterno])
+}
+
+model Pickup {
+  id        String   @id @default(cuid())
+  orderId   String
+  cpfLast4  String?
+  operator  String?
+  createdAt DateTime @default(now())
+
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
+model SyncJob {
+  id            String        @id @default(cuid())
+  type          SyncJobType
+  status        SyncJobStatus @default(PENDING)
+  attempts      Int           @default(0)
+  lastError     String?
+
+  orderId       String?
+  payload       Json?
+
+  scheduledAt   DateTime      @default(now())
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  order         Order?        @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([scheduledAt])
+}

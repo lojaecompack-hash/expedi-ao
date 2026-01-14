@@ -1,0 +1,30 @@
+INSTRUÇÕES PARA CORRIGIR DATABASE_URL
+======================================
+
+1. Acesse: https://supabase.com/dashboard/project/rlmjrholkeljnuevtcu/settings/database
+
+2. Role até a seção "Connection string"
+
+3. Clique na aba "URI"
+
+4. Clique no botão "Copy" ao lado da connection string
+
+5. Cole aqui no arquivo .env.local, substituindo a linha DATABASE_URL
+
+6. IMPORTANTE: Substitua [YOUR-PASSWORD] pela senha real: @Bruno0154
+   MAS use %40 no lugar do @ (URL encoded)
+   
+   Exemplo:
+   Se a string copiada for:
+   postgresql://postgres:[YOUR-PASSWORD]@db.xxxxx.supabase.co:5432/postgres
+   
+   Substitua por:
+   postgresql://postgres:%40Bruno0154@db.xxxxx.supabase.co:5432/postgres
+
+7. Salve o .env.local
+
+8. Rode o teste:
+   & "C:\Program Files\nodejs\node.exe" .\scripts\test-db-connection.js
+
+DICA: Use Ctrl+C para copiar direto do Supabase e Ctrl+V para colar no .env.local
+Isso evita erros de digitação no host.
