@@ -55,10 +55,10 @@ export async function getTinyAccessToken(): Promise<string> {
     const data = await new Promise<TinyTokenResponse>((resolve, reject) => {
       const postData = params.toString()
       
-      // Tentar resolver DNS manualmente usando IP público do Tiny
-      // Se auth.tiny.com.br não resolver, usar fetch com URL completa
+      // Usar IP direto para contornar bloqueio de DNS da Vercel
+      // O header Host e servername permitem que o TLS e servidor identifiquem o domínio
       const options = {
-        hostname: 'auth.tiny.com.br',
+        hostname: '177.67.82.107', // IP direto do auth.tiny.com.br
         port: 443,
         path: '/oauth/token',
         method: 'POST',
@@ -68,11 +68,8 @@ export async function getTinyAccessToken(): Promise<string> {
           'Host': 'auth.tiny.com.br'
         },
         timeout: 30000,
-        // Adicionar lookup manual de DNS
-        lookup: (hostname: string, _options: unknown, callback: (err: Error | null, address: string, family: number) => void) => {
-          // Forçar IPv4 - usar IP público do Tiny
-          callback(null, '177.67.82.107', 4)
-        }
+        servername: 'auth.tiny.com.br', // Para SNI (TLS)
+        rejectUnauthorized: true
       }
 
       const req = https.request(options, (res) => {
