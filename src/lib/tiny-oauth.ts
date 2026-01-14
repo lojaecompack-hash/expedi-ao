@@ -55,6 +55,8 @@ export async function getTinyAccessToken(): Promise<string> {
     const data = await new Promise<TinyTokenResponse>((resolve, reject) => {
       const postData = params.toString()
       
+      // Tentar resolver DNS manualmente usando IP público do Tiny
+      // Se auth.tiny.com.br não resolver, usar fetch com URL completa
       const options = {
         hostname: 'auth.tiny.com.br',
         port: 443,
@@ -62,9 +64,15 @@ export async function getTinyAccessToken(): Promise<string> {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'Content-Length': Buffer.byteLength(postData)
+          'Content-Length': Buffer.byteLength(postData),
+          'Host': 'auth.tiny.com.br'
         },
-        timeout: 30000
+        timeout: 30000,
+        // Adicionar lookup manual de DNS
+        lookup: (hostname: string, _options: unknown, callback: (err: Error | null, address: string, family: number) => void) => {
+          // Forçar IPv4 - usar IP público do Tiny
+          callback(null, '177.67.82.107', 4)
+        }
       }
 
       const req = https.request(options, (res) => {
