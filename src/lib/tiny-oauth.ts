@@ -41,32 +41,31 @@ export async function getTinyAccessToken(): Promise<string> {
       console.log('[OAuth] Usando credenciais das variáveis de ambiente')
     }
 
-    console.log('[OAuth] Fazendo requisição OAuth via Edge Function proxy...')
+    console.log('[OAuth] Fazendo requisição OAuth direta para Tiny...')
     
-    // Usar Edge Function proxy para contornar restrições de rede da Vercel
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : 'http://localhost:3000'
+    // Fazer requisição OAuth direta
+    const params = new URLSearchParams({
+      grant_type: 'client_credentials',
+      client_id: clientId,
+      client_secret: clientSecret,
+    })
     
-    const response = await fetch(`${baseUrl}/api/tiny-oauth-proxy`, {
+    const response = await fetch('https://auth.tiny.com.br/oauth/token', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: JSON.stringify({
-        clientId,
-        clientSecret,
-      }),
+      body: params.toString(),
     })
 
     if (!response.ok) {
-      const error = await response.json()
-      console.error('[OAuth] Erro do proxy:', error)
-      throw new Error(error.error || 'Falha ao obter token do Tiny')
+      const text = await response.text()
+      console.error('[OAuth] Erro na resposta:', response.status, text)
+      throw new Error(`Falha ao obter token do Tiny: ${response.status} - ${text}`)
     }
 
     const data = await response.json() as TinyTokenResponse
-    console.log('[OAuth] Token obtido com sucesso via proxy, expira em', data.expires_in, 'segundos')
+    console.log('[OAuth] Token obtido com sucesso, expira em', data.expires_in, 'segundos')
 
     // Cachear token (expira em expires_in - 60 segundos de margem)
     cachedToken = {
