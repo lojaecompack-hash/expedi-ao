@@ -25,7 +25,7 @@ export default function TinySettingsPage() {
 
   async function loadSettings() {
     try {
-      const res = await fetch('/api/settings/tiny-simple')
+      const res = await fetch('/api/settings/tiny')
       const data = await res.json()
       
       if (res.ok) {
@@ -48,7 +48,7 @@ export default function TinySettingsPage() {
     setSaving(true)
 
     try {
-      const res = await fetch('/api/settings/tiny-simple', {
+      const res = await fetch('/api/settings/tiny', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ clientId, clientSecret }),

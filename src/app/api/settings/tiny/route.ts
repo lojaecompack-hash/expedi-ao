@@ -13,28 +13,20 @@ export async function GET() {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    // Buscar workspace do usuário
-    const membership = await prisma.membership.findFirst({
-      where: { userId: data.user.id },
-      include: { workspace: true },
+    // Buscar ou criar workspace padrão
+    let workspace = await prisma.workspace.findFirst({
+      where: { name: 'Default' },
     })
 
-    if (!membership) {
-      return NextResponse.json({ error: 'Workspace not found' }, { status: 404 })
-    }
-
-    // Verificar permissão
-    const hasPermission =
-      membership.permissions.includes('ADMIN') ||
-      membership.permissions.includes('SETTINGS')
-
-    if (!hasPermission) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!workspace) {
+      workspace = await prisma.workspace.create({
+        data: { name: 'Default' },
+      })
     }
 
     // Buscar settings do Tiny
     const tinySettings = await prisma.tinySettings.findUnique({
-      where: { workspaceId: membership.workspaceId },
+      where: { workspaceId: workspace.id },
       select: {
         id: true,
         clientId: true,
@@ -73,23 +65,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    // Buscar workspace do usuário
-    const membership = await prisma.membership.findFirst({
-      where: { userId: data.user.id },
-      include: { workspace: true },
+    // Buscar ou criar workspace padrão
+    let workspace = await prisma.workspace.findFirst({
+      where: { name: 'Default' },
     })
 
-    if (!membership) {
-      return NextResponse.json({ error: 'Workspace not found' }, { status: 404 })
-    }
-
-    // Verificar permissão
-    const hasPermission =
-      membership.permissions.includes('ADMIN') ||
-      membership.permissions.includes('SETTINGS')
-
-    if (!hasPermission) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!workspace) {
+      workspace = await prisma.workspace.create({
+        data: { name: 'Default' },
+      })
     }
 
     const body = await req.json()
@@ -107,14 +91,14 @@ export async function POST(req: Request) {
 
     // Salvar ou atualizar settings
     const tinySettings = await prisma.tinySettings.upsert({
-      where: { workspaceId: membership.workspaceId },
+      where: { workspaceId: workspace.id },
       update: {
         clientId,
         clientSecretEncrypted,
         isActive: true,
       },
       create: {
-        workspaceId: membership.workspaceId,
+        workspaceId: workspace.id,
         clientId,
         clientSecretEncrypted,
         isActive: true,
