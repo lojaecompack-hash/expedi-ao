@@ -44,7 +44,11 @@ export async function getTinyAccessToken(): Promise<string> {
     console.log('[OAuth] Fazendo requisição OAuth via Edge Function proxy...')
     
     // Usar Edge Function proxy para contornar restrições de rede da Vercel
-    const response = await fetch('/api/tiny-oauth-proxy', {
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : 'http://localhost:3000'
+    
+    const response = await fetch(`${baseUrl}/api/tiny-oauth-proxy`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
