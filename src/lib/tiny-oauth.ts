@@ -1,5 +1,6 @@
 import { prisma } from './prisma'
 import { decrypt } from './crypto'
+import https from 'https'
 
 interface TinyTokenResponse {
   access_token: string
@@ -43,26 +44,58 @@ export async function getTinyAccessToken(): Promise<string> {
 
     console.log('[OAuth] Fazendo requisição OAuth para Tiny...')
     
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 segundos
-    
-    const response = await fetch('https://auth.tiny.com.br/oauth/token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: params.toString(),
-      signal: controller.signal,
-    }).finally(() => clearTimeout(timeoutId))
+    // Usar https nativo ao invés de fetch (Vercel bloqueia fetch para alguns domínios)
+    const data = await new Promise<TinyTokenResponse>((resolve, reject) => {
+      const postData = params.toString()
+      
+      const options = {
+        hostname: 'auth.tiny.com.br',
+        port: 443,
+        path: '/oauth/token',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Length': Buffer.byteLength(postData)
+        },
+        timeout: 30000
+      }
 
-    if (!response.ok) {
-      const text = await response.text()
-      console.error('[OAuth] Erro na resposta:', response.status, text)
-      throw new Error(`Falha ao obter token do Tiny: ${response.status} - ${text}`)
-    }
+      const req = https.request(options, (res) => {
+        let body = ''
+        
+        res.on('data', (chunk) => {
+          body += chunk
+        })
+        
+        res.on('end', () => {
+          if (res.statusCode === 200) {
+            try {
+              const json = JSON.parse(body) as TinyTokenResponse
+              console.log('[OAuth] Token obtido com sucesso, expira em', json.expires_in, 'segundos')
+              resolve(json)
+            } catch (error) {
+              reject(new Error(`Erro ao parsear resposta: ${body}`))
+            }
+          } else {
+            console.error('[OAuth] Erro na resposta:', res.statusCode, body)
+            reject(new Error(`Falha ao obter token do Tiny: ${res.statusCode} - ${body}`))
+          }
+        })
+      })
 
-    const data = await response.json() as TinyTokenResponse
-    console.log('[OAuth] Token obtido com sucesso, expira em', data.expires_in, 'segundos')
+      req.on('error', (error) => {
+        console.error('[OAuth] Erro na requisição:', error)
+        reject(error)
+      })
+
+      req.on('timeout', () => {
+        req.destroy()
+        reject(new Error('Timeout ao conectar com Tiny ERP'))
+      })
+
+      req.write(postData)
+      req.end()
+    })
 
     // Cachear token (expira em expires_in - 60 segundos de margem)
     cachedToken = {
