@@ -41,21 +41,20 @@ export async function getTinyAccessToken(): Promise<string> {
       console.log('[OAuth] Usando credenciais das variáveis de ambiente')
     }
 
-    console.log('[OAuth] Fazendo requisição OAuth direta para Tiny...')
+    console.log('[OAuth] Fazendo requisição OAuth via Cloudflare Worker proxy...')
     
-    // Fazer requisição OAuth direta
-    const params = new URLSearchParams({
-      grant_type: 'client_credentials',
-      client_id: clientId,
-      client_secret: clientSecret,
-    })
+    // Usar Cloudflare Worker proxy para contornar bloqueio da Vercel
+    const proxyUrl = process.env.TINY_OAUTH_PROXY_URL || 'https://tiny-oauth-proxy.YOUR-USERNAME.workers.dev'
     
-    const response = await fetch('https://auth.tiny.com.br/oauth/token', {
+    const response = await fetch(proxyUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
       },
-      body: params.toString(),
+      body: JSON.stringify({
+        clientId,
+        clientSecret,
+      }),
     })
 
     if (!response.ok) {
