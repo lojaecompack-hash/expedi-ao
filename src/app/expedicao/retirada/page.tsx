@@ -54,12 +54,6 @@ function RetiradaContent() {
           </p>
           <div className="flex gap-2">
             <a
-              href="/api/tiny/auth?next=/expedicao/retirada"
-              className="inline-flex h-10 items-center justify-center rounded-lg border bg-white px-3 text-sm font-medium"
-            >
-              Conectar Tiny
-            </a>
-            <a
               href="/dashboard"
               className="inline-flex h-10 items-center justify-center rounded-lg bg-black px-3 text-sm font-medium text-white"
             >

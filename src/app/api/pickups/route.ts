@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 
 import { prisma } from '@/lib/prisma'
 import { setPedidoSituacao, tinyFetch } from '@/lib/tiny'
+import { getTinyAccessToken } from '@/lib/tiny-oauth'
 
 function onlyDigits(v: string): string {
   return v.replace(/\D+/g, '')
@@ -18,13 +18,8 @@ type TinyPedidoListResponse = {
 
 export async function POST(req: Request) {
   try {
-    const accessToken = (await cookies()).get('tiny_access_token')?.value
-    if (!accessToken) {
-      return NextResponse.json(
-        { ok: false, error: 'Not authenticated. Open /api/tiny/auth first.' },
-        { status: 401 },
-      )
-    }
+    // Obter token OAuth usando credenciais do banco
+    const accessToken = await getTinyAccessToken()
 
     const body = (await req.json()) as {
       orderNumber?: string | number
