@@ -43,13 +43,17 @@ export async function getTinyAccessToken(): Promise<string> {
 
     console.log('[OAuth] Fazendo requisição OAuth para Tiny...')
     
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 segundos
+    
     const response = await fetch('https://auth.tiny.com.br/oauth/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: params.toString(),
-    })
+      signal: controller.signal,
+    }).finally(() => clearTimeout(timeoutId))
 
     if (!response.ok) {
       const text = await response.text()
@@ -69,6 +73,14 @@ export async function getTinyAccessToken(): Promise<string> {
     return data.access_token
   } catch (error) {
     console.error('[OAuth] Erro ao obter token:', error)
-    throw error
+    
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        throw new Error('Timeout ao conectar com Tiny ERP. Tente novamente.')
+      }
+      throw new Error(`Erro OAuth: ${error.message}`)
+    }
+    
+    throw new Error('Erro desconhecido ao obter token do Tiny')
   }
 }
