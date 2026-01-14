@@ -18,8 +18,11 @@ type TinyPedidoListResponse = {
 
 export async function POST(req: Request) {
   try {
+    console.log('[Pickups] Iniciando processamento de retirada...')
+    
     // Obter token OAuth usando credenciais do banco
     const accessToken = await getTinyAccessToken()
+    console.log('[Pickups] Token OAuth obtido com sucesso')
 
     const body = (await req.json()) as {
       orderNumber?: string | number
