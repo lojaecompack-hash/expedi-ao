@@ -18,22 +18,29 @@ export async function getTinyAccessToken(): Promise<string> {
       return cachedToken.token
     }
 
-    console.log('[OAuth] Buscando credenciais do banco...')
+    // Tentar usar variáveis de ambiente primeiro (para Vercel)
+    let clientId = process.env.TINY_CLIENT_ID
+    let clientSecret = process.env.TINY_CLIENT_SECRET
     
-    // Buscar credenciais do banco
-    const workspace = await prisma.workspace.findFirst({
-      where: { name: 'Default' },
-      include: { tinySettings: true }
-    })
+    if (!clientId || !clientSecret) {
+      console.log('[OAuth] Variáveis de ambiente não encontradas, buscando do banco...')
+      
+      // Buscar credenciais do banco
+      const workspace = await prisma.workspace.findFirst({
+        where: { name: 'Default' },
+        include: { tinySettings: true }
+      })
 
-    if (!workspace?.tinySettings) {
-      throw new Error('Tiny ERP não configurado. Configure em /settings/integrations/tiny')
+      if (!workspace?.tinySettings) {
+        throw new Error('Tiny ERP não configurado. Configure em /settings/integrations/tiny')
+      }
+
+      clientId = workspace.tinySettings.clientId
+      clientSecret = decrypt(workspace.tinySettings.clientSecretEncrypted)
+      console.log('[OAuth] Credenciais encontradas no banco, Client ID:', clientId.substring(0, 20) + '...')
+    } else {
+      console.log('[OAuth] Usando credenciais das variáveis de ambiente')
     }
-
-    const { clientId, clientSecretEncrypted } = workspace.tinySettings
-    console.log('[OAuth] Credenciais encontradas, Client ID:', clientId.substring(0, 20) + '...')
-    
-    const clientSecret = decrypt(clientSecretEncrypted)
 
     // Fazer requisição OAuth
     const params = new URLSearchParams({
