@@ -1,10 +1,17 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 export async function GET() {
   try {
-    const workspaceCount = await prisma.workspace.count()
-    const membershipCount = await prisma.membership.count()
+    // Usar $queryRaw para evitar prepared statements no pooler
+    const workspaces = await prisma.$queryRaw`SELECT COUNT(*) as count FROM "Workspace"`
+    const memberships = await prisma.$queryRaw`SELECT COUNT(*) as count FROM "Membership"`
+    
+    const workspaceCount = Number((workspaces as any)[0]?.count || 0)
+    const membershipCount = Number((memberships as any)[0]?.count || 0)
     
     return NextResponse.json({
       ok: true,
