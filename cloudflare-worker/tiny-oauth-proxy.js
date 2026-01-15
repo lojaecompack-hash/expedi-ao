@@ -42,15 +42,36 @@ export default {
         client_secret: clientSecret,
       })
 
-      const response = await fetch('https://auth.tiny.com.br/oauth/token', {
+      // Usar IP direto para contornar erro 1016 do Cloudflare
+      const response = await fetch('https://177.67.82.107/oauth/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': 'Cloudflare-Worker/1.0',
+          'Accept': 'application/json',
+          'Host': 'auth.tiny.com.br',
         },
         body: params.toString(),
       })
 
-      const data = await response.json()
+      // Tentar parsear como JSON, se falhar retornar o texto
+      let data
+      const contentType = response.headers.get('content-type')
+      
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json()
+      } else {
+        const text = await response.text()
+        return new Response(JSON.stringify({
+          error: 'Resposta não é JSON',
+          status: response.status,
+          contentType,
+          body: text.substring(0, 500)
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
 
       if (!response.ok) {
         return new Response(JSON.stringify({

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import AppLayout from '@/components/AppLayout'
 
 interface TinySettings {
-  clientId: string
+  apiToken: string
   isActive: boolean
   createdAt: string
   updatedAt: string
@@ -15,8 +15,7 @@ export default function TinySettingsPage() {
   const [saving, setSaving] = useState(false)
   const [configured, setConfigured] = useState(false)
   const [settings, setSettings] = useState<TinySettings | null>(null)
-  const [clientId, setClientId] = useState('')
-  const [clientSecret, setClientSecret] = useState('')
+  const [apiToken, setApiToken] = useState('')
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   useEffect(() => {
@@ -32,7 +31,7 @@ export default function TinySettingsPage() {
         setConfigured(data.configured)
         setSettings(data.settings)
         if (data.settings) {
-          setClientId(data.settings.clientId)
+          setApiToken(data.settings.apiToken)
         }
       }
     } catch (error) {
@@ -51,22 +50,22 @@ export default function TinySettingsPage() {
       const res = await fetch('/api/settings/tiny', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clientId, clientSecret }),
+        body: JSON.stringify({ apiToken }),
       })
 
       const data = await res.json()
 
       if (res.ok) {
-        setMessage({ type: 'success', text: 'Credenciais salvas com sucesso!' })
+        setMessage({ type: 'success', text: 'Token API salvo com sucesso!' })
         setConfigured(true)
         setSettings(data.settings)
-        setClientSecret('')
+        setApiToken('')
         setTimeout(() => setMessage(null), 5000)
       } else {
-        setMessage({ type: 'error', text: data.error || 'Erro ao salvar credenciais' })
+        setMessage({ type: 'error', text: data.error || 'Erro ao salvar token' })
       }
     } catch (error) {
-      setMessage({ type: 'error', text: 'Erro ao salvar credenciais' })
+      setMessage({ type: 'error', text: 'Erro ao salvar token' })
     } finally {
       setSaving(false)
     }
@@ -86,7 +85,7 @@ export default function TinySettingsPage() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Integração Tiny ERP</h1>
           <p className="mt-2 text-gray-600">
-            Configure as credenciais de acesso ao Tiny ERP
+            Configure o Token API do Tiny ERP
           </p>
         </div>
 
@@ -105,36 +104,21 @@ export default function TinySettingsPage() {
         <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="clientId" className="block text-sm font-medium text-gray-700 mb-1">
-                Client ID
-              </label>
-              <input
-                type="text"
-                id="clientId"
-                value={clientId}
-                onChange={(e) => setClientId(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="seu-client-id"
-                required
-              />
-            </div>
-
-            <div>
-              <label htmlFor="clientSecret" className="block text-sm font-medium text-gray-700 mb-1">
-                Client Secret
+              <label htmlFor="apiToken" className="block text-sm font-medium text-gray-700 mb-1">
+                Token API
               </label>
               <input
                 type="password"
-                id="clientSecret"
-                value={clientSecret}
-                onChange={(e) => setClientSecret(e.target.value)}
+                id="apiToken"
+                value={apiToken}
+                onChange={(e) => setApiToken(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder={configured ? '••••••••••••••••' : 'seu-client-secret'}
+                placeholder={configured ? '••••••••••••••••' : 'seu-token-api'}
                 required={!configured}
               />
               {configured && (
                 <p className="text-xs text-gray-500 mt-1">
-                  Deixe em branco para manter o secret atual
+                  Deixe em branco para manter o token atual
                 </p>
               )}
             </div>
@@ -144,7 +128,7 @@ export default function TinySettingsPage() {
               disabled={saving}
               className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             >
-              {saving ? 'Salvando...' : configured ? 'Atualizar Credenciais' : 'Salvar Credenciais'}
+              {saving ? 'Salvando...' : configured ? 'Atualizar Token' : 'Salvar Token'}
             </button>
           </form>
         </div>
@@ -158,7 +142,7 @@ export default function TinySettingsPage() {
                   Integração configurada
                 </h4>
                 <p className="text-sm text-green-700">
-                  Client ID: <code className="bg-green-100 px-1 rounded">{settings.clientId}</code>
+                  Token configurado: <code className="bg-green-100 px-1 rounded">••••••••</code>
                 </p>
                 <p className="text-xs text-green-600 mt-1">
                   Última atualização: {new Date(settings.updatedAt).toLocaleString('pt-BR')}
@@ -173,13 +157,13 @@ export default function TinySettingsPage() {
             <span className="text-blue-600">ℹ️</span>
             <div>
               <h4 className="text-sm font-medium text-blue-900 mb-1">
-                Como obter as credenciais
+                Como obter o Token API
               </h4>
               <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
                 <li>Acesse o painel do Tiny ERP</li>
-                <li>Vá em Configurações → Integrações → OAuth</li>
-                <li>Crie uma nova aplicação ou use uma existente</li>
-                <li>Copie o Client ID e Client Secret</li>
+                <li>Vá em Menu → Configurações → E-commerce</li>
+                <li>Clique em "Token API"</li>
+                <li>Copie o token exibido</li>
               </ol>
             </div>
           </div>

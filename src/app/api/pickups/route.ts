@@ -1,28 +1,15 @@
 import { NextResponse } from 'next/server'
 
 import { prisma } from '@/lib/prisma'
-import { setPedidoSituacao, tinyFetch } from '@/lib/tiny'
-import { getTinyAccessToken } from '@/lib/tiny-oauth'
+import { getTinyOrder, markOrderAsShipped } from '@/lib/tiny-api'
 
 function onlyDigits(v: string): string {
   return v.replace(/\D+/g, '')
 }
 
-type TinyPedidoListItem = {
-  id?: number
-}
-
-type TinyPedidoListResponse = {
-  itens?: TinyPedidoListItem[]
-}
-
 export async function POST(req: Request) {
   try {
     console.log('[Pickups] Iniciando processamento de retirada...')
-    
-    // Obter token OAuth usando credenciais do banco
-    const accessToken = await getTinyAccessToken()
-    console.log('[Pickups] Token OAuth obtido com sucesso')
 
     const body = (await req.json()) as {
       orderNumber?: string | number
@@ -33,9 +20,9 @@ export async function POST(req: Request) {
 
     const orderNumberRaw = String(body.orderNumber ?? '').trim()
     const orderNumberDigits = onlyDigits(orderNumberRaw)
-    const orderNumber = Number(orderNumberDigits)
+    const orderNumber = orderNumberDigits
 
-    if (!Number.isFinite(orderNumber) || orderNumber <= 0) {
+    if (!orderNumber) {
       return NextResponse.json(
         { ok: false, error: 'Missing or invalid orderNumber (numero do pedido Tiny)' },
         { status: 400 },
@@ -54,61 +41,42 @@ export async function POST(req: Request) {
     const operator = (body.operator ? String(body.operator) : '').trim() || null
     const cpfLast4 = cpfDigits.slice(-4)
 
-    const list = await tinyFetch<TinyPedidoListResponse>(
-      `/pedidos?numero=${encodeURIComponent(String(orderNumber))}&limit=1&offset=0`,
-      { method: 'GET' },
-      accessToken,
-    )
-
-    if (list.status < 200 || list.status >= 300) {
-      return NextResponse.json(
-        { ok: false, error: 'Failed to fetch pedido by numero', tiny: list },
-        { status: 502 },
-      )
-    }
-
-    const itens = list.data?.itens
-    const first = itens?.[0]
-    const idPedido = Number(first?.id)
-
-    if (!Number.isFinite(idPedido) || idPedido <= 0) {
+    console.log('[Pickups] Buscando pedido no Tiny:', orderNumber)
+    const pedido = await getTinyOrder(orderNumber)
+    
+    if (!pedido || !pedido.id) {
       return NextResponse.json(
         {
           ok: false,
           error: 'Pedido não encontrado no Tiny para este número',
-          debug: { orderNumber, received: list.data },
         },
         { status: 404 },
       )
     }
 
+    const tinyOrderId = String(pedido.id)
+    console.log('[Pickups] Pedido encontrado, ID:', tinyOrderId)
+
     const dryRunEnv = process.env.TINY_DRY_RUN
     const dryRun = body.dryRun ?? (dryRunEnv ? dryRunEnv !== '0' : false)
 
     if (!dryRun) {
-      const result = await setPedidoSituacao({ idPedido, situacao: 5, token: accessToken })
-
-      if (result.status < 200 || result.status >= 300) {
-        return NextResponse.json(
-          { ok: false, error: 'Failed to update pedido situacao', tiny: result },
-          { status: 502 },
-        )
-      }
+      console.log('[Pickups] Marcando pedido como enviado...')
+      await markOrderAsShipped(orderNumber)
+      console.log('[Pickups] Pedido marcado como enviado')
     }
-
-    const tinyOrderId = String(idPedido)
 
     const order = await prisma.order.upsert({
       where: { tinyOrderId },
       update: {
-        orderNumber: String(orderNumber),
-        statusTiny: '5',
+        orderNumber,
+        statusTiny: 'faturado',
         statusInterno: 'RETIRADO',
       },
       create: {
         tinyOrderId,
-        orderNumber: String(orderNumber),
-        statusTiny: '5',
+        orderNumber,
+        statusTiny: 'faturado',
         statusInterno: 'RETIRADO',
       },
       select: { id: true, tinyOrderId: true, orderNumber: true },
@@ -129,12 +97,13 @@ export async function POST(req: Request) {
       order,
       pickup,
       tiny: {
-        idPedido,
-        situacao: 5,
+        idPedido: tinyOrderId,
+        situacao: 'faturado',
       },
     })
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Unknown error'
+    console.error('[Pickups] Erro:', message)
     return NextResponse.json({ ok: false, error: message }, { status: 500 })
   }
 }

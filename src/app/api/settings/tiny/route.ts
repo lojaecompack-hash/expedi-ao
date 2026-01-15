@@ -29,7 +29,7 @@ export async function GET() {
       where: { workspaceId: workspace.id },
       select: {
         id: true,
-        clientId: true,
+        apiTokenEncrypted: true,
         isActive: true,
         createdAt: true,
         updatedAt: true,
@@ -40,7 +40,7 @@ export async function GET() {
       configured: Boolean(tinySettings),
       settings: tinySettings
         ? {
-            clientId: tinySettings.clientId,
+            apiToken: '********',
             isActive: tinySettings.isActive,
             createdAt: tinySettings.createdAt,
             updatedAt: tinySettings.updatedAt,
@@ -77,35 +77,32 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json()
-    const { clientId, clientSecret } = body
+    const { apiToken } = body
 
-    if (!clientId || !clientSecret) {
+    if (!apiToken) {
       return NextResponse.json(
-        { error: 'clientId and clientSecret are required' },
+        { error: 'apiToken is required' },
         { status: 400 },
       )
     }
 
-    // Criptografar o client secret
-    const clientSecretEncrypted = encrypt(clientSecret)
+    // Criptografar o token
+    const apiTokenEncrypted = encrypt(apiToken)
 
     // Salvar ou atualizar settings
     const tinySettings = await prisma.tinySettings.upsert({
       where: { workspaceId: workspace.id },
       update: {
-        clientId,
-        clientSecretEncrypted,
+        apiTokenEncrypted,
         isActive: true,
       },
       create: {
         workspaceId: workspace.id,
-        clientId,
-        clientSecretEncrypted,
+        apiTokenEncrypted,
         isActive: true,
       },
       select: {
         id: true,
-        clientId: true,
         isActive: true,
         createdAt: true,
         updatedAt: true,
@@ -115,7 +112,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       ok: true,
       settings: {
-        clientId: tinySettings.clientId,
+        apiToken: '********',
         isActive: tinySettings.isActive,
         createdAt: tinySettings.createdAt,
         updatedAt: tinySettings.updatedAt,
