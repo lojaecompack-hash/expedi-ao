@@ -28,6 +28,19 @@ export async function getTinyApiToken(): Promise<string> {
 interface TinyPedido {
   id: string
   numero: string
+  cliente?: {
+    nome?: string
+    cpf_cnpj?: string
+  }
+  itens?: Array<{
+    item: {
+      id?: string
+      codigo?: string
+      descricao?: string
+      unidade?: string
+      quantidade?: string
+    }
+  }>
   [key: string]: unknown
 }
 
@@ -142,4 +155,74 @@ export async function markOrderAsShipped(orderNumber: string, orderId?: string) 
 
   console.log('[Tiny API] Situação alterada com sucesso!')
   return data.retorno
+}
+
+export interface TinyOrderDetails {
+  id: string
+  numero: string
+  clienteNome: string
+  itens: Array<{
+    id: string
+    descricao: string
+    quantidade: number
+  }>
+}
+
+export async function getTinyOrderDetails(orderNumber: string): Promise<TinyOrderDetails | null> {
+  try {
+    const token = await getTinyApiToken()
+    
+    // Primeiro buscar o ID do pedido
+    const pedidoBasico = await getTinyOrder(orderNumber)
+    if (!pedidoBasico || !pedidoBasico.id) {
+      return null
+    }
+    
+    // Buscar detalhes completos do pedido
+    const url = 'https://api.tiny.com.br/api2/pedido.obter.php'
+    const params = new URLSearchParams({
+      token,
+      id: String(pedidoBasico.id),
+      formato: 'JSON'
+    })
+    
+    console.log('[Tiny API] Buscando detalhes do pedido ID:', pedidoBasico.id)
+    
+    const response = await fetch(`${url}?${params.toString()}`)
+    
+    if (!response.ok) {
+      throw new Error(`Erro ao buscar detalhes: ${response.status}`)
+    }
+    
+    const data = await response.json() as TinyApiResponse<TinyPedido>
+    
+    if (data.retorno.status === 'Erro') {
+      const erro = data.retorno.erros?.[0]?.erro || 'Erro desconhecido'
+      throw new Error(`Erro Tiny: ${erro}`)
+    }
+    
+    const pedido = data.retorno.pedido
+    if (!pedido) {
+      return null
+    }
+    
+    // Extrair dados necessários
+    const detalhes: TinyOrderDetails = {
+      id: String(pedido.id),
+      numero: String(pedido.numero),
+      clienteNome: pedido.cliente?.nome || 'Cliente não informado',
+      itens: (pedido.itens || []).map((item, index) => ({
+        id: item.item?.id || String(index),
+        descricao: item.item?.descricao || 'Produto sem descrição',
+        quantidade: parseFloat(item.item?.quantidade || '1')
+      }))
+    }
+    
+    console.log('[Tiny API] Detalhes do pedido:', detalhes)
+    
+    return detalhes
+  } catch (error) {
+    console.error('[Tiny API] Erro ao buscar detalhes:', error)
+    return null
+  }
 }
