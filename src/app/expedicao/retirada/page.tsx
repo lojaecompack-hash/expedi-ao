@@ -180,12 +180,6 @@ export default function RetiradaPage() {
       return
     }
     
-    if (!operatorId) {
-      setResult("❌ Selecione um operador")
-      setSuccess(false)
-      return
-    }
-    
     // Validar se TODOS os itens foram conferidos
     const allItemsChecked = orderDetails && Object.values(checkedItems).every(Boolean)
     if (orderDetails && !allItemsChecked) {
@@ -347,14 +341,13 @@ export default function RetiradaPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-zinc-900">Operador *</label>
+                  <label className="block text-sm font-medium text-zinc-900">Operador (opcional)</label>
                   <div className="relative">
                     <Settings className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-400 pointer-events-none" />
                     <select
                       value={operatorId}
                       onChange={(e) => setOperatorId(e.target.value)}
                       className="w-full pl-10 pr-4 py-3 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent transition-all appearance-none bg-white"
-                      required
                     >
                       <option value="">Selecione um operador</option>
                       {operators.map(op => (
