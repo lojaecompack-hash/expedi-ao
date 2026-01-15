@@ -32,6 +32,10 @@ export default function RetiradaPage() {
   
   // Estados para conferência
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({})
+  
+  // Estados para foto
+  const [photo, setPhoto] = useState<string | null>(null)
+  const [showCamera, setShowCamera] = useState(false)
 
   // Função para buscar detalhes do pedido via API
   const searchOrder = async (number: string) => {
@@ -122,6 +126,23 @@ export default function RetiradaPage() {
     setCheckedItems(newChecks)
   }
 
+  // Capturar foto via input file
+  const handlePhotoCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setPhoto(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  // Limpar foto
+  const clearPhoto = () => {
+    setPhoto(null)
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     
@@ -158,6 +179,8 @@ export default function RetiradaPage() {
           orderNumber,
           cpf,
           operator: operator.trim() ? operator : undefined,
+          retrieverName: retrieverName.trim(),
+          photo: photo || null,
         }),
       })
 
@@ -169,6 +192,10 @@ export default function RetiradaPage() {
         setOrderNumber("")
         setCpf("")
         setOperator("")
+        setRetrieverName("")
+        setOrderDetails(null)
+        setCheckedItems({})
+        setPhoto(null)
       } else {
         setSuccess(false)
         setResult(`❌ Erro ao registrar retirada\n\n${data.error || "Erro desconhecido"}`)
@@ -333,6 +360,32 @@ export default function RetiradaPage() {
                       placeholder="Ex: João"
                       required
                     />
+                  </div>
+                </div>
+
+                {/* Campo de Foto */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-zinc-900">Foto do Produto/Documento</label>
+                  <div className="space-y-3">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handlePhotoCapture}
+                      className="w-full text-sm text-zinc-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#FFD700] file:text-zinc-900 hover:file:bg-[#FFC700] cursor-pointer"
+                    />
+                    {photo && (
+                      <div className="relative">
+                        <img src={photo} alt="Preview" className="w-full h-48 object-cover rounded-lg border border-zinc-200" />
+                        <button
+                          type="button"
+                          onClick={clearPhoto}
+                          className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 transition-colors"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
