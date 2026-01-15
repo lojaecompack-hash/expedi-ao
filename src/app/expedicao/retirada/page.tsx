@@ -138,10 +138,10 @@ export default function RetiradaPage() {
       return
     }
     
-    // Validar se pelo menos um item foi conferido
-    const hasCheckedItems = Object.values(checkedItems).some(Boolean)
-    if (orderDetails && !hasCheckedItems) {
-      setResult("❌ Marque pelo menos um produto como conferido")
+    // Validar se TODOS os itens foram conferidos
+    const allItemsChecked = orderDetails && Object.values(checkedItems).every(Boolean)
+    if (orderDetails && !allItemsChecked) {
+      setResult("❌ Todos os produtos devem ser conferidos (marcados)")
       setSuccess(false)
       return
     }
