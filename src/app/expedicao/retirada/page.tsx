@@ -4,6 +4,7 @@ import { useState } from "react"
 import { motion } from "framer-motion"
 import { Package, Truck, CheckCircle, AlertCircle, ArrowLeft, Search, User, Settings } from "lucide-react"
 import Link from "next/link"
+import { getTinyOrderDetails, type TinyOrderDetails } from "@/lib/tiny-api"
 
 export default function RetiradaPage() {
   const [orderNumber, setOrderNumber] = useState("")
@@ -12,6 +13,45 @@ export default function RetiradaPage() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<string>("")
   const [success, setSuccess] = useState(false)
+  
+  // Estados para busca automática
+  const [orderDetails, setOrderDetails] = useState<TinyOrderDetails | null>(null)
+  const [loadingOrder, setLoadingOrder] = useState(false)
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null)
+
+  // Função para buscar detalhes do pedido com debounce
+  const searchOrder = async (number: string) => {
+    if (number.length < 2) {
+      setOrderDetails(null)
+      return
+    }
+
+    setLoadingOrder(true)
+    try {
+      const details = await getTinyOrderDetails(number)
+      setOrderDetails(details)
+    } catch (error) {
+      console.error('Erro ao buscar pedido:', error)
+      setOrderDetails(null)
+    } finally {
+      setLoadingOrder(false)
+    }
+  }
+
+  // Handler para mudança no número do pedido
+  const handleOrderNumberChange = (value: string) => {
+    setOrderNumber(value)
+    
+    if (searchTimeout) {
+      clearTimeout(searchTimeout)
+    }
+    
+    const timeout = setTimeout(() => {
+      searchOrder(value)
+    }, 500)
+    
+    setSearchTimeout(timeout)
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -144,12 +184,17 @@ export default function RetiradaPage() {
                     <input
                       type="text"
                       value={orderNumber}
-                      onChange={(e) => setOrderNumber(e.target.value)}
+                      onChange={(e) => handleOrderNumberChange(e.target.value)}
                       inputMode="numeric"
                       className="w-full pl-10 pr-4 py-3 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent transition-all"
                       placeholder="Ex: 12345"
                       required
                     />
+                    {loadingOrder && (
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <div className="w-5 h-5 border-2 border-[#FFD700] border-t-transparent rounded-full animate-spin"></div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -183,6 +228,36 @@ export default function RetiradaPage() {
                     />
                   </div>
                 </div>
+
+                {/* Painel de Informações do Pedido */}
+                {orderDetails && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="border border-zinc-200 rounded-xl p-6 space-y-4 bg-zinc-50"
+                  >
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-zinc-900">📦 Pedido #{orderDetails.numero}</h3>
+                      <span className="text-sm text-zinc-600">Cliente: {orderDetails.clienteNome}</span>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-zinc-700">Produtos:</p>
+                      {orderDetails.itens.map(item => (
+                        <div
+                          key={item.id}
+                          className="flex items-center gap-3 p-3 bg-white rounded-lg border border-zinc-200"
+                        >
+                          <Package className="w-5 h-5 text-zinc-400 flex-shrink-0" />
+                          <div className="flex-1">
+                            <span className="text-sm font-medium text-zinc-900">{item.descricao}</span>
+                            <span className="text-sm text-zinc-600 ml-2">(Quant: {item.quantidade})</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
 
                 <button
                   type="submit"
