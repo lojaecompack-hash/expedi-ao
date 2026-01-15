@@ -109,6 +109,8 @@ export async function markOrderAsShipped(orderNumber: string, orderId?: string) 
     method: 'POST'
   })
   
+  console.log('[Tiny API] Response status alterar situação:', response.status)
+  
   if (!response.ok) {
     throw new Error(`Erro ao marcar pedido como enviado: ${response.status}`)
   }
@@ -117,8 +119,10 @@ export async function markOrderAsShipped(orderNumber: string, orderId?: string) 
   
   console.log('[Tiny API] Resposta alterar situação:', JSON.stringify(data, null, 2))
   
-  if (data.retorno.status_processamento === '3') {
-    const erro = data.retorno.erros?.[0]?.erro || 'Erro desconhecido'
+  if (data.retorno.status_processamento === '3' || data.retorno.status === 'Erro') {
+    const erro = data.retorno.erros?.[0]?.erro || data.retorno.codigo_erro || 'Erro desconhecido'
+    console.error('[Tiny API] Erro ao alterar status:', erro)
+    console.error('[Tiny API] Resposta completa:', data)
     throw new Error(`Erro Tiny: ${erro}`)
   }
 
