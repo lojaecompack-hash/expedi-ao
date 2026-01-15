@@ -31,35 +31,45 @@ export default function RetiradaPage() {
 
   // Função para buscar detalhes do pedido via API
   const searchOrder = async (number: string) => {
+    console.log('[Client] Iniciando busca para pedido:', number)
+    
     if (number.length < 2) {
+      console.log('[Client] Número muito curto, limpando detalhes')
       setOrderDetails(null)
       return
     }
 
     setLoadingOrder(true)
     try {
-      const res = await fetch(`/api/order-details?number=${encodeURIComponent(number)}`)
+      const url = `/api/order-details?number=${encodeURIComponent(number)}`
+      console.log('[Client] Chamando API:', url)
+      
+      const res = await fetch(url)
+      console.log('[Client] Resposta recebida, status:', res.status)
       
       if (!res.ok) {
-        console.error('Erro ao buscar pedido:', res.status)
+        console.error('[Client] Erro HTTP:', res.status)
         setOrderDetails(null)
         return
       }
       
       const details = await res.json()
+      console.log('[Client] Dados recebidos:', details)
       
       if (details.error) {
-        console.error('Erro na resposta:', details.error)
+        console.error('[Client] Erro na resposta:', details.error)
         setOrderDetails(null)
         return
       }
       
+      console.log('[Client] Definindo orderDetails:', details)
       setOrderDetails(details)
     } catch (error) {
-      console.error('Erro ao buscar pedido:', error)
+      console.error('[Client] Erro ao buscar pedido:', error)
       setOrderDetails(null)
     } finally {
       setLoadingOrder(false)
+      console.log('[Client] Busca finalizada')
     }
   }
 
