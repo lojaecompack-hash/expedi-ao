@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { decrypt } from '@/lib/crypto'
 
-export async function GET() {
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url)
+  const orderNumber = searchParams.get('numero') || '2'
   try {
     console.log('[Debug Tiny] Iniciando diagnóstico...')
     
@@ -57,7 +59,7 @@ export async function GET() {
     const url = 'https://api.tiny.com.br/api2/pedido.obter.php'
     const params = new URLSearchParams({
       token,
-      numero: '2',
+      numero: orderNumber,
       formato: 'JSON'
     })
 
