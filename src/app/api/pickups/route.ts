@@ -62,7 +62,7 @@ export async function POST(req: Request) {
 
     if (!dryRun) {
       console.log('[Pickups] Marcando pedido como enviado...')
-      await markOrderAsShipped(orderNumber)
+      await markOrderAsShipped(orderNumber, tinyOrderId)
       console.log('[Pickups] Pedido marcado como enviado')
     }
 

@@ -68,19 +68,23 @@ export async function getTinyOrder(orderNumber: string): Promise<TinyPedido | un
   return data.retorno.pedido
 }
 
-export async function markOrderAsShipped(orderNumber: string) {
+export async function markOrderAsShipped(orderNumber: string, orderId?: string) {
   const token = await getTinyApiToken()
   
-  // Primeiro buscar o pedido para pegar o ID
-  console.log('[Tiny API] Buscando ID do pedido:', orderNumber)
-  const pedido = await getTinyOrder(orderNumber)
-  
-  if (!pedido || !pedido.id) {
-    throw new Error('Pedido não encontrado para marcar como enviado')
+  // Se não tiver o ID, buscar o pedido primeiro
+  let pedidoId = orderId
+  if (!pedidoId) {
+    console.log('[Tiny API] Buscando ID do pedido:', orderNumber)
+    const pedido = await getTinyOrder(orderNumber)
+    
+    if (!pedido || !pedido.id) {
+      throw new Error('Pedido não encontrado para marcar como enviado')
+    }
+    
+    pedidoId = String(pedido.id)
   }
   
-  const pedidoId = String(pedido.id)
-  console.log('[Tiny API] ID do pedido:', pedidoId)
+  console.log('[Tiny API] Alterando situação do pedido ID:', pedidoId)
   
   const url = 'https://api.tiny.com.br/api2/pedido.alterar.situacao.php'
   const params = new URLSearchParams({
@@ -89,8 +93,6 @@ export async function markOrderAsShipped(orderNumber: string) {
     situacao: 'faturado',
     formato: 'JSON'
   })
-
-  console.log('[Tiny API] Alterando situação do pedido...')
 
   const response = await fetch(`${url}?${params.toString()}`, {
     method: 'POST'
