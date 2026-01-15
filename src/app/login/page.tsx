@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-
-import { createSupabaseBrowserClient } from '@/lib/supabase/browser'
+import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
+import { Package, User, Lock, AlertCircle } from 'lucide-react'
 
 export default function LoginPage() {
   const [nextPath, setNextPath] = useState('/dashboard')
@@ -10,8 +10,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string>('')
-
-  const supabase = useMemo(() => createSupabaseBrowserClient(), [])
 
   useEffect(() => {
     const url = new URL(window.location.href)
@@ -27,16 +25,23 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
       })
 
-      if (signInError) {
-        setError(signInError.message)
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || 'Erro ao fazer login')
         return
       }
 
+      // Salvar token no cookie
+      document.cookie = `auth-token=${data.token}; path=/; max-age=${7 * 24 * 60 * 60}` // 7 dias
+
+      // Redirecionar
       window.location.href = nextPath
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Erro desconhecido'
@@ -47,55 +52,89 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 p-6 text-zinc-900">
-      <div className="mx-auto w-full max-w-md space-y-6">
-        <header className="space-y-1">
-          <h1 className="text-2xl font-semibold">Entrar</h1>
-          <p className="text-sm text-zinc-600">Entre com seu e-mail e senha para continuar.</p>
-        </header>
+    <div className="min-h-screen bg-[#F9FAFB] flex items-center justify-center p-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-md"
+      >
+        {/* Logo */}
+        <div className="flex justify-center mb-8">
+          <div className="w-16 h-16 bg-[#FFD700] rounded-2xl flex items-center justify-center">
+            <Package className="w-8 h-8 text-zinc-900" />
+          </div>
+        </div>
 
-        <section className="rounded-xl border bg-white p-4 space-y-4">
-          <form onSubmit={onSubmit} className="space-y-4">
+        {/* Login Card */}
+        <div className="bg-white rounded-2xl border border-zinc-200 p-8 shadow-sm">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold text-zinc-900">Bem-vindo</h1>
+            <p className="text-zinc-600 mt-2">Entre com sua conta para continuar</p>
+          </div>
+
+          <form onSubmit={onSubmit} className="space-y-6">
+            {error && (
+              <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            )}
+
             <div className="space-y-2">
-              <label className="block text-sm font-medium">E-mail</label>
-              <input
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                type="email"
-                autoComplete="email"
-                className="w-full rounded-lg border px-3 py-2"
-                placeholder="seuemail@exemplo.com"
-              />
+              <label className="block text-sm font-medium text-zinc-900">Email</label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-400" />
+                <input
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  type="email"
+                  autoComplete="email"
+                  className="w-full pl-10 pr-4 py-3 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent transition-all"
+                  placeholder="seuemail@exemplo.com"
+                  required
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium">Senha</label>
-              <input
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                type="password"
-                autoComplete="current-password"
-                className="w-full rounded-lg border px-3 py-2"
-                placeholder="••••••••"
-              />
+              <label className="block text-sm font-medium text-zinc-900">Senha</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-400" />
+                <input
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  type="password"
+                  autoComplete="current-password"
+                  className="w-full pl-10 pr-4 py-3 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent transition-all"
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
             </div>
-
-            {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex h-10 w-full items-center justify-center rounded-lg bg-black px-3 text-sm font-medium text-white disabled:opacity-60"
+              className="w-full bg-[#FFD700] text-zinc-900 font-semibold py-3 px-6 rounded-xl hover:bg-[#FFC700] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {loading ? 'Entrando...' : 'Entrar'}
+              {loading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-zinc-900 border-t-transparent rounded-full animate-spin"></div>
+                  <span>Entrando...</span>
+                </>
+              ) : (
+                <span>Entrar</span>
+              )}
             </button>
           </form>
-        </section>
+        </div>
 
-        <footer className="text-xs text-zinc-500">
-          Se você ainda não tiver um usuário, crie no Supabase Auth (Users) ou me peça que eu te guie.
-        </footer>
-      </div>
+        <div className="text-center mt-6">
+          <p className="text-sm text-zinc-600">
+            Precisa de uma conta? Entre em contato com o administrador.
+          </p>
+        </div>
+      </motion.div>
     </div>
   )
 }
