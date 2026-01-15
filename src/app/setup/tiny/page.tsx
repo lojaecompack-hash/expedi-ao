@@ -1,8 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 export default function SetupTinyPage() {
+  const [isConfigured, setIsConfigured] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [apiToken, setApiToken] = useState('')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
