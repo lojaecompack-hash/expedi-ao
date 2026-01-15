@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     const body = (await req.json()) as {
       orderNumber?: string | number
       cpf?: string
-      operator?: string
+      operatorId?: string
       retrieverName?: string
       photo?: string
       dryRun?: boolean
@@ -40,7 +40,7 @@ export async function POST(req: Request) {
       )
     }
 
-    const operator = (body.operator ? String(body.operator) : '').trim() || null
+    const operatorId = body.operatorId || null
     const cpfLast4 = cpfDigits.slice(-4)
 
     console.log('[Pickups] Buscando pedido no Tiny:', orderNumber)
@@ -138,11 +138,11 @@ export async function POST(req: Request) {
       data: {
         orderId: order.id,
         cpfLast4,
-        operator,
+        operatorId,
         retrieverName: body.retrieverName || null,
         photo: body.photo || null,
       },
-      select: { id: true, cpfLast4: true, operator: true, retrieverName: true, photo: true, createdAt: true },
+      select: { id: true, cpfLast4: true, operatorId: true, retrieverName: true, photo: true, createdAt: true },
     })
 
     return NextResponse.json({

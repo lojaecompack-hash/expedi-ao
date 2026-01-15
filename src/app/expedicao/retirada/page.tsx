@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Package, Truck, CheckCircle, AlertCircle, ArrowLeft, Search, User, Settings } from "lucide-react"
 import Link from "next/link"
@@ -16,10 +16,16 @@ interface OrderDetails {
   }>
 }
 
+interface Operator {
+  id: string
+  name: string
+  isActive: boolean
+}
+
 export default function RetiradaPage() {
   const [orderNumber, setOrderNumber] = useState("")
   const [cpf, setCpf] = useState("")
-  const [operator, setOperator] = useState("")
+  const [operatorId, setOperatorId] = useState("")
   const [retrieverName, setRetrieverName] = useState("")
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<string>("")
@@ -36,6 +42,26 @@ export default function RetiradaPage() {
   // Estados para foto
   const [photo, setPhoto] = useState<string | null>(null)
   const [showCamera, setShowCamera] = useState(false)
+  
+  // Estados para operadores
+  const [operators, setOperators] = useState<Operator[]>([])
+  
+  useEffect(() => {
+    fetchOperators()
+  }, [])
+  
+  const fetchOperators = async () => {
+    try {
+      const res = await fetch('/api/operators')
+      const data = await res.json()
+      
+      if (data.ok) {
+        setOperators(data.operators.filter((op: Operator) => op.isActive))
+      }
+    } catch (error) {
+      console.error('Erro ao buscar operadores:', error)
+    }
+  }
 
   // Função para buscar detalhes do pedido via API
   const searchOrder = async (number: string) => {
@@ -153,8 +179,8 @@ export default function RetiradaPage() {
       return
     }
     
-    if (!operator.trim()) {
-      setResult("❌ Operador é obrigatório")
+    if (!operatorId) {
+      setResult("❌ Selecione um operador")
       setSuccess(false)
       return
     }
@@ -178,7 +204,7 @@ export default function RetiradaPage() {
         body: JSON.stringify({
           orderNumber,
           cpf,
-          operator: operator.trim() ? operator : undefined,
+          operatorId: operatorId,
           retrieverName: retrieverName.trim(),
           photo: photo || null,
         }),
@@ -191,7 +217,7 @@ export default function RetiradaPage() {
         setResult(`✅ Retirada registrada com sucesso!\n\nPedido: ${data.order.orderNumber}\nID: ${data.order.tinyOrderId}\nOperador: ${data.pickup.operator || "Não informado"}\nStatus: ${data.tiny.situacao}`)
         setOrderNumber("")
         setCpf("")
-        setOperator("")
+        setOperatorId("")
         setRetrieverName("")
         setOrderDetails(null)
         setCheckedItems({})
@@ -351,16 +377,24 @@ export default function RetiradaPage() {
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-zinc-900">Operador *</label>
                   <div className="relative">
-                    <Settings className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-400" />
-                    <input
-                      type="text"
-                      value={operator}
-                      onChange={(e) => setOperator(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent transition-all"
-                      placeholder="Ex: João"
+                    <Settings className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-400 pointer-events-none" />
+                    <select
+                      value={operatorId}
+                      onChange={(e) => setOperatorId(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent transition-all appearance-none bg-white"
                       required
-                    />
+                    >
+                      <option value="">Selecione um operador</option>
+                      {operators.map(op => (
+                        <option key={op.id} value={op.id}>{op.name}</option>
+                      ))}
+                    </select>
                   </div>
+                  {operators.length === 0 && (
+                    <p className="text-xs text-zinc-500">
+                      Nenhum operador cadastrado. <Link href="/expedicao/operadores" className="text-[#FFD700] hover:underline">Cadastrar operadores</Link>
+                    </p>
+                  )}
                 </div>
 
                 {/* Campo de Foto */}
