@@ -7,9 +7,9 @@ export async function GET(req: Request) {
     const number = searchParams.get('number')
     
     // Validação
-    if (!number || number.length < 2) {
+    if (!number || number.trim().length === 0) {
       return NextResponse.json(
-        { error: 'Número do pedido inválido ou muito curto' },
+        { error: 'Número do pedido inválido' },
         { status: 400 }
       )
     }

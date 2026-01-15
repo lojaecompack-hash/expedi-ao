@@ -33,8 +33,8 @@ export default function RetiradaPage() {
   const searchOrder = async (number: string) => {
     console.log('[Client] Iniciando busca para pedido:', number)
     
-    if (number.length < 2) {
-      console.log('[Client] Número muito curto, limpando detalhes')
+    if (!number || number.trim().length === 0) {
+      console.log('[Client] Número vazio, limpando detalhes')
       setOrderDetails(null)
       return
     }
