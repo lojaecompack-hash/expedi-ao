@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Package, Users, Plus, Edit2, Trash2, Check, X, ArrowLeft } from "lucide-react"
+import { Users, Plus, Edit2, Trash2, Check, X, ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import Sidebar from "@/components/Sidebar"
 
 interface Operator {
   id: string
@@ -149,32 +150,7 @@ export default function OperadoresPage() {
 
   return (
     <div className="min-h-screen bg-[#F9FAFB]">
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-white border-r border-zinc-200">
-        <div className="flex h-16 items-center px-6 border-b border-zinc-200">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-[#FFD700] rounded-lg flex items-center justify-center">
-              <Package className="w-5 h-5 text-zinc-900" />
-            </div>
-            <span className="text-xl font-semibold text-zinc-900">Ecompack</span>
-          </div>
-        </div>
-        
-        <nav className="p-4 space-y-2">
-          <Link href="/" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-zinc-100 text-zinc-700 transition-colors">
-            <Package className="w-5 h-5" />
-            <span className="font-medium">Dashboard</span>
-          </Link>
-          <Link href="/expedicao/retirada" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-zinc-100 text-zinc-700 transition-colors">
-            <Package className="w-5 h-5" />
-            <span className="font-medium">Retirada</span>
-          </Link>
-          <Link href="/expedicao/operadores" className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[#FFD700] text-zinc-900">
-            <Users className="w-5 h-5" />
-            <span className="font-medium">Operadores</span>
-          </Link>
-        </nav>
-      </aside>
+      <Sidebar />
 
       {/* Main Content */}
       <div className="ml-64 p-8">
