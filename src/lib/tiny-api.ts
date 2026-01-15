@@ -90,7 +90,7 @@ export async function markOrderAsShipped(orderNumber: string, orderId?: string) 
   const params = new URLSearchParams({
     token,
     id: pedidoId,
-    situacao: 'faturado',
+    situacao: 'enviado',
     formato: 'JSON'
   })
 

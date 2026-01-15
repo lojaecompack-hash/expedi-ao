@@ -70,13 +70,13 @@ export async function POST(req: Request) {
       where: { tinyOrderId },
       update: {
         orderNumber,
-        statusTiny: 'faturado',
+        statusTiny: 'enviado',
         statusInterno: 'RETIRADO',
       },
       create: {
         tinyOrderId,
         orderNumber,
-        statusTiny: 'faturado',
+        statusTiny: 'enviado',
         statusInterno: 'RETIRADO',
       },
       select: { id: true, tinyOrderId: true, orderNumber: true },
@@ -98,7 +98,7 @@ export async function POST(req: Request) {
       pickup,
       tiny: {
         idPedido: tinyOrderId,
-        situacao: 'faturado',
+        situacao: 'enviado',
       },
     })
   } catch (e) {
