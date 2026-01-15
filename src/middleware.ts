@@ -3,16 +3,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseMiddlewareClient } from '@/lib/supabase/middleware'
 
 function isPublicPath(pathname: string) {
-  if (pathname === '/') return true
   if (pathname.startsWith('/login')) return true
   if (pathname.startsWith('/api/tiny/auth')) return true
   if (pathname.startsWith('/api/tiny/callback')) return true
   if (pathname.startsWith('/api/session')) return true
   if (pathname.startsWith('/api/logout')) return true
-  if (pathname.startsWith('/api/operators')) return true // API de operadores pública
-  if (pathname.startsWith('/api/pickups')) return true // API de pickups pública
-  if (pathname.startsWith('/api/order-details')) return true // API de detalhes pública
-  if (pathname.startsWith('/api/retiradas')) return true // API de relatórios pública
+  if (pathname.startsWith('/api/operators')) return true
+  if (pathname.startsWith('/api/pickups')) return true
+  if (pathname.startsWith('/api/order-details')) return true
+  if (pathname.startsWith('/api/retiradas')) return true
   if (pathname.startsWith('/_next')) return true
   if (pathname.startsWith('/favicon.ico')) return true
   if (pathname.startsWith('/public')) return true
@@ -40,5 +39,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/tiny-test/:path*', '/expedicao/:path*', '/admin/:path*'],
+  matcher: ['/', '/dashboard/:path*', '/tiny-test/:path*', '/expedicao/:path*', '/admin/:path*'],
 }
