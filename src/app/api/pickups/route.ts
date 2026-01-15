@@ -42,9 +42,18 @@ export async function POST(req: Request) {
     const cpfLast4 = cpfDigits.slice(-4)
 
     console.log('[Pickups] Buscando pedido no Tiny:', orderNumber)
-    const pedido = await getTinyOrder(orderNumber)
+    let pedido
+    try {
+      pedido = await getTinyOrder(orderNumber)
+      console.log('[Pickups] getTinyOrder retornou:', pedido ? 'pedido encontrado' : 'undefined')
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Unknown error'
+      console.error('[Pickups] Erro ao buscar pedido:', msg)
+      throw error
+    }
     
     if (!pedido || !pedido.id) {
+      console.error('[Pickups] Pedido não encontrado ou sem ID')
       return NextResponse.json(
         {
           ok: false,
@@ -62,8 +71,14 @@ export async function POST(req: Request) {
 
     if (!dryRun) {
       console.log('[Pickups] Marcando pedido como enviado...')
-      await markOrderAsShipped(orderNumber, tinyOrderId)
-      console.log('[Pickups] Pedido marcado como enviado')
+      try {
+        await markOrderAsShipped(orderNumber, tinyOrderId)
+        console.log('[Pickups] Pedido marcado como enviado com sucesso')
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : 'Unknown error'
+        console.error('[Pickups] Erro ao marcar como enviado:', msg)
+        throw error
+      }
     }
 
     const order = await prisma.order.upsert({
