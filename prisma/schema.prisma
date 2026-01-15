@@ -92,7 +92,6 @@ model Pickup {
   orderId   String
   cpfLast4  String?
   operator  String?
-  signature String?
   createdAt DateTime @default(now())
 
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)

@@ -15,7 +15,6 @@ export async function POST(req: Request) {
       orderNumber?: string | number
       cpf?: string
       operator?: string
-      signature?: string
       dryRun?: boolean
     }
 
@@ -138,9 +137,8 @@ export async function POST(req: Request) {
         orderId: order.id,
         cpfLast4,
         operator,
-        signature: body.signature || null,
       },
-      select: { id: true, cpfLast4: true, operator: true, signature: true, createdAt: true },
+      select: { id: true, cpfLast4: true, operator: true, createdAt: true },
     })
 
     return NextResponse.json({

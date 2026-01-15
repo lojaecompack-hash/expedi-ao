@@ -1,11 +1,9 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState } from "react"
 import { motion } from "framer-motion"
-import { Package, Truck, CheckCircle, AlertCircle, ArrowLeft, Search, User, Settings, ShoppingBag, CheckSquare, Square, RotateCcw } from "lucide-react"
+import { Package, Truck, CheckCircle, AlertCircle, ArrowLeft, Search, User, Settings } from "lucide-react"
 import Link from "next/link"
-import SignatureCanvas from "react-signature-canvas"
-import { getTinyOrderDetails, type TinyOrderDetails } from "@/lib/tiny-api"
 
 export default function RetiradaPage() {
   const [orderNumber, setOrderNumber] = useState("")
@@ -14,97 +12,6 @@ export default function RetiradaPage() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<string>("")
   const [success, setSuccess] = useState(false)
-  
-  // Novos estados para conferência e assinatura
-  const [orderDetails, setOrderDetails] = useState<TinyOrderDetails | null>(null)
-  const [loadingOrder, setLoadingOrder] = useState(false)
-  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({})
-  const [signature, setSignature] = useState<string | null>(null)
-  const signatureRef = useRef<SignatureCanvas>(null)
-  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null)
-
-  // Função para buscar detalhes do pedido com debounce
-  const searchOrder = async (number: string) => {
-    if (number.length < 2) {
-      setOrderDetails(null)
-      setCheckedItems({})
-      return
-    }
-
-    setLoadingOrder(true)
-    try {
-      const details = await getTinyOrderDetails(number)
-      if (details) {
-        setOrderDetails(details)
-        // Inicializar checkboxes
-        const initialChecks: Record<string, boolean> = {}
-        details.itens.forEach(item => {
-          initialChecks[item.id] = false
-        })
-        setCheckedItems(initialChecks)
-      } else {
-        setOrderDetails(null)
-        setCheckedItems({})
-      }
-    } catch (error) {
-      console.error('Erro ao buscar pedido:', error)
-      setOrderDetails(null)
-      setCheckedItems({})
-    } finally {
-      setLoadingOrder(false)
-    }
-  }
-
-  // Debounce para busca automática
-  const handleOrderNumberChange = (value: string) => {
-    setOrderNumber(value)
-    
-    if (searchTimeout) {
-      clearTimeout(searchTimeout)
-    }
-    
-    const timeout = setTimeout(() => {
-      searchOrder(value)
-    }, 500)
-    
-    setSearchTimeout(timeout)
-  }
-
-  // Toggle checkbox
-  const toggleItem = (itemId: string) => {
-    setCheckedItems(prev => ({
-      ...prev,
-      [itemId]: !prev[itemId]
-    }))
-  }
-
-  // Toggle todos os itens
-  const toggleAll = () => {
-    if (!orderDetails) return
-    
-    const allChecked = Object.values(checkedItems).every(Boolean)
-    const newChecks: Record<string, boolean> = {}
-    
-    orderDetails.itens.forEach(item => {
-      newChecks[item.id] = !allChecked
-    })
-    
-    setCheckedItems(newChecks)
-  }
-
-  // Limpar assinatura
-  const clearSignature = () => {
-    signatureRef.current?.clear()
-    setSignature(null)
-  }
-
-  // Salvar assinatura
-  const saveSignature = () => {
-    if (signatureRef.current) {
-      const dataURL = signatureRef.current.toDataURL('image/png')
-      setSignature(dataURL)
-    }
-  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -120,7 +27,6 @@ export default function RetiradaPage() {
           orderNumber,
           cpf,
           operator: operator.trim() ? operator : undefined,
-          signature: signature || null,
         }),
       })
 
@@ -132,10 +38,6 @@ export default function RetiradaPage() {
         setOrderNumber("")
         setCpf("")
         setOperator("")
-        setOrderDetails(null)
-        setCheckedItems({})
-        setSignature(null)
-        signatureRef.current?.clear()
       } else {
         setSuccess(false)
         setResult(`❌ Erro ao registrar retirada\n\n${data.error || "Erro desconhecido"}`)
@@ -242,17 +144,12 @@ export default function RetiradaPage() {
                     <input
                       type="text"
                       value={orderNumber}
-                      onChange={(e) => handleOrderNumberChange(e.target.value)}
+                      onChange={(e) => setOrderNumber(e.target.value)}
                       inputMode="numeric"
                       className="w-full pl-10 pr-4 py-3 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent transition-all"
                       placeholder="Ex: 12345"
                       required
                     />
-                    {loadingOrder && (
-                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                        <div className="w-5 h-5 border-2 border-[#FFD700] border-t-transparent rounded-full animate-spin"></div>
-                      </div>
-                    )}
                   </div>
                 </div>
 
@@ -286,99 +183,6 @@ export default function RetiradaPage() {
                     />
                   </div>
                 </div>
-
-                {/* Painel de Conferência */}
-                {orderDetails && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="border border-zinc-200 rounded-xl p-6 space-y-4"
-                  >
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-zinc-900">📦 Conferência do Pedido #{orderDetails.numero}</h3>
-                      <span className="text-sm text-zinc-600">Cliente: {orderDetails.clienteNome}</span>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm text-zinc-600">
-                        <button
-                          type="button"
-                          onClick={toggleAll}
-                          className="flex items-center gap-1 hover:text-zinc-900 transition-colors"
-                        >
-                          {Object.values(checkedItems).every(Boolean) ? (
-                            <CheckSquare className="w-4 h-4" />
-                          ) : (
-                            <Square className="w-4 h-4" />
-                          )}
-                          <span>Selecionar todos</span>
-                        </button>
-                      </div>
-                      
-                      {orderDetails.itens.map(item => (
-                        <div
-                          key={item.id}
-                          className="flex items-center gap-3 p-3 bg-zinc-50 rounded-lg hover:bg-zinc-100 transition-colors cursor-pointer"
-                          onClick={() => toggleItem(item.id)}
-                        >
-                          <button
-                            type="button"
-                            className="flex-shrink-0"
-                          >
-                            {checkedItems[item.id] ? (
-                              <CheckSquare className="w-5 h-5 text-[#FFD700]" />
-                            ) : (
-                              <Square className="w-5 h-5 text-zinc-400" />
-                            )}
-                          </button>
-                          <div className="flex-1">
-                            <span className="text-sm font-medium text-zinc-900">{item.descricao}</span>
-                            <span className="text-sm text-zinc-600 ml-2">(Quant: {item.quantidade})</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* Campo de Assinatura */}
-                {orderDetails && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="border border-zinc-200 rounded-xl p-6 space-y-4"
-                  >
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-zinc-900">✍️ Assinatura do Retirante</h3>
-                      <button
-                        type="button"
-                        onClick={clearSignature}
-                        className="flex items-center gap-1 text-sm text-zinc-600 hover:text-zinc-900 transition-colors"
-                      >
-                        <RotateCcw className="w-4 h-4" />
-                        <span>Limpar</span>
-                      </button>
-                    </div>
-                    
-                    <div className="border-2 border-dashed border-zinc-300 rounded-lg p-2 bg-white">
-                      <SignatureCanvas
-                        ref={signatureRef}
-                        penColor="black"
-                        canvasProps={{
-                          className: "w-full h-32 cursor-crosshair",
-                          style: { touchAction: 'none' }
-                        }}
-                        onEnd={saveSignature}
-                      />
-                    </div>
-                    
-                    {!signature && (
-                      <p className="text-xs text-zinc-500 text-center">
-                        Assine acima com o dedo ou mouse
-                      </p>
-                    )}
-                  </motion.div>
-                )}
 
                 <button
                   type="submit"
