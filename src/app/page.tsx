@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Package, TrendingUp, Users, Truck, Search, Bell, Settings, Menu, Home, BarChart3, ClipboardList, Wrench } from "lucide-react"
+import { Package, TrendingUp, Users, Truck, Search, Bell, Settings, Home as HomeIcon, BarChart3, ClipboardList, Wrench } from "lucide-react"
 import Link from "next/link"
 
 export default function Home() {
@@ -20,7 +20,7 @@ export default function Home() {
         
         <nav className="p-4 space-y-2">
           <Link href="/" className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[#FFD700] text-zinc-900">
-            <Home className="w-5 h-5" />
+            <HomeIcon className="w-5 h-5" />
             <span className="font-medium">Dashboard</span>
           </Link>
           <Link href="/expedicao/retirada" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-zinc-100 text-zinc-700 transition-colors">
