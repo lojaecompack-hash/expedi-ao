@@ -64,8 +64,17 @@ export async function getTinyOrder(orderNumber: string): Promise<TinyPedido | un
     throw new Error(`Erro Tiny: ${erro}`)
   }
 
-  console.log('[Tiny API] Pedido encontrado:', data.retorno.pedido)
-  return data.retorno.pedido
+  // A API do Tiny retorna o pedido em data.retorno.pedido ou data.retorno.pedidos[0]
+  const pedido = data.retorno.pedido || (data.retorno.pedidos && data.retorno.pedidos[0])
+  
+  console.log('[Tiny API] Pedido encontrado:', pedido)
+  
+  if (!pedido) {
+    console.error('[Tiny API] Estrutura da resposta:', Object.keys(data.retorno))
+    throw new Error('Pedido não encontrado na resposta da API')
+  }
+  
+  return pedido
 }
 
 export async function markOrderAsShipped(orderNumber: string, orderId?: string) {
