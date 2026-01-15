@@ -37,10 +37,10 @@ export async function getTinyOrder(orderNumber: string): Promise<TinyPedido | un
   console.log('[Tiny API] Buscando pedido:', orderNumber)
   console.log('[Tiny API] Token (primeiros 20 chars):', token.substring(0, 20) + '...')
   
-  const url = 'https://api.tiny.com.br/api2/pedido.obter.php'
+  const url = 'https://api.tiny.com.br/api2/pedidos.pesquisa.php'
   const params = new URLSearchParams({
     token,
-    id: orderNumber,
+    numero: orderNumber,
     formato: 'JSON'
   })
 
