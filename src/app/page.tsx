@@ -27,6 +27,10 @@ export default function Home() {
             <Truck className="w-5 h-5" />
             <span className="font-medium">Expedição</span>
           </Link>
+          <Link href="/expedicao/operadores" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-zinc-100 text-zinc-700 transition-colors">
+            <Users className="w-5 h-5" />
+            <span className="font-medium">Operadores</span>
+          </Link>
           <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-zinc-100 text-zinc-700 transition-colors">
             <ClipboardList className="w-5 h-5" />
             <span className="font-medium">Pedidos</span>
