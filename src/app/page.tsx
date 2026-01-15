@@ -31,7 +31,7 @@ export default function Home() {
             <ClipboardList className="w-5 h-5" />
             <span className="font-medium">Pedidos</span>
           </Link>
-          <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-zinc-100 text-zinc-700 transition-colors">
+          <Link href="/admin/relatorios/retiradas" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-zinc-100 text-zinc-700 transition-colors">
             <BarChart3 className="w-5 h-5" />
             <span className="font-medium">Relatórios</span>
           </Link>
@@ -189,7 +189,7 @@ export default function Home() {
                   </div>
                 </button>
                 
-                <button className="flex items-center gap-3 p-4 border border-zinc-200 rounded-xl hover:bg-zinc-50 transition-colors">
+                <Link href="/admin/relatorios/retiradas" className="flex items-center gap-3 p-4 border border-zinc-200 rounded-xl hover:bg-zinc-50 transition-colors">
                   <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
                     <BarChart3 className="w-5 h-5 text-green-600" />
                   </div>
@@ -197,7 +197,7 @@ export default function Home() {
                     <p className="font-medium text-zinc-900">Ver Relatórios</p>
                     <p className="text-sm text-zinc-600">Análise completa</p>
                   </div>
-                </button>
+                </Link>
               </div>
             </motion.div>
           </motion.div>
