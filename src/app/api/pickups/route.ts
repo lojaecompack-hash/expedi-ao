@@ -69,10 +69,19 @@ export async function POST(req: Request) {
     // Verificar se pedido já foi retirado (banco de dados)
     const existingOrder = await prisma.order.findUnique({
       where: { tinyOrderId },
-      include: { 
+      select: {
+        id: true,
+        tinyOrderId: true,
+        orderNumber: true,
+        statusTiny: true,
+        statusInterno: true,
         pickups: {
           orderBy: { createdAt: 'desc' },
-          take: 1
+          take: 1,
+          select: {
+            createdAt: true,
+            operator: true
+          }
         }
       }
     })
