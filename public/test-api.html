@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test API</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+        .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        button { background: #0070f3; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; margin: 10px; }
+        button:hover { background: #0051cc; }
+        .result { background: #f5f5f5; padding: 15px; border-radius: 4px; margin-top: 15px; white-space: pre-wrap; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test API - Tiny ERP</h1>
+        
+        <button onclick="testSaveToken()">Testar Save Token</button>
+        <button onclick="testGetToken()">Testar Get Token</button>
+        <button onclick="testPickup()">Testar Pickup</button>
+        
+        <div id="result" class="result">Clique em um botão para testar...</div>
+    </div>
+
+    <script>
+        function showResult(text) {
+            document.getElementById('result').textContent = text;
+        }
+
+        async function testSaveToken() {
+            showResult('Testando save token...');
+            try {
+                const response = await fetch('/api/save-token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ apiToken: 'test-token-123' })
+                });
+                const data = await response.json();
+                showResult('Status: ' + response.status + '\n\nResposta:\n' + JSON.stringify(data, null, 2));
+            } catch (error) {
+                showResult('Erro:\n' + error.message);
+            }
+        }
+
+        async function testGetToken() {
+            showResult('Testando get token...');
+            try {
+                const response = await fetch('/api/test-token');
+                const data = await response.json();
+                showResult('Status: ' + response.status + '\n\nResposta:\n' + JSON.stringify(data, null, 2));
+            } catch (error) {
+                showResult('Erro:\n' + error.message);
+            }
+        }
+
+        async function testPickup() {
+            showResult('Testando pickup...');
+            try {
+                const response = await fetch('/api/pickups', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        orderNumber: '2',
+                        cpf: '35366377870',
+                        operator: 'bruno',
+                        dryRun: true
+                    })
+                });
+                const data = await response.json();
+                showResult('Status: ' + response.status + '\n\nResposta:\n' + JSON.stringify(data, null, 2));
+            } catch (error) {
+                showResult('Erro:\n' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
