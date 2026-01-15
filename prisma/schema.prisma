@@ -88,13 +88,15 @@ model Order {
 }
 
 model Pickup {
-  id        String   @id @default(cuid())
-  orderId   String
-  cpfLast4  String?
-  operator  String?
-  createdAt DateTime @default(now())
+  id            String   @id @default(cuid())
+  orderId       String
+  cpfLast4      String?
+  operator      String?
+  retrieverName String?
+  photo         String?  @db.Text
+  createdAt     DateTime @default(now())
 
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId])
 }
