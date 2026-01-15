@@ -20,6 +20,7 @@ export default function RetiradaPage() {
   const [orderNumber, setOrderNumber] = useState("")
   const [cpf, setCpf] = useState("")
   const [operator, setOperator] = useState("")
+  const [retrieverName, setRetrieverName] = useState("")
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<string>("")
   const [success, setSuccess] = useState(false)
@@ -28,6 +29,9 @@ export default function RetiradaPage() {
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null)
   const [loadingOrder, setLoadingOrder] = useState(false)
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null)
+  
+  // Estados para conferência
+  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({})
 
   // Função para buscar detalhes do pedido via API
   const searchOrder = async (number: string) => {
@@ -64,9 +68,17 @@ export default function RetiradaPage() {
       
       console.log('[Client] Definindo orderDetails:', details)
       setOrderDetails(details)
+      
+      // Inicializar checkboxes desmarcados
+      const initialChecks: Record<string, boolean> = {}
+      details.itens.forEach((item: { id: string }) => {
+        initialChecks[item.id] = false
+      })
+      setCheckedItems(initialChecks)
     } catch (error) {
       console.error('[Client] Erro ao buscar pedido:', error)
       setOrderDetails(null)
+      setCheckedItems({})
     } finally {
       setLoadingOrder(false)
       console.log('[Client] Busca finalizada')
@@ -88,8 +100,52 @@ export default function RetiradaPage() {
     setSearchTimeout(timeout)
   }
 
+  // Toggle checkbox individual
+  const toggleItem = (itemId: string) => {
+    setCheckedItems(prev => ({
+      ...prev,
+      [itemId]: !prev[itemId]
+    }))
+  }
+
+  // Toggle todos os checkboxes
+  const toggleAll = () => {
+    if (!orderDetails) return
+    
+    const allChecked = Object.values(checkedItems).every(Boolean)
+    const newChecks: Record<string, boolean> = {}
+    
+    orderDetails.itens.forEach(item => {
+      newChecks[item.id] = !allChecked
+    })
+    
+    setCheckedItems(newChecks)
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
+    
+    // Validações
+    if (!retrieverName.trim()) {
+      setResult("❌ Nome do retirante é obrigatório")
+      setSuccess(false)
+      return
+    }
+    
+    if (!operator.trim()) {
+      setResult("❌ Operador é obrigatório")
+      setSuccess(false)
+      return
+    }
+    
+    // Validar se pelo menos um item foi conferido
+    const hasCheckedItems = Object.values(checkedItems).some(Boolean)
+    if (orderDetails && !hasCheckedItems) {
+      setResult("❌ Marque pelo menos um produto como conferido")
+      setSuccess(false)
+      return
+    }
+    
     setLoading(true)
     setResult("")
     setSuccess(false)
@@ -234,7 +290,22 @@ export default function RetiradaPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-zinc-900">CPF do retirante</label>
+                  <label className="block text-sm font-medium text-zinc-900">Nome do retirante *</label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-400" />
+                    <input
+                      type="text"
+                      value={retrieverName}
+                      onChange={(e) => setRetrieverName(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent transition-all"
+                      placeholder="Ex: João Silva"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-zinc-900">CPF do retirante *</label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-400" />
                     <input
@@ -251,7 +322,7 @@ export default function RetiradaPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-zinc-900">Operador (opcional)</label>
+                  <label className="block text-sm font-medium text-zinc-900">Operador *</label>
                   <div className="relative">
                     <Settings className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-400" />
                     <input
@@ -260,6 +331,7 @@ export default function RetiradaPage() {
                       onChange={(e) => setOperator(e.target.value)}
                       className="w-full pl-10 pr-4 py-3 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent transition-all"
                       placeholder="Ex: João"
+                      required
                     />
                   </div>
                 </div>
@@ -277,12 +349,28 @@ export default function RetiradaPage() {
                     </div>
                     
                     <div className="space-y-2">
-                      <p className="text-sm font-medium text-zinc-700">Produtos:</p>
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-zinc-700">Produtos: *</p>
+                        <button
+                          type="button"
+                          onClick={toggleAll}
+                          className="text-xs text-zinc-600 hover:text-zinc-900 transition-colors"
+                        >
+                          {Object.values(checkedItems).every(Boolean) ? 'Desmarcar todos' : 'Marcar todos'}
+                        </button>
+                      </div>
                       {orderDetails.itens.map(item => (
                         <div
                           key={item.id}
-                          className="flex items-center gap-3 p-3 bg-white rounded-lg border border-zinc-200"
+                          onClick={() => toggleItem(item.id)}
+                          className="flex items-center gap-3 p-3 bg-white rounded-lg border border-zinc-200 cursor-pointer hover:bg-zinc-50 transition-colors"
                         >
+                          <input
+                            type="checkbox"
+                            checked={checkedItems[item.id] || false}
+                            onChange={() => toggleItem(item.id)}
+                            className="w-5 h-5 rounded border-zinc-300 text-[#FFD700] focus:ring-[#FFD700] cursor-pointer"
+                          />
                           <Package className="w-5 h-5 text-zinc-400 shrink-0" />
                           <div className="flex-1">
                             <span className="text-sm font-medium text-zinc-900">{item.descricao}</span>
