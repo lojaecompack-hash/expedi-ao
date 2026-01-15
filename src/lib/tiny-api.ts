@@ -34,6 +34,9 @@ interface TinyPedido {
 export async function getTinyOrder(orderNumber: string): Promise<TinyPedido | undefined> {
   const token = await getTinyApiToken()
   
+  console.log('[Tiny API] Buscando pedido:', orderNumber)
+  console.log('[Tiny API] Token (primeiros 20 chars):', token.substring(0, 20) + '...')
+  
   const url = 'https://api.tiny.com.br/api2/pedido.obter.php'
   const params = new URLSearchParams({
     token,
@@ -41,7 +44,11 @@ export async function getTinyOrder(orderNumber: string): Promise<TinyPedido | un
     formato: 'JSON'
   })
 
+  console.log('[Tiny API] URL completa:', `${url}?${params.toString()}`)
+
   const response = await fetch(`${url}?${params.toString()}`)
+  
+  console.log('[Tiny API] Response status:', response.status)
   
   if (!response.ok) {
     throw new Error(`Erro ao buscar pedido: ${response.status}`)
@@ -49,11 +56,15 @@ export async function getTinyOrder(orderNumber: string): Promise<TinyPedido | un
 
   const data = await response.json() as TinyApiResponse<TinyPedido>
   
+  console.log('[Tiny API] Resposta completa:', JSON.stringify(data, null, 2))
+  
   if (data.retorno.status_processamento === '3') {
     const erro = data.retorno.erros?.[0]?.erro || 'Erro desconhecido'
+    console.error('[Tiny API] Erro do Tiny:', erro)
     throw new Error(`Erro Tiny: ${erro}`)
   }
 
+  console.log('[Tiny API] Pedido encontrado:', data.retorno.pedido)
   return data.retorno.pedido
 }
 
