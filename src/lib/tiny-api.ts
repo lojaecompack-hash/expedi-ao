@@ -65,8 +65,8 @@ export async function getTinyOrder(orderNumber: string): Promise<TinyPedido | un
   }
 
   // Buscar pedido pelo número na lista
-  const pedidos = data.retorno.pedidos || []
-  const pedidoItem = pedidos.find((item: { pedido?: TinyPedido }) => item.pedido?.numero === orderNumber)
+  const pedidos = (data.retorno.pedidos || []) as unknown as Array<{ pedido: TinyPedido }>
+  const pedidoItem = pedidos.find(item => item.pedido?.numero === orderNumber)
   
   if (!pedidoItem || !pedidoItem.pedido) {
     console.error('[Tiny API] Pedido não encontrado na lista')
