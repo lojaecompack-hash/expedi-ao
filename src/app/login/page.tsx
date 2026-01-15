@@ -1,8 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Package, User, Lock, AlertCircle } from 'lucide-react'
+
+import { createSupabaseBrowserClient } from '@/lib/supabase/browser'
 
 export default function LoginPage() {
   const [nextPath, setNextPath] = useState('/dashboard')
@@ -10,6 +12,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string>('')
+
+  const supabase = useMemo(() => createSupabaseBrowserClient(), [])
 
   useEffect(() => {
     const url = new URL(window.location.href)
@@ -25,23 +29,16 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
       })
 
-      const data = await res.json()
-
-      if (!res.ok) {
-        setError(data.error || 'Erro ao fazer login')
+      if (signInError) {
+        setError(signInError.message)
         return
       }
 
-      // Salvar token no cookie
-      document.cookie = `auth-token=${data.token}; path=/; max-age=${7 * 24 * 60 * 60}` // 7 dias
-
-      // Redirecionar
       window.location.href = nextPath
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Erro desconhecido'
