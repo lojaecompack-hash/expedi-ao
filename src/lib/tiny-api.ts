@@ -37,42 +37,44 @@ export async function getTinyOrder(orderNumber: string): Promise<TinyPedido | un
   console.log('[Tiny API] Buscando pedido:', orderNumber)
   console.log('[Tiny API] Token (primeiros 20 chars):', token.substring(0, 20) + '...')
   
+  // Buscar lista de pedidos
   const url = 'https://api.tiny.com.br/api2/pedidos.pesquisa.php'
   const params = new URLSearchParams({
     token,
-    numero: orderNumber,
     formato: 'JSON'
   })
 
-  console.log('[Tiny API] URL completa:', `${url}?${params.toString()}`)
+  console.log('[Tiny API] Listando pedidos...')
 
   const response = await fetch(`${url}?${params.toString()}`)
   
   console.log('[Tiny API] Response status:', response.status)
   
   if (!response.ok) {
-    throw new Error(`Erro ao buscar pedido: ${response.status}`)
+    throw new Error(`Erro ao buscar pedidos: ${response.status}`)
   }
 
   const data = await response.json() as TinyApiResponse<TinyPedido>
   
-  console.log('[Tiny API] Resposta completa:', JSON.stringify(data, null, 2))
+  console.log('[Tiny API] Total de pedidos:', data.retorno.pedidos?.length || 0)
   
-  if (data.retorno.status_processamento === '3') {
+  if (data.retorno.status_processamento === '3' || data.retorno.status === 'Erro') {
     const erro = data.retorno.erros?.[0]?.erro || 'Erro desconhecido'
     console.error('[Tiny API] Erro do Tiny:', erro)
     throw new Error(`Erro Tiny: ${erro}`)
   }
 
-  // A API do Tiny retorna o pedido em data.retorno.pedido ou data.retorno.pedidos[0]
-  const pedido = data.retorno.pedido || (data.retorno.pedidos && data.retorno.pedidos[0])
+  // Buscar pedido pelo número na lista
+  const pedidos = data.retorno.pedidos || []
+  const pedidoItem = pedidos.find((item: { pedido?: TinyPedido }) => item.pedido?.numero === orderNumber)
   
-  console.log('[Tiny API] Pedido encontrado:', pedido)
-  
-  if (!pedido) {
-    console.error('[Tiny API] Estrutura da resposta:', Object.keys(data.retorno))
-    throw new Error('Pedido não encontrado na resposta da API')
+  if (!pedidoItem || !pedidoItem.pedido) {
+    console.error('[Tiny API] Pedido não encontrado na lista')
+    throw new Error(`Pedido número ${orderNumber} não encontrado`)
   }
+  
+  const pedido = pedidoItem.pedido
+  console.log('[Tiny API] Pedido encontrado:', { id: pedido.id, numero: pedido.numero })
   
   return pedido
 }
