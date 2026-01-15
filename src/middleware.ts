@@ -2,15 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth'
 
 function isPublicPath(pathname: string) {
-  // TEMPORÁRIO: Desabilitar autenticação para permitir acesso
-  return true
-  
-  // if (pathname === '/') return true
-  // if (pathname.startsWith('/login')) return true
-  // if (pathname.startsWith('/api/auth')) return true
-  // if (pathname.startsWith('/_next')) return true
-  // if (pathname.startsWith('/favicon.ico')) return true
-  // return false
+  if (pathname === '/login') return true
+  if (pathname.startsWith('/api/auth')) return true
+  if (pathname.startsWith('/_next')) return true
+  if (pathname.startsWith('/favicon.ico')) return true
+  return false
 }
 
 function canAccessPath(pathname: string, role: 'ADMIN' | 'EXPEDICAO'): boolean {

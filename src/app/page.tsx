@@ -35,10 +35,6 @@ export default function Home() {
             <BarChart3 className="w-5 h-5" />
             <span className="font-medium">Relatórios</span>
           </Link>
-          <Link href="/admin/usuarios" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-zinc-100 text-zinc-700 transition-colors">
-            <Users className="w-5 h-5" />
-            <span className="font-medium">Usuários</span>
-          </Link>
           <Link href="/setup/tiny" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-zinc-100 text-zinc-700 transition-colors">
             <Wrench className="w-5 h-5" />
             <span className="font-medium">Configurações</span>
