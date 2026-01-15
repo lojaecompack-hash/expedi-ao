@@ -349,26 +349,19 @@ export default function RetiradaPage() {
                     </div>
                     
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-zinc-700">Produtos: *</p>
-                        <button
-                          type="button"
-                          onClick={toggleAll}
-                          className="text-xs text-zinc-600 hover:text-zinc-900 transition-colors"
-                        >
-                          {Object.values(checkedItems).every(Boolean) ? 'Desmarcar todos' : 'Marcar todos'}
-                        </button>
-                      </div>
+                      <p className="text-sm font-medium text-zinc-700">Produtos: *</p>
                       {orderDetails.itens.map(item => (
                         <div
                           key={item.id}
-                          onClick={() => toggleItem(item.id)}
-                          className="flex items-center gap-3 p-3 bg-white rounded-lg border border-zinc-200 cursor-pointer hover:bg-zinc-50 transition-colors"
+                          className="flex items-center gap-3 p-3 bg-white rounded-lg border border-zinc-200"
                         >
                           <input
                             type="checkbox"
                             checked={checkedItems[item.id] || false}
-                            onChange={() => toggleItem(item.id)}
+                            onChange={(e) => {
+                              e.stopPropagation()
+                              toggleItem(item.id)
+                            }}
                             className="w-5 h-5 rounded border-zinc-300 text-[#FFD700] focus:ring-[#FFD700] cursor-pointer"
                           />
                           <Package className="w-5 h-5 text-zinc-400 shrink-0" />
