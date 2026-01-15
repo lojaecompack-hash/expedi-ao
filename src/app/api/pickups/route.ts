@@ -66,6 +66,32 @@ export async function POST(req: Request) {
     const tinyOrderId = String(pedido.id)
     console.log('[Pickups] Pedido encontrado, ID:', tinyOrderId)
 
+    // Verificar se pedido já foi retirado (banco de dados)
+    const existingOrder = await prisma.order.findUnique({
+      where: { tinyOrderId },
+      include: { 
+        pickups: {
+          orderBy: { createdAt: 'desc' },
+          take: 1
+        }
+      }
+    })
+
+    if (existingOrder && existingOrder.statusTiny === 'enviado') {
+      const primeiraRetirada = existingOrder.pickups[0]
+      console.log('[Pickups] Pedido já foi retirado anteriormente')
+      return NextResponse.json({
+        ok: false,
+        error: 'Este pedido já foi retirado anteriormente',
+        details: {
+          pedido: existingOrder.orderNumber,
+          statusAtual: existingOrder.statusTiny,
+          primeiraRetirada: primeiraRetirada?.createdAt,
+          operadorAnterior: primeiraRetirada?.operator || 'Não informado'
+        }
+      }, { status: 400 })
+    }
+
     const dryRunEnv = process.env.TINY_DRY_RUN
     const dryRun = body.dryRun ?? (dryRunEnv ? dryRunEnv !== '0' : false)
 
