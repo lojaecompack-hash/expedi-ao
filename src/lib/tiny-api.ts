@@ -58,8 +58,10 @@ export async function getTinyOrder(orderNumber: string): Promise<TinyPedido | un
   
   console.log('[Tiny API] Total de pedidos:', data.retorno.pedidos?.length || 0)
   
-  if (data.retorno.status_processamento === '3' || data.retorno.status === 'Erro') {
-    const erro = data.retorno.erros?.[0]?.erro || 'Erro desconhecido'
+  // status_processamento = "3" significa SUCESSO na API do Tiny
+  // status = "Erro" indica erro
+  if (data.retorno.status === 'Erro') {
+    const erro = data.retorno.erros?.[0]?.erro || data.retorno.codigo_erro || 'Erro desconhecido'
     console.error('[Tiny API] Erro do Tiny:', erro)
     throw new Error(`Erro Tiny: ${erro}`)
   }
@@ -129,7 +131,9 @@ export async function markOrderAsShipped(orderNumber: string, orderId?: string) 
   
   console.log('[Tiny API] Resposta alterar situação:', JSON.stringify(data, null, 2))
   
-  if (data.retorno.status_processamento === '3' || data.retorno.status === 'Erro') {
+  // status_processamento = "3" significa SUCESSO na API do Tiny
+  // status = "Erro" indica erro
+  if (data.retorno.status === 'Erro') {
     const erro = data.retorno.erros?.[0]?.erro || data.retorno.codigo_erro || 'Erro desconhecido'
     console.error('[Tiny API] Erro ao alterar status:', erro)
     console.error('[Tiny API] Resposta completa:', data)
