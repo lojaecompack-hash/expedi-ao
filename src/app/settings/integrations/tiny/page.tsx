@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import AppLayout from '@/components/AppLayout'
+import MainLayout from '@/components/MainLayout'
 
 interface TinySettings {
   apiToken: string
@@ -73,14 +73,14 @@ export default function TinySettingsPage() {
 
   if (loading) {
     return (
-      <AppLayout>
+      <MainLayout>
         <div className="text-center py-12">Carregando...</div>
-      </AppLayout>
+      </MainLayout>
     )
   }
 
   return (
-    <AppLayout>
+    <MainLayout>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Integração Tiny ERP</h1>
@@ -162,13 +162,13 @@ export default function TinySettingsPage() {
               <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
                 <li>Acesse o painel do Tiny ERP</li>
                 <li>Vá em Menu → Configurações → E-commerce</li>
-                <li>Clique em "Token API"</li>
+                <li>Clique em &quot;Token API&quot;</li>
                 <li>Copie o token exibido</li>
               </ol>
             </div>
           </div>
         </div>
       </div>
-    </AppLayout>
+    </MainLayout>
   )
 }
