@@ -107,6 +107,7 @@ export async function POST(
     return NextResponse.json({ ok: true, operator })
   } catch (error) {
     console.error('Erro ao criar operador:', error)
-    return NextResponse.json({ ok: false, error: 'Erro ao criar operador' }, { status: 500 })
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+    return NextResponse.json({ ok: false, error: `Erro ao criar operador: ${errorMessage}` }, { status: 500 })
   }
 }
