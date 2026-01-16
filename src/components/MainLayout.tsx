@@ -60,16 +60,15 @@ export default function MainLayout({ children }: MainLayoutProps) {
     )
   }
 
-  // Menu items - ADMIN vê tudo, EXPEDICAO vê tudo exceto Dashboard e Configurações
+  // Menu items - ADMIN vê tudo, EXPEDICAO vê apenas Retirada e Relatórios
   const menuItems = userRole === 'ADMIN' ? [
     { href: '/', label: 'Dashboard', icon: Home },
-    { href: '/expedicao/retirada', label: 'Expedição', icon: Truck },
-    { href: '/expedicao/operadores', label: 'Operadores', icon: Users },
+    { href: '/expedicao/retirada', label: 'Retirada', icon: Truck },
     { href: '/admin/relatorios/retiradas', label: 'Relatórios', icon: BarChart3 },
+    { href: '/usuarios', label: 'Usuários', icon: Users },
     { href: '/setup/tiny', label: 'Configurações', icon: Wrench },
   ] : [
-    { href: '/expedicao/retirada', label: 'Expedição', icon: Truck },
-    { href: '/expedicao/operadores', label: 'Operadores', icon: Users },
+    { href: '/expedicao/retirada', label: 'Retirada', icon: Truck },
     { href: '/admin/relatorios/retiradas', label: 'Relatórios', icon: BarChart3 },
   ]
 
