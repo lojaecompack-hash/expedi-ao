@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { CheckCircle, AlertCircle, User, Settings, Package, Truck } from "lucide-react"
 import MainLayout from "@/components/MainLayout"
+import PasswordValidationModal from "@/components/PasswordValidationModal"
 
 interface OrderDetails {
   id: string
@@ -45,6 +46,10 @@ export default function RetiradaPage() {
   
   // Estados para operadores
   const [operators, setOperators] = useState<Operator[]>([])
+  
+  // Estados para validação de senha
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [pendingSubmit, setPendingSubmit] = useState(false)
   
   useEffect(() => {
     fetchOperators()
@@ -169,16 +174,31 @@ export default function RetiradaPage() {
     setPhoto(null)
   }
 
-  async function onSubmit(e: React.FormEvent) {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Validações
-    if (!retrieverName.trim()) {
-      setResult("❌ Nome do retirante é obrigatório")
+    if (!orderNumber || !cpf || !retrieverName.trim()) {
       setSuccess(false)
+      setResult("❌ Preencha todos os campos obrigatórios")
       return
     }
-    
+
+    if (!operatorId) {
+      setSuccess(false)
+      setResult("❌ Selecione um operador")
+      return
+    }
+
+    // Mostrar modal de validação de senha
+    setPendingSubmit(true)
+    setShowPasswordModal(true)
+  }
+
+  const handlePasswordValidated = async () => {
+    setShowPasswordModal(false)
+    if (!pendingSubmit) return
+    setPendingSubmit(false)
+
     // Validar se TODOS os itens foram conferidos
     const allItemsChecked = orderDetails && Object.values(checkedItems).every(Boolean)
     if (orderDetails && !allItemsChecked) {
@@ -190,6 +210,8 @@ export default function RetiradaPage() {
     setLoading(true)
     setResult("")
     setSuccess(false)
+    
+    // Continuar com o processo de registro
 
     try {
       const res = await fetch("/api/pickups", {
@@ -227,6 +249,11 @@ export default function RetiradaPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handlePasswordCanceled = () => {
+    setShowPasswordModal(false)
+    setPendingSubmit(false)
   }
 
   function formatCPF(value: string) {
@@ -456,6 +483,16 @@ export default function RetiradaPage() {
               </motion.div>
             )}
           </motion.div>
+
+          {/* Modal de Validação de Senha */}
+          {showPasswordModal && operatorId && (
+            <PasswordValidationModal
+              operatorId={operatorId}
+              operatorName={operators.find(op => op.id === operatorId)?.name || 'Operador'}
+              onValidate={handlePasswordValidated}
+              onCancel={handlePasswordCanceled}
+            />
+          )}
         </MainLayout>
       )
     }

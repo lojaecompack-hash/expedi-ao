@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
+import bcrypt from 'bcryptjs'
 
 export async function GET(
   request: NextRequest,
@@ -74,10 +75,14 @@ export async function POST(
 
     const { id: userId } = await params
     const body = await request.json()
-    const { name, email, phone } = body
+    const { name, email, phone, password } = body
 
     if (!name) {
       return NextResponse.json({ ok: false, error: 'Nome é obrigatório' }, { status: 400 })
+    }
+
+    if (!password || password.length < 4) {
+      return NextResponse.json({ ok: false, error: 'Senha é obrigatória (mínimo 4 caracteres)' }, { status: 400 })
     }
 
     // Verificar se o usuário existe e é EXPEDIÇÃO
@@ -93,6 +98,9 @@ export async function POST(
       return NextResponse.json({ ok: false, error: 'Operadores só podem ser vinculados a usuários EXPEDIÇÃO' }, { status: 400 })
     }
 
+    // Hash da senha
+    const passwordHash = await bcrypt.hash(password, 10)
+
     // Criar operador
     const operator = await prisma.operator.create({
       data: {
@@ -100,6 +108,7 @@ export async function POST(
         email: email || null,
         phone: phone || null,
         userId: userId,
+        passwordHash,
         isActive: true
       }
     })

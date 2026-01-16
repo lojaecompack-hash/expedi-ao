@@ -35,7 +35,8 @@ export default function UserDetailPage() {
   const [operatorForm, setOperatorForm] = useState({
     name: '',
     email: '',
-    phone: ''
+    phone: '',
+    password: ''
   })
 
   useEffect(() => {
@@ -87,7 +88,7 @@ export default function UserDetailPage() {
 
       if (data.ok) {
         alert('Operador criado com sucesso!')
-        setOperatorForm({ name: '', email: '', phone: '' })
+        setOperatorForm({ name: '', email: '', phone: '', password: '' })
         fetchOperators()
       } else {
         const errorMsg = data.error || 'Erro ao criar operador'
@@ -313,6 +314,22 @@ export default function UserDetailPage() {
                     className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-[#FFD700] focus:border-transparent"
                     placeholder="(00) 00000-0000"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 mb-2">
+                    Senha *
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    value={operatorForm.password}
+                    onChange={(e) => setOperatorForm({ ...operatorForm, password: e.target.value })}
+                    className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-[#FFD700] focus:border-transparent"
+                    placeholder="Mínimo 4 caracteres"
+                    minLength={4}
+                  />
+                  <p className="text-xs text-zinc-500 mt-1">Senha para validar retiradas</p>
                 </div>
 
                 <button
