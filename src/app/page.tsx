@@ -1,10 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { motion } from "framer-motion"
 import { Package, TrendingUp, Users, Truck, BarChart3 } from "lucide-react"
 import Link from "next/link"
 import MainLayout from "@/components/MainLayout"
+import DateFilter, { DateFilterOption } from "@/components/DateFilter"
+import StatsCard from "@/components/StatsCard"
 
 export default function Home() {
   const [stats, setStats] = useState({
@@ -14,13 +16,40 @@ export default function Home() {
     totalOperadores: 0
   })
   const [loading, setLoading] = useState(true)
+  const [dateFilter, setDateFilter] = useState<DateFilterOption>('hoje')
+  const [customStartDate, setCustomStartDate] = useState('')
+  const [customEndDate, setCustomEndDate] = useState('')
 
-  useEffect(() => {
-    fetchStats()
-  }, [])
-
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
+      setLoading(true)
+      
+      // Calcular datas baseado no filtro
+      let startDate = new Date()
+      let endDate = new Date()
+      
+      switch (dateFilter) {
+        case 'hoje':
+          startDate.setHours(0, 0, 0, 0)
+          break
+        case 'semana':
+          startDate.setDate(startDate.getDate() - 7)
+          break
+        case '14dias':
+          startDate.setDate(startDate.getDate() - 14)
+          break
+        case '30dias':
+          startDate.setDate(startDate.getDate() - 30)
+          break
+        case 'personalizado':
+          if (customStartDate && customEndDate) {
+            startDate = new Date(customStartDate)
+            endDate = new Date(customEndDate)
+            endDate.setHours(23, 59, 59, 999)
+          }
+          break
+      }
+      
       // Buscar retiradas
       const retiradasRes = await fetch('/api/retiradas?limit=1000')
       const retiradasData = await retiradasRes.json()
@@ -31,18 +60,25 @@ export default function Home() {
         const inicioSemana = new Date()
         inicioSemana.setDate(inicioSemana.getDate() - 7)
         
-        const retiradasHoje = retiradas.filter((r: any) => 
+        // Filtrar retiradas pelo período selecionado
+        const retiradasFiltradas = retiradas.filter((r: Record<string, any>) => {
+          const dataRetirada = new Date(r.createdAt)
+          return dataRetirada >= startDate && dataRetirada <= endDate
+        })
+        
+        const retiradasHoje = retiradas.filter((r: Record<string, any>) => 
           new Date(r.createdAt).toDateString() === hoje
         ).length
         
-        const retiradasSemana = retiradas.filter((r: any) => 
+        const retiradasSemana = retiradas.filter((r: Record<string, any>) => 
           new Date(r.createdAt) >= inicioSemana
         ).length
         
         setStats(prev => ({
           ...prev,
           retiradasHoje,
-          retiradasSemana
+          retiradasSemana,
+          totalPedidos: retiradasFiltradas.length
         }))
       }
 
@@ -61,7 +97,11 @@ export default function Home() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [dateFilter, customStartDate, customEndDate])
+
+  useEffect(() => {
+    fetchStats()
+  }, [fetchStats])
 
   return (
     <MainLayout>
@@ -78,79 +118,61 @@ export default function Home() {
               <p className="text-zinc-600 mt-2">Visão geral do seu e-commerce</p>
             </div>
 
+            {/* Date Filter */}
+            <DateFilter
+              value={dateFilter}
+              onChange={setDateFilter}
+              onCustomDateChange={(start, end) => {
+                setCustomStartDate(start)
+                setCustomEndDate(end)
+              }}
+            />
+
             {/* Metrics Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                className="bg-white rounded-2xl border border-zinc-200 p-6 hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-zinc-600">Retiradas Hoje</p>
-                    <p className="text-2xl font-bold text-zinc-900 mt-1">{loading ? '...' : stats.retiradasHoje}</p>
-                    <p className="text-sm text-zinc-600 mt-2">registradas</p>
-                  </div>
-                  <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                    <TrendingUp className="w-6 h-6 text-green-600" />
-                  </div>
-                </div>
-              </motion.div>
+              <StatsCard
+                title="Retiradas Hoje"
+                value={stats.retiradasHoje}
+                subtitle="registradas"
+                icon={TrendingUp}
+                iconBgColor="bg-green-100"
+                iconColor="text-green-600"
+                delay={0.1}
+                loading={loading}
+              />
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="bg-white rounded-2xl border border-zinc-200 p-6 hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-zinc-600">Esta Semana</p>
-                    <p className="text-2xl font-bold text-zinc-900 mt-1">{loading ? '...' : stats.retiradasSemana}</p>
-                    <p className="text-sm text-zinc-600 mt-2">retiradas</p>
-                  </div>
-                  <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                    <Package className="w-6 h-6 text-blue-600" />
-                  </div>
-                </div>
-              </motion.div>
+              <StatsCard
+                title="Esta Semana"
+                value={stats.retiradasSemana}
+                subtitle="retiradas"
+                icon={Package}
+                iconBgColor="bg-blue-100"
+                iconColor="text-blue-600"
+                delay={0.2}
+                loading={loading}
+              />
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-                className="bg-white rounded-2xl border border-zinc-200 p-6 hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-zinc-600">Operadores</p>
-                    <p className="text-2xl font-bold text-zinc-900 mt-1">{loading ? '...' : stats.totalOperadores}</p>
-                    <p className="text-sm text-zinc-600 mt-2">cadastrados</p>
-                  </div>
-                  <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                    <Users className="w-6 h-6 text-purple-600" />
-                  </div>
-                </div>
-              </motion.div>
+              <StatsCard
+                title="Operadores"
+                value={stats.totalOperadores}
+                subtitle="cadastrados"
+                icon={Users}
+                iconBgColor="bg-purple-100"
+                iconColor="text-purple-600"
+                delay={0.3}
+                loading={loading}
+              />
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                className="bg-white rounded-2xl border border-zinc-200 p-6 hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-zinc-600">Expedição</p>
-                    <p className="text-2xl font-bold text-zinc-900 mt-1">{loading ? '...' : stats.retiradasHoje}</p>
-                    <p className="text-sm text-zinc-600 mt-2">hoje</p>
-                  </div>
-                  <div className="w-12 h-12 bg-[#FFD700]/20 rounded-xl flex items-center justify-center">
-                    <Truck className="w-6 h-6 text-[#FFD700]" />
-                  </div>
-                </div>
-              </motion.div>
+              <StatsCard
+                title="Expedição"
+                value={stats.retiradasHoje}
+                subtitle="hoje"
+                icon={Truck}
+                iconBgColor="bg-[#FFD700]/20"
+                iconColor="text-[#FFD700]"
+                delay={0.4}
+                loading={loading}
+              />
             </div>
 
             {/* Quick Actions */}
