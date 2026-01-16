@@ -83,17 +83,20 @@ export default function UserDetailPage() {
       })
 
       const data = await res.json()
+      console.log('Response:', data)
 
       if (data.ok) {
         alert('Operador criado com sucesso!')
         setOperatorForm({ name: '', email: '', phone: '' })
         fetchOperators()
       } else {
-        alert(data.error || 'Erro ao criar operador')
+        const errorMsg = data.error || 'Erro ao criar operador'
+        console.error('Erro da API:', errorMsg)
+        alert(`Erro ao criar operador: ${errorMsg}`)
       }
     } catch (error) {
       console.error('Erro ao criar operador:', error)
-      alert('Erro ao criar operador')
+      alert(`Erro ao criar operador: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
     } finally {
       setCreating(false)
     }
