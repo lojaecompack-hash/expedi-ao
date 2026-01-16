@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { createClient } from '@/lib/supabase/server'
+import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 // GET - Listar operadores do usuário logado
 export async function GET() {
   try {
-    const supabase = await createClient()
+    const supabase = await createSupabaseServerClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     // Se não tiver usuário logado, retorna vazio (segurança)
@@ -67,7 +67,7 @@ export async function POST(req: Request) {
     }
 
     // Pegar userId do Supabase Auth
-    const supabase = await createClient()
+    const supabase = await createSupabaseServerClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     const operator = await prisma.operator.create({
@@ -105,7 +105,7 @@ export async function PUT(req: Request) {
     }
 
     // Verificar ownership
-    const supabase = await createClient()
+    const supabase = await createSupabaseServerClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
@@ -172,7 +172,7 @@ export async function DELETE(req: Request) {
     }
 
     // Verificar ownership
-    const supabase = await createClient()
+    const supabase = await createSupabaseServerClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
