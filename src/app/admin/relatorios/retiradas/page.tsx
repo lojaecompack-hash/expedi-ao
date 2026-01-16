@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Package, Truck, User, Calendar, Search, ArrowLeft, Eye } from "lucide-react"
+import { Package, Truck, User, Calendar, Search, Eye } from "lucide-react"
 import Link from "next/link"
+import MainLayout from "@/components/MainLayout"
 
 interface Retirada {
   id: string
@@ -54,49 +55,13 @@ export default function RelatorioRetiradas() {
   )
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB]">
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-white border-r border-zinc-200">
-        <div className="flex h-16 items-center px-6 border-b border-zinc-200">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-[#FFD700] rounded-lg flex items-center justify-center">
-              <Package className="w-5 h-5 text-zinc-900" />
-            </div>
-            <span className="text-xl font-semibold text-zinc-900">Ecompack</span>
-          </div>
+    <MainLayout>
+      <div className="space-y-8">
+        {/* Header */}
+        <div>
+          <h1 className="text-3xl font-bold text-zinc-900">Relatório de Retiradas</h1>
+          <p className="text-zinc-600 mt-1">Visualize todas as retiradas realizadas</p>
         </div>
-        
-        <nav className="p-4 space-y-2">
-          <Link href="/" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-zinc-100 text-zinc-700 transition-colors">
-            <Package className="w-5 h-5" />
-            <span className="font-medium">Dashboard</span>
-          </Link>
-          <Link href="/expedicao/retirada" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-zinc-100 text-zinc-700 transition-colors">
-            <Truck className="w-5 h-5" />
-            <span className="font-medium">Retirada</span>
-          </Link>
-          <Link href="/admin/relatorios/retiradas" className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[#FFD700] text-zinc-900">
-            <Package className="w-5 h-5" />
-            <span className="font-medium">Relatórios</span>
-          </Link>
-        </nav>
-      </aside>
-
-      {/* Main Content */}
-      <div className="ml-64 p-8">
-        <div className="max-w-7xl mx-auto space-y-8">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/" className="p-2 hover:bg-zinc-100 rounded-lg transition-colors">
-                <ArrowLeft className="w-5 h-5 text-zinc-600" />
-              </Link>
-              <div>
-                <h1 className="text-3xl font-bold text-zinc-900">Relatório de Retiradas</h1>
-                <p className="text-zinc-600 mt-1">Visualize todas as retiradas realizadas</p>
-              </div>
-            </div>
-          </div>
 
           {/* Search */}
           <div className="relative">
@@ -253,7 +218,6 @@ export default function RelatorioRetiradas() {
             )}
           </motion.div>
         </div>
-      </div>
-    </div>
-  )
-}
+      </MainLayout>
+    )
+  }

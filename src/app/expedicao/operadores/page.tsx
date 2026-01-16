@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Users, Plus, Edit2, Trash2, Check, X, ArrowLeft } from "lucide-react"
-import Link from "next/link"
-import Sidebar from "@/components/Sidebar"
+import { Users, Plus, Edit2, Trash2, Check, X } from "lucide-react"
+import MainLayout from "@/components/MainLayout"
 
 interface Operator {
   id: string
@@ -149,23 +148,14 @@ export default function OperadoresPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB]">
-      <Sidebar />
-
-      {/* Main Content */}
-      <div className="ml-64 p-8">
-        <div className="max-w-6xl mx-auto space-y-8">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/expedicao/retirada" className="p-2 hover:bg-zinc-100 rounded-lg transition-colors">
-                <ArrowLeft className="w-5 h-5 text-zinc-600" />
-              </Link>
-              <div>
-                <h1 className="text-3xl font-bold text-zinc-900">Gerenciar Operadores</h1>
-                <p className="text-zinc-600 mt-1">Cadastre os operadores da expedição</p>
-              </div>
-            </div>
+    <MainLayout>
+      <div className="space-y-8">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-zinc-900">Gerenciar Operadores</h1>
+            <p className="text-zinc-600 mt-1">Cadastre os operadores da expedição</p>
+          </div>
 
             {!showForm && (
               <button
@@ -353,7 +343,6 @@ export default function OperadoresPage() {
             )}
           </motion.div>
         </div>
-      </div>
-    </div>
-  )
-}
+      </MainLayout>
+    )
+  }

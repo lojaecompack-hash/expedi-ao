@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { CheckCircle, AlertCircle, User, Settings, ArrowLeft, Truck, Package } from "lucide-react"
-import Link from "next/link"
-import Sidebar from "@/components/Sidebar"
+import { CheckCircle, AlertCircle, User, Settings, Package, Truck } from "lucide-react"
+import MainLayout from "@/components/MainLayout"
 
 interface OrderDetails {
   id: string
@@ -239,27 +238,7 @@ export default function RetiradaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB]">
-      <Sidebar />
-
-      {/* Main Content */}
-      <div className="pl-64">
-        {/* Header */}
-        <header className="sticky top-0 z-30 h-16 bg-white/80 backdrop-blur-md border-b border-zinc-200">
-          <div className="flex h-16 items-center justify-between px-8">
-            <div className="flex items-center gap-4">
-              <Link href="/" className="flex items-center gap-2 text-zinc-600 hover:text-zinc-900 transition-colors">
-                <ArrowLeft className="w-5 h-5" />
-                <span>Voltar</span>
-              </Link>
-              <div className="h-6 w-px bg-zinc-200"></div>
-              <h1 className="text-xl font-semibold text-zinc-900">Expedição - Retirada</h1>
-            </div>
-          </div>
-        </header>
-
-        {/* Form Content */}
-        <main className="p-8">
+    <MainLayout>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -357,7 +336,7 @@ export default function RetiradaPage() {
                   </div>
                   {operators.length === 0 && (
                     <p className="text-xs text-zinc-500">
-                      Nenhum operador cadastrado. <Link href="/expedicao/operadores" className="text-[#FFD700] hover:underline">Cadastrar operadores</Link>
+                      Nenhum operador cadastrado.
                     </p>
                   )}
                 </div>
@@ -477,8 +456,6 @@ export default function RetiradaPage() {
               </motion.div>
             )}
           </motion.div>
-        </main>
-      </div>
-    </div>
-  )
-}
+        </MainLayout>
+      )
+    }
