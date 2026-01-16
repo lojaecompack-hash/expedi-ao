@@ -112,10 +112,13 @@ model Operator {
   email     String?  @unique
   phone     String?
   isActive  Boolean  @default(true)
+  userId    String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   pickups   Pickup[]
+  
+  @@index([userId])
 }
 
 model Pickup {
