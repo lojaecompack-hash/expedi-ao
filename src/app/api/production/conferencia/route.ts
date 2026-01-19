@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
+import { getTinyApiToken } from '@/lib/tiny-api'
 
 // GET - Listar ordens aguardando conferência
 export async function GET() {
@@ -135,6 +136,50 @@ export async function POST(request: NextRequest) {
       where: { orderId },
       data: { conferido: true, conferidoAt: new Date() }
     })
+
+    // Dar entrada no estoque da Tiny
+    try {
+      const token = await getTinyApiToken()
+      
+      // Criar nota de entrada no Tiny
+      const notaEntrada = {
+        nota: {
+          tipo: 'E', // Entrada
+          natureza_operacao: 'Produção Interna',
+          data_emissao: new Date().toISOString().split('T')[0],
+          itens: [{
+            item: {
+              codigo: order.productSku,
+              descricao: order.productName,
+              unidade: 'UN',
+              quantidade: pacotesConferido.toString()
+            }
+          }]
+        }
+      }
+
+      const tinyUrl = 'https://api.tiny.com.br/api2/nota.fiscal.incluir.php'
+      const params = new URLSearchParams({
+        token,
+        formato: 'json',
+        nota: JSON.stringify(notaEntrada)
+      })
+
+      const tinyResponse = await fetch(`${tinyUrl}?${params}`, {
+        method: 'POST'
+      })
+
+      const tinyData = await tinyResponse.json()
+      
+      console.log('[Conferência] Resposta Tiny entrada estoque:', tinyData)
+
+      if (tinyData.retorno?.status === 'Erro') {
+        console.error('[Conferência] Erro ao dar entrada no estoque Tiny:', tinyData.retorno)
+      }
+    } catch (tinyError) {
+      console.error('[Conferência] Erro ao integrar com Tiny:', tinyError)
+      // Não falha a conferência se houver erro na Tiny
+    }
 
     return NextResponse.json({ 
       ok: true, 
