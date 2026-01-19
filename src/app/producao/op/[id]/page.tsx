@@ -264,8 +264,8 @@ export default function OPDetailPage({ params }: { params: Promise<{ id: string 
   }
 
   const session = order.sessoes[0]
-  const totalBobinas = order.bobinas.reduce((acc, b) => acc + Number(b.pesoInicial), 0)
-  const bobinaAtual = order.bobinas.find(b => !b.fimAt)
+  const totalBobinas = order.bobinas?.reduce((acc, b) => acc + Number(b.pesoInicial), 0) || 0
+  const bobinaAtual = order.bobinas?.find(b => !b.fimAt)
   const pesoUsado = Number(order.pesoTotalProduzido || 0) + Number(order.totalApara)
   const progresso = totalBobinas > 0 ? Math.min(100, Math.round((pesoUsado / totalBobinas) * 100)) : 0
 

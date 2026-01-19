@@ -20,6 +20,9 @@ export async function GET(
     const order = await prisma.productionOrder.findUnique({
       where: { id },
       include: {
+        bobinas: {
+          orderBy: { sequencia: 'asc' }
+        },
         sessoes: {
           orderBy: { createdAt: 'desc' },
           include: {
