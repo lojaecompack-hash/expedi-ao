@@ -158,10 +158,15 @@ function NovaOPContent() {
               <TinyProductSearch
                 value={formData.productSku}
                 onChange={(sku, product) => {
+                  // Extrair medida do nome do produto (ex: "Envelope 19x25" -> "19x25")
+                  const medidaMatch = product?.nome?.match(/(\d+x\d+)/i)
+                  const medida = medidaMatch ? medidaMatch[1] : ''
+                  
                   setFormData({
                     ...formData,
                     productSku: sku,
-                    productName: product?.nome || formData.productName
+                    productName: product?.nome || formData.productName,
+                    productMeasure: medida || formData.productMeasure
                   })
                 }}
                 label="SKU do Produto"
@@ -182,19 +187,6 @@ function NovaOPContent() {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-1">
-                  Medida
-                </label>
-                <input
-                  type="text"
-                  value={formData.productMeasure}
-                  onChange={(e) => setFormData({ ...formData, productMeasure: e.target.value })}
-                  placeholder="Ex: 19x25"
-                  className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-[#FFD700] focus:border-transparent"
-                  required
-                />
-              </div>
             </div>
           </div>
 
