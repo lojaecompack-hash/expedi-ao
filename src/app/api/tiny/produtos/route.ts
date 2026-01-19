@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
-import { prisma } from '@/lib/prisma'
-import crypto from 'crypto'
+import { getTinyApiToken } from '@/lib/tiny-api'
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,35 +18,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Pesquisa deve ter pelo menos 2 caracteres' }, { status: 400 })
     }
 
-    // Buscar configurações da Tiny
-    const settings = await prisma.tinySettings.findFirst({
-      where: { isActive: true }
-    })
-
-    if (!settings || !settings.apiTokenEncrypted) {
-      console.log('Configurações da Tiny não encontradas ou token não configurado')
+    // Buscar token usando a mesma função do módulo de retirada
+    let token: string
+    try {
+      token = await getTinyApiToken()
+    } catch (error) {
+      console.error('Erro ao obter token Tiny:', error)
       return NextResponse.json({ 
         ok: false, 
         error: 'Configure a integração com a Tiny primeiro em /setup/tiny',
-        produtos: [] 
-      })
-    }
-
-    // Descriptografar token
-    let token: string
-    try {
-      const decipher = crypto.createDecipheriv(
-        'aes-256-cbc',
-        Buffer.from(process.env.ENCRYPTION_KEY!, 'hex'),
-        Buffer.from(process.env.ENCRYPTION_IV!, 'hex')
-      )
-      token = decipher.update(settings.apiTokenEncrypted, 'hex', 'utf8')
-      token += decipher.final('utf8')
-    } catch (error) {
-      console.error('Erro ao descriptografar token:', error)
-      return NextResponse.json({ 
-        ok: false, 
-        error: 'Erro ao descriptografar token da Tiny',
         produtos: [] 
       })
     }
