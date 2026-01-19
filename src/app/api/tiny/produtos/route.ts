@@ -24,18 +24,33 @@ export async function GET(request: NextRequest) {
       where: { isActive: true }
     })
 
-    if (!settings) {
-      return NextResponse.json({ ok: false, error: 'Configurações da Tiny não encontradas' }, { status: 404 })
+    if (!settings || !settings.apiTokenEncrypted) {
+      console.log('Configurações da Tiny não encontradas ou token não configurado')
+      return NextResponse.json({ 
+        ok: false, 
+        error: 'Configure a integração com a Tiny primeiro em /setup/tiny',
+        produtos: [] 
+      })
     }
 
     // Descriptografar token
-    const decipher = crypto.createDecipheriv(
-      'aes-256-cbc',
-      Buffer.from(process.env.ENCRYPTION_KEY!, 'hex'),
-      Buffer.from(process.env.ENCRYPTION_IV!, 'hex')
-    )
-    let token = decipher.update(settings.apiTokenEncrypted, 'hex', 'utf8')
-    token += decipher.final('utf8')
+    let token: string
+    try {
+      const decipher = crypto.createDecipheriv(
+        'aes-256-cbc',
+        Buffer.from(process.env.ENCRYPTION_KEY!, 'hex'),
+        Buffer.from(process.env.ENCRYPTION_IV!, 'hex')
+      )
+      token = decipher.update(settings.apiTokenEncrypted, 'hex', 'utf8')
+      token += decipher.final('utf8')
+    } catch (error) {
+      console.error('Erro ao descriptografar token:', error)
+      return NextResponse.json({ 
+        ok: false, 
+        error: 'Erro ao descriptografar token da Tiny',
+        produtos: [] 
+      })
+    }
 
     // Buscar produtos na Tiny
     const tinyUrl = `https://api.tiny.com.br/api2/produtos.pesquisa.php`
