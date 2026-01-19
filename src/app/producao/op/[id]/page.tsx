@@ -117,8 +117,13 @@ export default function OPDetailPage({ params }: { params: Promise<{ id: string 
   }
 
   const handleTrocarBobina = async () => {
-    if (!trocarBobinaForm.novaBobinaSku || !trocarBobinaForm.novaBobinaPeso) {
-      alert('Preencha todos os campos obrigatórios')
+    if (!trocarBobinaForm.novaBobinaPeso) {
+      alert('Informe o peso da nova bobina')
+      return
+    }
+    
+    if (!bobinaAtual) {
+      alert('Nenhuma bobina ativa encontrada')
       return
     }
     
@@ -128,7 +133,7 @@ export default function OPDetailPage({ params }: { params: Promise<{ id: string 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           pesoRestante: parseFloat(trocarBobinaForm.pesoRestante) || 0,
-          novaBobinaSku: trocarBobinaForm.novaBobinaSku,
+          novaBobinaSku: bobinaAtual.bobinaSku, // Usa o mesmo SKU da bobina atual
           novaBobinaPeso: parseFloat(trocarBobinaForm.novaBobinaPeso),
           novaBobinaOrigem: trocarBobinaForm.novaBobinaOrigem
         })
@@ -299,26 +304,21 @@ export default function OPDetailPage({ params }: { params: Promise<{ id: string 
 
         {/* Sessão Atual */}
         <div className="bg-white rounded-xl border border-zinc-200 p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div>
-                <div className="text-sm text-zinc-500">Operador</div>
-                <div className="font-bold text-zinc-900">{session?.operatorName || '-'}</div>
-              </div>
-              <div className="h-8 w-px bg-zinc-200" />
-              <div>
-                <div className="text-sm text-zinc-500">Máquina</div>
-                <div className="font-bold text-zinc-900">{session?.machine?.code || '-'}</div>
-              </div>
-              <div className="h-8 w-px bg-zinc-200" />
-              <div>
-                <div className="text-sm text-zinc-500">Turno</div>
-                <div className="font-bold text-zinc-900">{turnoLabel(session?.turno || order.turnoInicial)}</div>
-              </div>
+          <div className="flex items-center gap-4">
+            <div>
+              <div className="text-sm text-zinc-500">Operador</div>
+              <div className="font-bold text-zinc-900">{session?.operatorName || '-'}</div>
             </div>
-            <button className="px-4 py-2 bg-zinc-100 hover:bg-zinc-200 rounded-lg text-sm font-medium transition-colors">
-              🔄 Trocar Máquina
-            </button>
+            <div className="h-8 w-px bg-zinc-200" />
+            <div>
+              <div className="text-sm text-zinc-500">Máquina</div>
+              <div className="font-bold text-zinc-900">{session?.machine?.code || '-'}</div>
+            </div>
+            <div className="h-8 w-px bg-zinc-200" />
+            <div>
+              <div className="text-sm text-zinc-500">Turno</div>
+              <div className="font-bold text-zinc-900">{turnoLabel(session?.turno || order.turnoInicial)}</div>
+            </div>
           </div>
         </div>
 
@@ -545,9 +545,22 @@ export default function OPDetailPage({ params }: { params: Promise<{ id: string 
             <div className="bg-white rounded-xl p-6 w-full max-w-md">
               <h3 className="text-lg font-bold text-zinc-900 mb-4">🔄 Trocar Bobina</h3>
               
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-                <p className="text-blue-800 text-sm">
-                  Bobina Atual: {bobinaAtual?.bobinaSku || '-'}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-blue-600 font-medium">Bobina Atual</p>
+                    <p className="text-lg font-bold text-blue-900">{bobinaAtual?.bobinaSku || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-blue-600 font-medium">Peso Inicial</p>
+                    <p className="text-lg font-bold text-blue-900">{Number(bobinaAtual?.pesoInicial || 0).toFixed(1)} kg</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                <p className="text-yellow-800 text-sm">
+                  ⚠️ A nova bobina deve ser da <strong>mesma medida</strong> ({order.productMeasure}). Para trocar de medida, finalize esta OP e crie uma nova.
                 </p>
               </div>
               
@@ -564,29 +577,16 @@ export default function OPDetailPage({ params }: { params: Promise<{ id: string 
                     placeholder="Ex: 5.0"
                     className="w-full px-4 py-2 border border-zinc-300 rounded-lg"
                   />
+                  <p className="text-xs text-zinc-500 mt-1">Deixe em branco se a bobina acabou completamente</p>
                 </div>
                 
                 <div className="border-t border-zinc-200 pt-4">
-                  <h4 className="font-medium text-zinc-900 mb-3">Nova Bobina:</h4>
+                  <h4 className="font-medium text-zinc-900 mb-3">Nova Bobina (mesma medida):</h4>
                   
                   <div className="space-y-3">
                     <div>
                       <label className="block text-sm font-medium text-zinc-700 mb-1">
-                        SKU da Nova Bobina *
-                      </label>
-                      <input
-                        type="text"
-                        value={trocarBobinaForm.novaBobinaSku}
-                        onChange={(e) => setTrocarBobinaForm({ ...trocarBobinaForm, novaBobinaSku: e.target.value })}
-                        placeholder="Digite o SKU"
-                        className="w-full px-4 py-2 border border-zinc-300 rounded-lg"
-                        required
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-zinc-700 mb-1">
-                        Peso Inicial (kg) *
+                        Peso da Nova Bobina (kg) *
                       </label>
                       <input
                         type="number"
