@@ -27,8 +27,12 @@ export async function GET() {
                 productMeasure: true,
                 status: true,
                 pesoTotalProduzido: true,
-                bobinaPesoInicial: true,
-                totalApara: true
+                totalApara: true,
+                bobinas: {
+                  select: {
+                    pesoInicial: true
+                  }
+                }
               }
             }
           }

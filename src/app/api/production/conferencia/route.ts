@@ -66,9 +66,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar divergência
-    const pesoOperador = Number(order.pesoTotalProduzido)
-    const unidadesOperador = order.totalUnidades
-    const pacotesOperador = order.totalPacotes
+    const pesoOperador = Number(order.pesoTotalProduzido || 0)
+    const unidadesOperador = order.totalUnidades || 0
+    const pacotesOperador = order.totalPacotes || 0
 
     const hasDivergencia = 
       pesoConferido !== pesoOperador ||
