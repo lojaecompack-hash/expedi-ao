@@ -3,7 +3,8 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import MainLayout from '@/components/MainLayout'
-import { ArrowLeft, Search, Package } from 'lucide-react'
+import TinyProductSearch from '@/components/TinyProductSearch'
+import { ArrowLeft, Package } from 'lucide-react'
 import Link from 'next/link'
 
 interface ProductionOperator {
@@ -154,28 +155,18 @@ function NovaOPContent() {
             </h2>
 
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-1">
-                  SKU do Produto
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={formData.productSku}
-                    onChange={(e) => setFormData({ ...formData, productSku: e.target.value })}
-                    placeholder="Digite o SKU"
-                    className="flex-1 px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-[#FFD700] focus:border-transparent"
-                    required
-                  />
-                  <button
-                    type="button"
-                    className="px-4 py-2 bg-zinc-100 hover:bg-zinc-200 rounded-lg transition-colors"
-                    title="Buscar na Tiny (em desenvolvimento)"
-                  >
-                    <Search className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
+              <TinyProductSearch
+                value={formData.productSku}
+                onChange={(sku, product) => {
+                  setFormData({
+                    ...formData,
+                    productSku: sku,
+                    productName: product?.nome || formData.productName
+                  })
+                }}
+                label="SKU do Produto"
+                placeholder="Digite o SKU para buscar"
+              />
 
               <div>
                 <label className="block text-sm font-medium text-zinc-700 mb-1">
@@ -212,19 +203,12 @@ function NovaOPContent() {
             <h2 className="text-lg font-semibold text-zinc-900 mb-4">🎞️ Bobina</h2>
 
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-1">
-                  SKU da Bobina
-                </label>
-                <input
-                  type="text"
-                  value={formData.bobinaSku}
-                  onChange={(e) => setFormData({ ...formData, bobinaSku: e.target.value })}
-                  placeholder="Digite o SKU da bobina"
-                  className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-[#FFD700] focus:border-transparent"
-                  required
-                />
-              </div>
+              <TinyProductSearch
+                value={formData.bobinaSku}
+                onChange={(sku) => setFormData({ ...formData, bobinaSku: sku })}
+                label="SKU da Bobina"
+                placeholder="Digite o SKU da bobina"
+              />
 
               <div>
                 <label className="block text-sm font-medium text-zinc-700 mb-1">
