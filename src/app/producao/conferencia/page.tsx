@@ -53,11 +53,11 @@ export default function ConferenciaPage() {
     }
   }
 
-  const handleSelectOrder = (order: ProductionOrder) => {
+  const selectOrder = (order: ProductionOrder) => {
     setSelectedOrder(order)
     setConfForm({
       pesoConferido: String(order.pesoTotalProduzido),
-      unidadesConferido: String(order.totalUnidades),
+      unidadesConferido: String(order.totalPacotes), // 1 pacote = 1 unidade
       pacotesConferido: String(order.totalPacotes),
       observacao: ''
     })
@@ -68,14 +68,15 @@ export default function ConferenciaPage() {
     setConferindo(true)
 
     try {
+      const pacotesConferido = parseInt(confForm.pacotesConferido)
       const res = await fetch('/api/production/conferencia', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           orderId: selectedOrder.id,
           pesoConferido: parseFloat(confForm.pesoConferido),
-          unidadesConferido: parseInt(confForm.unidadesConferido),
-          pacotesConferido: parseInt(confForm.pacotesConferido),
+          unidadesConferido: pacotesConferido, // 1 pacote = 1 unidade
+          pacotesConferido: pacotesConferido,
           observacao: confForm.observacao
         })
       })
@@ -102,8 +103,6 @@ export default function ConferenciaPage() {
   }
 
   const hasDivergencia = selectedOrder && (
-    parseFloat(confForm.pesoConferido) !== Number(selectedOrder.pesoTotalProduzido) ||
-    parseInt(confForm.unidadesConferido) !== selectedOrder.totalUnidades ||
     parseInt(confForm.pacotesConferido) !== selectedOrder.totalPacotes
   )
 
@@ -147,7 +146,7 @@ export default function ConferenciaPage() {
                 {orders.map((order) => (
                   <button
                     key={order.id}
-                    onClick={() => handleSelectOrder(order)}
+                    onClick={() => selectOrder(order)}
                     className={`w-full text-left p-4 rounded-xl border-2 transition-colors ${
                       selectedOrder?.id === order.id
                         ? 'border-[#FFD700] bg-yellow-50'
@@ -207,8 +206,6 @@ export default function ConferenciaPage() {
                       <div className="font-medium text-zinc-500 mb-2">INFORMADO (Operador)</div>
                       <div className="space-y-1">
                         <div>Pacotes: <strong>{selectedOrder.totalPacotes}</strong></div>
-                        <div>Unidades: <strong>{selectedOrder.totalUnidades}</strong></div>
-                        <div>Peso: <strong>{Number(selectedOrder.pesoTotalProduzido).toFixed(1)} kg</strong></div>
                       </div>
                     </div>
                     <div>
@@ -218,27 +215,13 @@ export default function ConferenciaPage() {
                           type="number"
                           value={confForm.pacotesConferido}
                           onChange={(e) => setConfForm({ ...confForm, pacotesConferido: e.target.value })}
-                          className="w-full px-3 py-1 border border-zinc-300 rounded-lg text-sm"
+                          className="w-full px-3 py-2 border border-zinc-300 rounded-lg"
                           placeholder="Pacotes"
-                        />
-                        <input
-                          type="number"
-                          value={confForm.unidadesConferido}
-                          onChange={(e) => setConfForm({ ...confForm, unidadesConferido: e.target.value })}
-                          className="w-full px-3 py-1 border border-zinc-300 rounded-lg text-sm"
-                          placeholder="Unidades"
-                        />
-                        <input
-                          type="number"
-                          step="0.1"
-                          value={confForm.pesoConferido}
-                          onChange={(e) => setConfForm({ ...confForm, pesoConferido: e.target.value })}
-                          className="w-full px-3 py-1 border border-zinc-300 rounded-lg text-sm"
-                          placeholder="Peso (kg)"
                         />
                       </div>
                     </div>
                   </div>
+                  <p className="text-xs text-zinc-500 mt-3">1 pacote = 1 unidade na Tiny</p>
                 </div>
 
                 {/* Alerta de Divergência */}
