@@ -132,7 +132,7 @@ export default function OPDetailPage({ params }: { params: Promise<{ id: string 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          pesoRestante: parseFloat(trocarBobinaForm.pesoRestante) || 0,
+          pesoRestante: 0, // Bobina acabou completamente
           novaBobinaSku: bobinaAtual.bobinaSku, // Usa o mesmo SKU da bobina atual
           novaBobinaPeso: parseFloat(trocarBobinaForm.novaBobinaPeso),
           novaBobinaOrigem: trocarBobinaForm.novaBobinaOrigem
@@ -566,21 +566,6 @@ export default function OPDetailPage({ params }: { params: Promise<{ id: string 
               
               <div className="space-y-4 mb-4">
                 <div>
-                  <label className="block text-sm font-medium text-zinc-700 mb-1">
-                    Peso Restante da Bobina Atual (kg)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={trocarBobinaForm.pesoRestante}
-                    onChange={(e) => setTrocarBobinaForm({ ...trocarBobinaForm, pesoRestante: e.target.value })}
-                    placeholder="Ex: 5.0"
-                    className="w-full px-4 py-2 border border-zinc-300 rounded-lg"
-                  />
-                  <p className="text-xs text-zinc-500 mt-1">Deixe em branco se a bobina acabou completamente</p>
-                </div>
-                
-                <div className="border-t border-zinc-200 pt-4">
                   <h4 className="font-medium text-zinc-900 mb-3">Nova Bobina (mesma medida):</h4>
                   
                   <div className="space-y-3">
