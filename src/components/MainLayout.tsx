@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { Package, Truck, Users, BarChart3, Wrench, Home, LogOut } from "lucide-react"
 
-type UserRole = 'ADMIN' | 'EXPEDICAO' | null
+type UserRole = 'ADMIN' | 'EXPEDICAO' | 'PRODUCAO' | null
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -123,7 +123,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 {userEmail || 'Usuário'}
               </div>
               <div className="text-xs text-zinc-500">
-                {userRole === 'ADMIN' ? 'Administrador' : 'Expedição'}
+                {userRole === 'ADMIN' ? 'Administrador' : userRole === 'PRODUCAO' ? 'Produção' : 'Expedição'}
               </div>
             </div>
           </div>
