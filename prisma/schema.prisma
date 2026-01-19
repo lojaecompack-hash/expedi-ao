@@ -235,17 +235,12 @@ model ProductionOrder {
   productName         String
   productMeasure      String
   
-  bobinaSku           String
-  bobinaPesoInicial   Decimal
-  bobinaPesoFinal     Decimal?
-  bobinaOrigem        String?
-  
   turnoInicial        TurnoType
   
-  pesoTotalProduzido  Decimal               @default(0)
+  pesoTotalProduzido  Decimal?
   totalApara          Decimal               @default(0)
-  totalPacotes        Int                   @default(0)
-  totalUnidades       Int                   @default(0)
+  totalPacotes        Int?
+  totalUnidades       Int?
   
   confPesoReal        Decimal?
   confUnidadesReal    Int?
@@ -265,13 +260,13 @@ model ProductionOrder {
   
   createdByUserId     String
   
+  bobinas   ProductionBobina[]
   pacotes   ProductionPackage[]
   aparas    ProductionApara[]
   sessoes   ProductionSession[]
   
   @@index([status])
   @@index([productSku])
-  @@index([bobinaSku])
 }
 
 model ProductionSession {
@@ -399,4 +394,27 @@ model ProductionConfig {
   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+// ========================================
+// BOBINAS (Múltiplas por OP)
+// ========================================
+
+model ProductionBobina {
+  id              String          @id @default(cuid())
+  orderId         String
+  order           ProductionOrder @relation(fields: [orderId], references: [id])
+  
+  sequencia       Int             // 1, 2, 3...
+  bobinaSku       String          // SKU da bobina
+  pesoInicial     Decimal         // Peso inicial (kg)
+  pesoRestante    Decimal?        // Peso que sobrou ao trocar
+  bobinaOrigem    String?         // EXTRUSORA ou TERCEIRO
+  
+  inicioAt        DateTime        @default(now())
+  fimAt           DateTime?       // Quando trocou ou finalizou
+  
+  createdAt       DateTime        @default(now())
+  
+  @@index([orderId])
 }

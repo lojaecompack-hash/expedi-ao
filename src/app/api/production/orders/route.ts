@@ -112,18 +112,23 @@ export async function POST(request: NextRequest) {
     }
     const code = `OP-${year}-${String(nextNumber).padStart(4, '0')}`
 
-    // Criar ordem e sessão inicial
+    // Criar ordem, bobina inicial e sessão inicial
     const order = await prisma.productionOrder.create({
       data: {
         code,
         productSku,
         productName,
         productMeasure,
-        bobinaSku,
-        bobinaPesoInicial,
-        bobinaOrigem: bobinaOrigem || 'EXTRUSORA',
         turnoInicial,
         createdByUserId: dbUser.id,
+        bobinas: {
+          create: {
+            sequencia: 1,
+            bobinaSku,
+            pesoInicial: bobinaPesoInicial,
+            bobinaOrigem: bobinaOrigem || 'EXTRUSORA'
+          }
+        },
         sessoes: {
           create: {
             operatorId,
@@ -134,6 +139,7 @@ export async function POST(request: NextRequest) {
         }
       },
       include: {
+        bobinas: true,
         sessoes: true
       }
     })

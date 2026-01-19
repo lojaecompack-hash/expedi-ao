@@ -85,7 +85,17 @@ export async function PUT(
 
     // Ação: Finalizar ordem (enviar para conferência)
     if (action === 'FINALIZAR') {
-      const { pesoTotalProduzido, totalUnidades, aparaFinal } = data
+      const { pesoTotalProduzido, totalPacotes, totalUnidades } = data
+
+      if (!pesoTotalProduzido || !totalPacotes || !totalUnidades) {
+        return NextResponse.json({ ok: false, error: 'Peso, pacotes e unidades são obrigatórios' }, { status: 400 })
+      }
+
+      // Fechar bobina ativa
+      await prisma.productionBobina.updateMany({
+        where: { orderId: id, fimAt: null },
+        data: { fimAt: new Date() }
+      })
 
       // Fechar sessão ativa
       await prisma.productionSession.updateMany({
@@ -97,9 +107,9 @@ export async function PUT(
       const updated = await prisma.productionOrder.update({
         where: { id },
         data: {
-          pesoTotalProduzido: pesoTotalProduzido || order.pesoTotalProduzido,
-          totalUnidades: totalUnidades || order.totalUnidades,
-          totalApara: aparaFinal || order.totalApara,
+          pesoTotalProduzido,
+          totalPacotes,
+          totalUnidades,
           status: 'AGUARDANDO_CONF',
           finishedAt: new Date()
         }
