@@ -9,7 +9,7 @@ interface User {
   id: string
   email: string
   name: string
-  role: 'ADMIN' | 'EXPEDICAO'
+  role: 'ADMIN' | 'EXPEDICAO' | 'PRODUCAO'
   isActive: boolean
 }
 
@@ -24,7 +24,7 @@ export default function UsuariosPage() {
     email: '',
     name: '',
     password: '',
-    role: 'EXPEDICAO' as 'ADMIN' | 'EXPEDICAO'
+    role: 'EXPEDICAO' as 'ADMIN' | 'EXPEDICAO' | 'PRODUCAO'
   })
 
   useEffect(() => {
@@ -149,9 +149,11 @@ export default function UsuariosPage() {
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             user.role === 'ADMIN' 
                               ? 'bg-purple-100 text-purple-800' 
+                              : user.role === 'PRODUCAO'
+                              ? 'bg-orange-100 text-orange-800'
                               : 'bg-blue-100 text-blue-800'
                           }`}>
-                            {user.role === 'ADMIN' ? 'Administrador' : 'Expedição'}
+                            {user.role === 'ADMIN' ? 'Administrador' : user.role === 'PRODUCAO' ? 'Produção' : 'Expedição'}
                           </span>
                         </td>
                         <td className="px-6 py-4">
@@ -249,7 +251,7 @@ export default function UsuariosPage() {
                         name="role"
                         value="ADMIN"
                         checked={formData.role === 'ADMIN'}
-                        onChange={(e) => setFormData({ ...formData, role: e.target.value as 'ADMIN' | 'EXPEDICAO' })}
+                        onChange={(e) => setFormData({ ...formData, role: e.target.value as 'ADMIN' | 'EXPEDICAO' | 'PRODUCAO' })}
                         className="w-4 h-4 text-[#FFD700] focus:ring-[#FFD700]"
                       />
                       <span className="text-sm text-zinc-700">ADMIN</span>
@@ -260,10 +262,21 @@ export default function UsuariosPage() {
                         name="role"
                         value="EXPEDICAO"
                         checked={formData.role === 'EXPEDICAO'}
-                        onChange={(e) => setFormData({ ...formData, role: e.target.value as 'ADMIN' | 'EXPEDICAO' })}
+                        onChange={(e) => setFormData({ ...formData, role: e.target.value as 'ADMIN' | 'EXPEDICAO' | 'PRODUCAO' })}
                         className="w-4 h-4 text-[#FFD700] focus:ring-[#FFD700]"
                       />
                       <span className="text-sm text-zinc-700">EXPEDIÇÃO</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="role"
+                        value="PRODUCAO"
+                        checked={formData.role === 'PRODUCAO'}
+                        onChange={(e) => setFormData({ ...formData, role: e.target.value as 'ADMIN' | 'EXPEDICAO' | 'PRODUCAO' })}
+                        className="w-4 h-4 text-[#FFD700] focus:ring-[#FFD700]"
+                      />
+                      <span className="text-sm text-zinc-700">PRODUÇÃO</span>
                     </label>
                   </div>
                 </div>
