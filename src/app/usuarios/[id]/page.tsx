@@ -4,18 +4,28 @@ import { useState, useEffect } from 'react'
 import MainLayout from '@/components/MainLayout'
 import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeft, Edit, Key, Trash2 } from 'lucide-react'
+import ProductionOperatorsSection from './production-operators-section'
 
 interface User {
   id: string
   email: string
   name: string
-  role: 'ADMIN' | 'EXPEDICAO'
+  role: 'ADMIN' | 'EXPEDICAO' | 'PRODUCAO'
   isActive: boolean
 }
 
 interface Operator {
   id: string
   name: string
+  email: string | null
+  phone: string | null
+  isActive: boolean
+}
+
+interface ProductionOperator {
+  id: string
+  name: string
+  type: 'CORTE_SOLDA' | 'EXTRUSORA'
   email: string | null
   phone: string | null
   isActive: boolean
@@ -28,6 +38,7 @@ export default function UserDetailPage() {
 
   const [user, setUser] = useState<User | null>(null)
   const [operators, setOperators] = useState<Operator[]>([])
+  const [productionOperators, setProductionOperators] = useState<ProductionOperator[]>([])
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
 
@@ -43,6 +54,7 @@ export default function UserDetailPage() {
     if (userId) {
       fetchUserDetails()
       fetchOperators()
+      fetchProductionOperators()
     }
   }, [userId])
 
@@ -69,6 +81,18 @@ export default function UserDetailPage() {
       }
     } catch (error) {
       console.error('Erro ao buscar operadores:', error)
+    }
+  }
+
+  const fetchProductionOperators = async () => {
+    try {
+      const res = await fetch(`/api/users/${userId}/production-operators`)
+      const data = await res.json()
+      if (data.ok) {
+        setProductionOperators(data.operators)
+      }
+    } catch (error) {
+      console.error('Erro ao buscar operadores de produção:', error)
     }
   }
 
@@ -169,9 +193,11 @@ export default function UserDetailPage() {
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                 user.role === 'ADMIN' 
                   ? 'bg-purple-100 text-purple-800' 
+                  : user.role === 'PRODUCAO'
+                  ? 'bg-orange-100 text-orange-800'
                   : 'bg-blue-100 text-blue-800'
               }`}>
-                {user.role === 'ADMIN' ? 'Administrador' : 'Expedição'}
+                {user.role === 'ADMIN' ? 'Administrador' : user.role === 'PRODUCAO' ? 'Produção' : 'Expedição'}
               </span>
             </div>
             <div>
@@ -342,6 +368,15 @@ export default function UserDetailPage() {
               </form>
             </div>
           </>
+        )}
+
+        {/* Operadores de Produção - Apenas para usuários PRODUCAO */}
+        {user.role === 'PRODUCAO' && (
+          <ProductionOperatorsSection
+            userId={userId}
+            operators={productionOperators}
+            onRefresh={fetchProductionOperators}
+          />
         )}
       </div>
     </MainLayout>
