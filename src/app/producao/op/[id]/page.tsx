@@ -217,7 +217,7 @@ export default function OPDetailPage({ params }: { params: Promise<{ id: string 
   }
 
   const handleFinalizar = async () => {
-    if (!finalizarForm.peso || !finalizarForm.pacotes || !finalizarForm.unidades) {
+    if (!finalizarForm.peso || !finalizarForm.pacotes) {
       alert('Preencha todos os campos obrigatórios')
       return
     }
@@ -230,7 +230,7 @@ export default function OPDetailPage({ params }: { params: Promise<{ id: string 
           action: 'FINALIZAR',
           pesoTotalProduzido: parseFloat(finalizarForm.peso),
           totalPacotes: parseInt(finalizarForm.pacotes),
-          totalUnidades: parseInt(finalizarForm.unidades)
+          totalUnidades: parseInt(finalizarForm.pacotes) // 1 pacote = 1 unidade
         })
       })
       const data = await res.json()
@@ -684,20 +684,7 @@ export default function OPDetailPage({ params }: { params: Promise<{ id: string 
                     className="w-full px-4 py-2 border border-zinc-300 rounded-lg"
                     required
                   />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-zinc-700 mb-1">
-                    Quantidade de Unidades *
-                  </label>
-                  <input
-                    type="number"
-                    value={finalizarForm.unidades}
-                    onChange={(e) => setFinalizarForm({ ...finalizarForm, unidades: e.target.value })}
-                    placeholder="Ex: 100000"
-                    className="w-full px-4 py-2 border border-zinc-300 rounded-lg"
-                    required
-                  />
+                  <p className="text-xs text-zinc-500 mt-1">Na Tiny: 1 pacote = 1 unidade</p>
                 </div>
               </div>
               
