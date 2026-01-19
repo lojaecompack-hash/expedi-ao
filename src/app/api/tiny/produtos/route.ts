@@ -48,8 +48,10 @@ export async function GET(request: NextRequest) {
     const response = await fetch(`${tinyUrl}?${params}`)
     const data = await response.json()
 
-    if (data.retorno.status === 'OK' && data.retorno.produtos) {
-      const produtos = data.retorno.produtos.map((item: any) => ({
+    console.log('Tiny API Response:', JSON.stringify(data, null, 2))
+
+    if (data.retorno?.status === 'OK' && data.retorno?.produtos) {
+      const produtos = data.retorno.produtos.map((item: { produto: { id: string; codigo: string; nome: string; unidade: string; preco: string } }) => ({
         id: item.produto.id,
         codigo: item.produto.codigo,
         nome: item.produto.nome,
@@ -58,6 +60,16 @@ export async function GET(request: NextRequest) {
       }))
 
       return NextResponse.json({ ok: true, produtos })
+    }
+
+    // Se não encontrou produtos ou houve erro
+    if (data.retorno?.status === 'Erro') {
+      console.error('Erro da Tiny API:', data.retorno)
+      return NextResponse.json({ 
+        ok: false, 
+        error: data.retorno.erros?.[0]?.erro || 'Erro ao buscar produtos na Tiny',
+        produtos: [] 
+      })
     }
 
     return NextResponse.json({ ok: true, produtos: [] })
