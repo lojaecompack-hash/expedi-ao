@@ -3,7 +3,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { getTinyApiToken } from '@/lib/tiny-api'
 
-// GET - Listar ordens aguardando conferência
+// GET - Listar ordens aguardando conferência (agrupadas por turno)
 export async function GET() {
   try {
     const supabase = await createSupabaseServerClient()
@@ -26,7 +26,17 @@ export async function GET() {
       }
     })
 
-    return NextResponse.json({ ok: true, orders })
+    // Agrupar por turno
+    const groupedByTurno: Record<string, typeof orders> = {}
+    orders.forEach(order => {
+      const turno = order.turnoInicial
+      if (!groupedByTurno[turno]) {
+        groupedByTurno[turno] = []
+      }
+      groupedByTurno[turno].push(order)
+    })
+
+    return NextResponse.json({ ok: true, orders, groupedByTurno })
   } catch (error) {
     console.error('Erro ao buscar ordens para conferência:', error)
     return NextResponse.json({ ok: false, error: 'Erro ao buscar ordens' }, { status: 500 })
