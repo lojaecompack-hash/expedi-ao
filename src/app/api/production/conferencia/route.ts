@@ -147,32 +147,26 @@ export async function POST(request: NextRequest) {
       data: { conferido: true, conferidoAt: new Date() }
     })
 
-    // Dar entrada no estoque da Tiny
+    // Dar entrada no estoque da Tiny (produto final produzido)
     try {
       const token = await getTinyApiToken()
       
-      // Criar nota de entrada no Tiny
-      const notaEntrada = {
-        nota: {
-          tipo: 'E', // Entrada
-          natureza_operacao: 'Produção Interna',
-          data_emissao: new Date().toISOString().split('T')[0],
-          itens: [{
-            item: {
-              codigo: order.productSku,
-              descricao: order.productName,
-              unidade: 'UN',
-              quantidade: pacotesConferido.toString()
-            }
-          }]
-        }
+      // Usar endpoint de atualização de estoque
+      const tinyUrl = 'https://api.tiny.com.br/api2/produto.atualizar.estoque.php'
+      
+      // Preparar dados para entrada de estoque
+      const estoqueData = {
+        idProduto: order.productSku, // SKU do produto
+        tipo: 'E', // E = Entrada
+        quantidade: pacotesConferido,
+        observacoes: `Produção OP ${order.code} - Conferência`
       }
 
-      const tinyUrl = 'https://api.tiny.com.br/api2/nota.fiscal.incluir.php'
       const params = new URLSearchParams({
         token,
         formato: 'json',
-        nota: JSON.stringify(notaEntrada)
+        ...estoqueData,
+        quantidade: pacotesConferido.toString()
       })
 
       const tinyResponse = await fetch(`${tinyUrl}?${params}`, {
@@ -181,10 +175,12 @@ export async function POST(request: NextRequest) {
 
       const tinyData = await tinyResponse.json()
       
-      console.log('[Conferência] Resposta Tiny entrada estoque:', tinyData)
+      console.log('[Conferência] Resposta Tiny entrada estoque:', JSON.stringify(tinyData, null, 2))
 
       if (tinyData.retorno?.status === 'Erro') {
         console.error('[Conferência] Erro ao dar entrada no estoque Tiny:', tinyData.retorno)
+      } else {
+        console.log('[Conferência] Entrada de estoque realizada com sucesso:', order.productSku, pacotesConferido, 'un')
       }
     } catch (tinyError) {
       console.error('[Conferência] Erro ao integrar com Tiny:', tinyError)
