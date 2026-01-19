@@ -12,16 +12,22 @@ interface ProductionOrder {
   productSku: string
   productName: string
   productMeasure: string
-  bobinaSku: string
-  bobinaPesoInicial: number
-  bobinaPesoFinal: number | null
-  bobinaOrigem: string
   turnoInicial: string
-  pesoTotalProduzido: number
+  pesoTotalProduzido: number | null
   totalApara: number
-  totalPacotes: number
-  totalUnidades: number
+  totalPacotes: number | null
+  totalUnidades: number | null
   status: string
+  bobinas: Array<{
+    id: string
+    sequencia: number
+    bobinaSku: string
+    pesoInicial: number
+    pesoRestante: number | null
+    bobinaOrigem: string
+    inicioAt: string
+    fimAt: string | null
+  }>
   sessoes: Array<{
     id: string
     operatorName: string
@@ -66,11 +72,18 @@ export default function OPDetailPage({ params }: { params: Promise<{ id: string 
   const [showPacoteModal, setShowPacoteModal] = useState(false)
   const [showParadaModal, setShowParadaModal] = useState(false)
   const [showFinalizarModal, setShowFinalizarModal] = useState(false)
+  const [showTrocarBobinaModal, setShowTrocarBobinaModal] = useState(false)
   
   // Formulários
   const [aparaForm, setAparaForm] = useState({ peso: '' })
   const [pacoteForm, setPacoteForm] = useState({ quantidade: 1000 })
-  const [pesoForm, setPesoForm] = useState({ peso: '' })
+  const [finalizarForm, setFinalizarForm] = useState({ peso: '', pacotes: '', unidades: '' })
+  const [trocarBobinaForm, setTrocarBobinaForm] = useState({
+    pesoRestante: '',
+    novaBobinaSku: '',
+    novaBobinaPeso: '',
+    novaBobinaOrigem: 'EXTRUSORA'
+  })
 
   useEffect(() => {
     fetchOrder()
@@ -83,7 +96,6 @@ export default function OPDetailPage({ params }: { params: Promise<{ id: string 
       const data = await res.json()
       if (data.ok) {
         setOrder(data.order)
-        setPesoForm({ peso: String(data.order.pesoTotalProduzido) })
       }
     } catch (error) {
       console.error('Erro ao buscar ordem:', error)
@@ -104,25 +116,44 @@ export default function OPDetailPage({ params }: { params: Promise<{ id: string 
     }
   }
 
-  const handleUpdatePeso = async () => {
-    if (!pesoForm.peso) return
+  const handleTrocarBobina = async () => {
+    if (!trocarBobinaForm.novaBobinaSku || !trocarBobinaForm.novaBobinaPeso) {
+      alert('Preencha todos os campos obrigatórios')
+      return
+    }
+    
     try {
-      const res = await fetch(`/api/production/orders/${id}`, {
-        method: 'PUT',
+      const res = await fetch(`/api/production/orders/${id}/trocar-bobina`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'UPDATE_PESO',
-          pesoTotalProduzido: parseFloat(pesoForm.peso)
+          pesoRestante: parseFloat(trocarBobinaForm.pesoRestante) || 0,
+          novaBobinaSku: trocarBobinaForm.novaBobinaSku,
+          novaBobinaPeso: parseFloat(trocarBobinaForm.novaBobinaPeso),
+          novaBobinaOrigem: trocarBobinaForm.novaBobinaOrigem
         })
       })
+      
       const data = await res.json()
       if (data.ok) {
+        alert('Bobina trocada com sucesso!')
+        setShowTrocarBobinaModal(false)
+        setTrocarBobinaForm({
+          pesoRestante: '',
+          novaBobinaSku: '',
+          novaBobinaPeso: '',
+          novaBobinaOrigem: 'EXTRUSORA'
+        })
         fetchOrder()
+      } else {
+        alert(data.error)
       }
     } catch (error) {
-      console.error('Erro ao atualizar peso:', error)
+      console.error('Erro ao trocar bobina:', error)
+      alert('Erro ao trocar bobina')
     }
   }
+
 
   const handleLancarApara = async () => {
     if (!aparaForm.peso || !order) return
@@ -181,14 +212,20 @@ export default function OPDetailPage({ params }: { params: Promise<{ id: string 
   }
 
   const handleFinalizar = async () => {
+    if (!finalizarForm.peso || !finalizarForm.pacotes || !finalizarForm.unidades) {
+      alert('Preencha todos os campos obrigatórios')
+      return
+    }
+    
     try {
       const res = await fetch(`/api/production/orders/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'FINALIZAR',
-          pesoTotalProduzido: parseFloat(pesoForm.peso),
-          totalUnidades: order?.totalUnidades
+          pesoTotalProduzido: parseFloat(finalizarForm.peso),
+          totalPacotes: parseInt(finalizarForm.pacotes),
+          totalUnidades: parseInt(finalizarForm.unidades)
         })
       })
       const data = await res.json()
@@ -227,8 +264,10 @@ export default function OPDetailPage({ params }: { params: Promise<{ id: string 
   }
 
   const session = order.sessoes[0]
-  const pesoRestante = Number(order.bobinaPesoInicial) - Number(order.pesoTotalProduzido) - Number(order.totalApara)
-  const progresso = Math.min(100, Math.round(((Number(order.pesoTotalProduzido) + Number(order.totalApara)) / Number(order.bobinaPesoInicial)) * 100))
+  const totalBobinas = order.bobinas.reduce((acc, b) => acc + Number(b.pesoInicial), 0)
+  const bobinaAtual = order.bobinas.find(b => !b.fimAt)
+  const pesoUsado = Number(order.pesoTotalProduzido || 0) + Number(order.totalApara)
+  const progresso = totalBobinas > 0 ? Math.min(100, Math.round((pesoUsado / totalBobinas) * 100)) : 0
 
   return (
     <MainLayout>
@@ -283,66 +322,80 @@ export default function OPDetailPage({ params }: { params: Promise<{ id: string 
           </div>
         </div>
 
+        {/* Bobinas Utilizadas */}
+        <div className="bg-white rounded-xl border border-zinc-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-zinc-900">🎞️ Bobinas Utilizadas</h2>
+            <button
+              onClick={() => setShowTrocarBobinaModal(true)}
+              className="px-4 py-2 bg-[#FFD700] hover:bg-[#E6C200] rounded-lg text-sm font-medium transition-colors"
+            >
+              ➕ Trocar Bobina
+            </button>
+          </div>
+          
+          <div className="space-y-2 mb-4">
+            {order.bobinas.map((bobina) => (
+              <div key={bobina.id} className="flex items-center justify-between p-3 bg-zinc-50 rounded-lg">
+                <div className="flex items-center gap-4">
+                  <span className="font-bold text-zinc-900">#{bobina.sequencia}</span>
+                  <span className="text-zinc-600">{bobina.bobinaSku}</span>
+                  <span className="text-sm text-zinc-500">
+                    {Number(bobina.pesoInicial).toFixed(1)}kg
+                    {bobina.pesoRestante !== null && ` → ${Number(bobina.pesoRestante).toFixed(1)}kg`}
+                  </span>
+                </div>
+                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                  bobina.fimAt 
+                    ? 'bg-zinc-200 text-zinc-600' 
+                    : 'bg-green-100 text-green-700'
+                }`}>
+                  {bobina.fimAt ? '✅ Finalizada' : '🟢 Em Uso'}
+                </span>
+              </div>
+            ))}
+          </div>
+          
+          <div className="pt-4 border-t border-zinc-200">
+            <div className="grid grid-cols-3 gap-4 text-sm">
+              <div>
+                <span className="text-zinc-500">Total de bobinas:</span>
+                <span className="font-bold ml-2">{order.bobinas.length}</span>
+              </div>
+              <div>
+                <span className="text-zinc-500">Peso total:</span>
+                <span className="font-bold ml-2">{totalBobinas.toFixed(1)} kg</span>
+              </div>
+              <div>
+                <span className="text-zinc-500">Progresso:</span>
+                <span className="font-bold ml-2">{progresso}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Balanço de Massa */}
         <div className="bg-white rounded-xl border border-zinc-200 p-6">
           <h2 className="text-lg font-semibold text-zinc-900 mb-4">📊 Balanço de Massa</h2>
           
-          <div className="grid grid-cols-4 gap-4 mb-4">
+          <div className="grid grid-cols-3 gap-4 mb-4">
             <div className="text-center p-4 bg-zinc-50 rounded-xl">
-              <div className="text-sm text-zinc-500">Bobina</div>
-              <div className="text-2xl font-bold text-zinc-900">{Number(order.bobinaPesoInicial).toFixed(1)} kg</div>
+              <div className="text-sm text-zinc-500">Bobinas (Total)</div>
+              <div className="text-2xl font-bold text-zinc-900">{totalBobinas.toFixed(1)} kg</div>
             </div>
             <div className="text-center p-4 bg-green-50 rounded-xl">
               <div className="text-sm text-green-600">Produzido</div>
-              <div className="text-2xl font-bold text-green-700">{Number(order.pesoTotalProduzido).toFixed(1)} kg</div>
+              <div className="text-2xl font-bold text-green-700">{Number(order.pesoTotalProduzido || 0).toFixed(1)} kg</div>
             </div>
             <div className="text-center p-4 bg-red-50 rounded-xl">
               <div className="text-sm text-red-600">Apara</div>
               <div className="text-2xl font-bold text-red-700">{Number(order.totalApara).toFixed(1)} kg</div>
             </div>
-            <div className="text-center p-4 bg-blue-50 rounded-xl">
-              <div className="text-sm text-blue-600">Restante</div>
-              <div className="text-2xl font-bold text-blue-700">{pesoRestante.toFixed(1)} kg</div>
-            </div>
           </div>
 
-          {/* Barra de Progresso */}
-          <div>
-            <div className="flex justify-between text-sm text-zinc-500 mb-2">
-              <span>Progresso</span>
-              <span>{progresso}%</span>
-            </div>
-            <div className="h-4 bg-zinc-100 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-gradient-to-r from-green-500 to-green-400 rounded-full transition-all"
-                style={{ width: `${progresso}%` }}
-              />
-            </div>
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
+            ℹ️ Peso e quantidade serão lançados ao finalizar a OP
           </div>
-        </div>
-
-        {/* Peso Total */}
-        <div className="bg-white rounded-xl border border-zinc-200 p-6">
-          <h2 className="text-lg font-semibold text-zinc-900 mb-4">⚖️ Peso Total Produzido</h2>
-          <div className="flex gap-4">
-            <input
-              type="number"
-              step="0.1"
-              value={pesoForm.peso}
-              onChange={(e) => setPesoForm({ peso: e.target.value })}
-              placeholder="Peso total em kg"
-              className="flex-1 px-4 py-3 border border-zinc-300 rounded-lg text-xl font-bold focus:ring-2 focus:ring-[#FFD700] focus:border-transparent"
-            />
-            <button
-              onClick={handleUpdatePeso}
-              className="px-6 py-3 bg-[#FFD700] hover:bg-[#E6C200] rounded-lg font-medium transition-colors"
-            >
-              Atualizar
-            </button>
-          </div>
-          <p className="text-sm text-zinc-500 mt-2">
-            Pacotes gerados: {order.totalPacotes} ({order.totalUnidades} unidades)
-          </p>
         </div>
 
         {/* Aparas Lançadas */}
@@ -486,34 +539,174 @@ export default function OPDetailPage({ params }: { params: Promise<{ id: string 
           </div>
         )}
 
+        {/* Modal Trocar Bobina */}
+        {showTrocarBobinaModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl p-6 w-full max-w-md">
+              <h3 className="text-lg font-bold text-zinc-900 mb-4">🔄 Trocar Bobina</h3>
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                <p className="text-blue-800 text-sm">
+                  Bobina Atual: {bobinaAtual?.bobinaSku || '-'}
+                </p>
+              </div>
+              
+              <div className="space-y-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 mb-1">
+                    Peso Restante da Bobina Atual (kg)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={trocarBobinaForm.pesoRestante}
+                    onChange={(e) => setTrocarBobinaForm({ ...trocarBobinaForm, pesoRestante: e.target.value })}
+                    placeholder="Ex: 5.0"
+                    className="w-full px-4 py-2 border border-zinc-300 rounded-lg"
+                  />
+                </div>
+                
+                <div className="border-t border-zinc-200 pt-4">
+                  <h4 className="font-medium text-zinc-900 mb-3">Nova Bobina:</h4>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-700 mb-1">
+                        SKU da Nova Bobina *
+                      </label>
+                      <input
+                        type="text"
+                        value={trocarBobinaForm.novaBobinaSku}
+                        onChange={(e) => setTrocarBobinaForm({ ...trocarBobinaForm, novaBobinaSku: e.target.value })}
+                        placeholder="Digite o SKU"
+                        className="w-full px-4 py-2 border border-zinc-300 rounded-lg"
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-700 mb-1">
+                        Peso Inicial (kg) *
+                      </label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={trocarBobinaForm.novaBobinaPeso}
+                        onChange={(e) => setTrocarBobinaForm({ ...trocarBobinaForm, novaBobinaPeso: e.target.value })}
+                        placeholder="Ex: 100"
+                        className="w-full px-4 py-2 border border-zinc-300 rounded-lg"
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-700 mb-2">
+                        Origem
+                      </label>
+                      <div className="flex gap-4">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="origem"
+                            value="EXTRUSORA"
+                            checked={trocarBobinaForm.novaBobinaOrigem === 'EXTRUSORA'}
+                            onChange={(e) => setTrocarBobinaForm({ ...trocarBobinaForm, novaBobinaOrigem: e.target.value })}
+                            className="w-4 h-4"
+                          />
+                          <span className="text-sm">Extrusora</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="origem"
+                            value="TERCEIRO"
+                            checked={trocarBobinaForm.novaBobinaOrigem === 'TERCEIRO'}
+                            onChange={(e) => setTrocarBobinaForm({ ...trocarBobinaForm, novaBobinaOrigem: e.target.value })}
+                            className="w-4 h-4"
+                          />
+                          <span className="text-sm">Terceiro</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setShowTrocarBobinaModal(false)}
+                  className="flex-1 px-4 py-3 bg-zinc-100 hover:bg-zinc-200 rounded-lg font-medium"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleTrocarBobina}
+                  className="flex-1 px-4 py-3 bg-[#FFD700] hover:bg-[#E6C200] rounded-lg font-medium"
+                >
+                  ✅ Trocar e Continuar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Modal Finalizar */}
         {showFinalizarModal && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-white rounded-xl p-6 w-full max-w-md">
               <h3 className="text-lg font-bold text-zinc-900 mb-4">Finalizar Ordem de Produção</h3>
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+              
+              <div className="space-y-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 mb-1">
+                    Peso Total Produzido (kg) *
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={finalizarForm.peso}
+                    onChange={(e) => setFinalizarForm({ ...finalizarForm, peso: e.target.value })}
+                    placeholder="Ex: 2000.0"
+                    className="w-full px-4 py-2 border border-zinc-300 rounded-lg"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 mb-1">
+                    Quantidade de Pacotes *
+                  </label>
+                  <input
+                    type="number"
+                    value={finalizarForm.pacotes}
+                    onChange={(e) => setFinalizarForm({ ...finalizarForm, pacotes: e.target.value })}
+                    placeholder="Ex: 100"
+                    className="w-full px-4 py-2 border border-zinc-300 rounded-lg"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 mb-1">
+                    Quantidade de Unidades *
+                  </label>
+                  <input
+                    type="number"
+                    value={finalizarForm.unidades}
+                    onChange={(e) => setFinalizarForm({ ...finalizarForm, unidades: e.target.value })}
+                    placeholder="Ex: 100000"
+                    className="w-full px-4 py-2 border border-zinc-300 rounded-lg"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
                 <p className="text-yellow-800 text-sm">
-                  Ao finalizar, a ordem será enviada para conferência. Certifique-se de que todos os dados estão corretos.
+                  ⚠️ Após finalizar, a ordem será enviada para conferência.
                 </p>
               </div>
-              <div className="space-y-2 mb-4">
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Peso Total:</span>
-                  <span className="font-bold">{Number(order.pesoTotalProduzido).toFixed(1)} kg</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Apara Total:</span>
-                  <span className="font-bold">{Number(order.totalApara).toFixed(1)} kg</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Pacotes:</span>
-                  <span className="font-bold">{order.totalPacotes}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Unidades:</span>
-                  <span className="font-bold">{order.totalUnidades}</span>
-                </div>
-              </div>
+              
               <div className="flex gap-4">
                 <button
                   onClick={() => setShowFinalizarModal(false)}
