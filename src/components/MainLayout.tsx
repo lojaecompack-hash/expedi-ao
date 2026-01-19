@@ -63,6 +63,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
   // Menu items - ADMIN vê tudo, EXPEDICAO vê Dashboard/Retirada/Relatórios, PRODUCAO vê Dashboard
   const menuItems = userRole === 'ADMIN' ? [
     { href: '/', label: 'Dashboard', icon: Home },
+    { href: '/producao', label: 'Produção', icon: Factory },
     { href: '/expedicao/retirada', label: 'Retirada', icon: Truck },
     { href: '/admin/relatorios/retiradas', label: 'Relatórios', icon: BarChart3 },
     { href: '/usuarios', label: 'Usuários', icon: Users },
