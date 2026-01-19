@@ -42,6 +42,29 @@ enum ProductionOperatorType {
   EXTRUSORA
 }
 
+enum ProductionOrderStatus {
+  EM_ANDAMENTO
+  PAUSADA
+  AGUARDANDO_CONF
+  CONFERIDO
+  CANCELADO
+}
+
+enum TurnoType {
+  MANHA
+  TARDE
+  NOITE
+}
+
+enum ParadaType {
+  ALMOCO
+  MANUTENCAO
+  BANHEIRO
+  SETUP
+  FALTA_BOBINA
+  OUTROS
+}
+
 model User {
   id           String    @id @default(cuid())
   email        String    @unique
@@ -185,4 +208,195 @@ model SyncJob {
 
   @@index([status])
   @@index([scheduledAt])
+}
+
+// ========================================
+// MÓDULO DE PRODUÇÃO - CORTE E SOLDA
+// ========================================
+
+model Machine {
+  id             String   @id @default(cuid())
+  code           String   @unique
+  name           String
+  isActive       Boolean  @default(true)
+  currentOrderId String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  sessoes ProductionSession[]
+  paradas MachineParada[]
+}
+
+model ProductionOrder {
+  id                  String                @id @default(cuid())
+  code                String                @unique
+  
+  productSku          String
+  productName         String
+  productMeasure      String
+  
+  bobinaSku           String
+  bobinaPesoInicial   Decimal
+  bobinaPesoFinal     Decimal?
+  bobinaOrigem        String?
+  
+  turnoInicial        TurnoType
+  
+  pesoTotalProduzido  Decimal               @default(0)
+  totalApara          Decimal               @default(0)
+  totalPacotes        Int                   @default(0)
+  totalUnidades       Int                   @default(0)
+  
+  confPesoReal        Decimal?
+  confUnidadesReal    Int?
+  confPacotesReal     Int?
+  confDivergencia     Boolean               @default(false)
+  confObservacao      String?
+  confUserId          String?
+  confAt              DateTime?
+  
+  consumoCola         Decimal?
+  consumoLine         Decimal?
+  
+  status              ProductionOrderStatus @default(EM_ANDAMENTO)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  finishedAt          DateTime?
+  
+  createdByUserId     String
+  
+  pacotes   ProductionPackage[]
+  aparas    ProductionApara[]
+  sessoes   ProductionSession[]
+  
+  @@index([status])
+  @@index([productSku])
+  @@index([bobinaSku])
+}
+
+model ProductionSession {
+  id           String          @id @default(cuid())
+  orderId      String
+  order        ProductionOrder @relation(fields: [orderId], references: [id])
+  
+  operatorId   String
+  operatorName String
+  machineId    String
+  machine      Machine         @relation(fields: [machineId], references: [id])
+  turno        TurnoType
+  
+  inicioAt     DateTime        @default(now())
+  fimAt        DateTime?
+  
+  pesoSessao   Decimal         @default(0)
+  aparaSessao  Decimal         @default(0)
+  
+  createdAt    DateTime        @default(now())
+  
+  @@index([orderId])
+  @@index([operatorId])
+  @@index([machineId])
+}
+
+model ProductionPackage {
+  id               String          @id @default(cuid())
+  orderId          String
+  order            ProductionOrder @relation(fields: [orderId], references: [id])
+  
+  sequencia        Int
+  quantidade       Int
+  
+  sessionId        String?
+  operatorName     String?
+  machineName      String?
+  turno            TurnoType?
+  
+  etiquetaCodigo   String          @unique
+  etiquetaGerada   Boolean         @default(false)
+  etiquetaGeradaAt DateTime?
+  
+  conferido        Boolean         @default(false)
+  conferidoAt      DateTime?
+  
+  createdAt        DateTime        @default(now())
+  
+  @@index([orderId])
+  @@index([etiquetaCodigo])
+}
+
+model ProductionApara {
+  id           String          @id @default(cuid())
+  orderId      String
+  order        ProductionOrder @relation(fields: [orderId], references: [id])
+  
+  peso         Decimal
+  operatorId   String
+  operatorName String
+  machineId    String
+  turno        TurnoType
+  
+  createdAt    DateTime        @default(now())
+  
+  @@index([orderId])
+}
+
+model MachineParada {
+  id           String      @id @default(cuid())
+  machineId    String
+  machine      Machine     @relation(fields: [machineId], references: [id])
+  
+  tipo         ParadaType
+  motivo       String?
+  
+  operatorId   String?
+  operatorName String?
+  turno        TurnoType
+  
+  inicioAt     DateTime    @default(now())
+  fimAt        DateTime?
+  duracaoMin   Int?
+  
+  createdAt    DateTime    @default(now())
+  
+  @@index([machineId])
+  @@index([tipo])
+}
+
+model ProductionDivergencia {
+  id               String   @id @default(cuid())
+  orderId          String
+  
+  qtdOperador      Int
+  pesoOperador     Decimal
+  pacotesOperador  Int
+  
+  qtdConferido     Int
+  pesoConferido    Decimal
+  pacotesConferido Int
+  
+  qtdDiferenca     Int
+  pesoDiferenca    Decimal
+  
+  ajustadoPorId    String
+  ajustadoPorName  String
+  observacao       String?
+  
+  createdAt        DateTime @default(now())
+  
+  @@index([orderId])
+}
+
+model ProductionConfig {
+  id              String   @id @default(cuid())
+  
+  colaSku         String?
+  lineSku         String?
+  
+  colaPercent     Decimal?
+  lineMetrosPorKg Decimal?
+  
+  aparaEstimada   Json?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }

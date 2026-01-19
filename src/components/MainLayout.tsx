@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
-import { Package, Truck, Users, BarChart3, Wrench, Home, LogOut } from "lucide-react"
+import { Package, Truck, Users, BarChart3, Wrench, Home, LogOut, Factory } from "lucide-react"
 
 type UserRole = 'ADMIN' | 'EXPEDICAO' | 'PRODUCAO' | null
 
@@ -69,6 +69,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
     { href: '/setup/tiny', label: 'Configurações', icon: Wrench },
   ] : userRole === 'PRODUCAO' ? [
     { href: '/', label: 'Dashboard', icon: Home },
+    { href: '/producao', label: 'Produção', icon: Factory },
+    { href: '/producao/conferencia', label: 'Conferência', icon: BarChart3 },
   ] : [
     { href: '/', label: 'Dashboard', icon: Home },
     { href: '/expedicao/retirada', label: 'Retirada', icon: Truck },
