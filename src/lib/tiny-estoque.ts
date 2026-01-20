@@ -94,9 +94,9 @@ export async function atualizarEstoqueTinyV2(
       tipo: tipo === 'E' ? 'Entrada' : 'Saida'
     })
 
-    // XML SEM INDENTAÇÃO - crítico para funcionar
+    // XML SEM INDENTAÇÃO - usar codigo ao invés de idProduto
     const obsEscaped = observacoes.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    const estoqueXml = `<estoque><idProduto>${produto.id}</idProduto><tipo>${tipo}</tipo><quantidade>${quantidade}</quantidade><observacoes>${obsEscaped}</observacoes></estoque>`
+    const estoqueXml = `<estoque><codigo>${produto.codigo}</codigo><tipo>${tipo}</tipo><quantidade>${quantidade}</quantidade><observacoes>${obsEscaped}</observacoes></estoque>`
 
     const url = 'https://api.tiny.com.br/api2/produto.atualizar.estoque.php'
     
