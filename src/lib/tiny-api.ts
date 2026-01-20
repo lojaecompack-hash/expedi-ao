@@ -291,7 +291,7 @@ export async function atualizarEstoqueTiny(
     formData.append('formato', 'json')
     formData.append('estoque', estoqueXml)
 
-    console.log('[Tiny Estoque] Enviando estoque XML:', estoqueXml)
+    console.log('[Tiny Estoque] Enviando XML (sem indentacao):', estoqueXml)
 
     const response = await fetch(url, {
       method: 'POST',
