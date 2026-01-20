@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
-import { getTinyApiToken } from '@/lib/tiny-api'
+import { saidaEstoqueTiny } from '@/lib/tiny-api'
 
 // POST - Trocar bobina durante produção
 export async function POST(
@@ -69,36 +69,14 @@ export async function POST(
     })
 
     // Dar saída no estoque da Tiny (bobina consumida)
-    try {
-      const token = await getTinyApiToken()
-      
-      const tinyUrl = 'https://api.tiny.com.br/api2/produto.atualizar.estoque.php'
-      
-      const params = new URLSearchParams({
-        token,
-        formato: 'json',
-        idProduto: novaBobinaSku,
-        tipo: 'S', // S = Saída
-        quantidade: novaBobinaPeso.toString(),
-        observacoes: `Consumo OP ${order.code} - Bobina #${bobinaAtual.sequencia + 1}`
-      })
-
-      const tinyResponse = await fetch(`${tinyUrl}?${params}`, {
-        method: 'POST'
-      })
-
-      const tinyData = await tinyResponse.json()
-      
-      console.log('[Trocar Bobina] Resposta Tiny saída estoque:', JSON.stringify(tinyData, null, 2))
-
-      if (tinyData.retorno?.status === 'Erro') {
-        console.error('[Trocar Bobina] Erro ao dar saída no estoque Tiny:', tinyData.retorno)
-      } else {
-        console.log('[Trocar Bobina] Saída de estoque realizada:', novaBobinaSku, novaBobinaPeso, 'kg')
-      }
-    } catch (tinyError) {
-      console.error('[Trocar Bobina] Erro ao integrar com Tiny:', tinyError)
-      // Não falha a troca se houver erro na Tiny
+    const tinyResult = await saidaEstoqueTiny(
+      novaBobinaSku,
+      novaBobinaPeso,
+      `Consumo OP ${order.code} - Bobina #${bobinaAtual.sequencia + 1}`
+    )
+    
+    if (!tinyResult.success) {
+      console.error('[Trocar Bobina] Erro ao dar saida no estoque Tiny:', tinyResult.error)
     }
 
     // Buscar ordem atualizada

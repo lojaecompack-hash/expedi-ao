@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
-import { getTinyApiToken } from '@/lib/tiny-api'
+import { saidaEstoqueTiny } from '@/lib/tiny-api'
 
 // GET - Listar ordens de produção
 export async function GET(request: NextRequest) {
@@ -152,36 +152,14 @@ export async function POST(request: NextRequest) {
     })
 
     // Dar saída no estoque da Tiny (primeira bobina consumida)
-    try {
-      const token = await getTinyApiToken()
-      
-      const tinyUrl = 'https://api.tiny.com.br/api2/produto.atualizar.estoque.php'
-      
-      const params = new URLSearchParams({
-        token,
-        formato: 'json',
-        idProduto: bobinaSku,
-        tipo: 'S', // S = Saída
-        quantidade: bobinaPesoInicial.toString(),
-        observacoes: `Consumo OP ${code} - Bobina #1`
-      })
-
-      const tinyResponse = await fetch(`${tinyUrl}?${params}`, {
-        method: 'POST'
-      })
-
-      const tinyData = await tinyResponse.json()
-      
-      console.log('[Criar OP] Resposta Tiny saída estoque bobina:', JSON.stringify(tinyData, null, 2))
-
-      if (tinyData.retorno?.status === 'Erro') {
-        console.error('[Criar OP] Erro ao dar saída no estoque Tiny:', tinyData.retorno)
-      } else {
-        console.log('[Criar OP] Saída de estoque realizada:', bobinaSku, bobinaPesoInicial, 'kg')
-      }
-    } catch (tinyError) {
-      console.error('[Criar OP] Erro ao integrar com Tiny:', tinyError)
-      // Não falha a criação se houver erro na Tiny
+    const tinyResult = await saidaEstoqueTiny(
+      bobinaSku,
+      bobinaPesoInicial,
+      `Consumo OP ${code} - Bobina #1`
+    )
+    
+    if (!tinyResult.success) {
+      console.error('[Criar OP] Erro ao dar saida no estoque Tiny:', tinyResult.error)
     }
 
     return NextResponse.json({ ok: true, order })

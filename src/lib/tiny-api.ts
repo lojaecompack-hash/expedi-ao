@@ -168,6 +168,177 @@ export interface TinyOrderDetails {
   }>
 }
 
+// ==========================================
+// GESTÃO DE ESTOQUE TINY
+// ==========================================
+
+interface TinyProduto {
+  id: string
+  codigo: string
+  nome: string
+  unidade: string
+  preco: string
+}
+
+interface TinyEstoqueResult {
+  success: boolean
+  error: string | null
+  data: unknown
+  produtoId?: string
+  produtoNome?: string
+}
+
+/**
+ * Busca um produto na Tiny pelo código (SKU)
+ * Retorna o ID numérico do produto necessário para operações de estoque
+ */
+export async function getTinyProductBySku(sku: string): Promise<TinyProduto | null> {
+  try {
+    const token = await getTinyApiToken()
+    
+    const url = 'https://api.tiny.com.br/api2/produtos.pesquisa.php'
+    const params = new URLSearchParams({
+      token,
+      pesquisa: sku,
+      formato: 'json'
+    })
+
+    console.log('[Tiny Estoque] Buscando produto por SKU:', sku)
+
+    const response = await fetch(`${url}?${params}`)
+    const data = await response.json()
+
+    console.log('[Tiny Estoque] Resposta busca produto:', JSON.stringify(data, null, 2))
+
+    if (data.retorno?.status === 'OK' && data.retorno?.produtos) {
+      // Procurar produto com código exato
+      const produtos = data.retorno.produtos as Array<{ produto: TinyProduto }>
+      const produtoExato = produtos.find(p => p.produto.codigo === sku)
+      
+      if (produtoExato) {
+        console.log('[Tiny Estoque] Produto encontrado:', produtoExato.produto)
+        return produtoExato.produto
+      }
+      
+      // Se não encontrou exato, retorna o primeiro resultado
+      if (produtos.length > 0) {
+        console.log('[Tiny Estoque] Usando primeiro resultado:', produtos[0].produto)
+        return produtos[0].produto
+      }
+    }
+
+    console.log('[Tiny Estoque] Produto nao encontrado para SKU:', sku)
+    return null
+  } catch (error) {
+    console.error('[Tiny Estoque] Erro ao buscar produto:', error)
+    return null
+  }
+}
+
+/**
+ * Atualiza o estoque de um produto na Tiny
+ * @param sku Código do produto (SKU)
+ * @param quantidade Quantidade a movimentar
+ * @param tipo 'E' para entrada, 'S' para saída
+ * @param observacoes Observações da movimentação
+ */
+export async function atualizarEstoqueTiny(
+  sku: string,
+  quantidade: number,
+  tipo: 'E' | 'S',
+  observacoes: string
+): Promise<TinyEstoqueResult> {
+  const result: TinyEstoqueResult = { success: false, error: null, data: null }
+
+  try {
+    const token = await getTinyApiToken()
+    
+    if (!token) {
+      result.error = 'Token Tiny nao configurado'
+      return result
+    }
+
+    // Primeiro, buscar o ID do produto pelo SKU
+    const produto = await getTinyProductBySku(sku)
+    
+    if (!produto) {
+      result.error = `Produto nao encontrado na Tiny: ${sku}`
+      return result
+    }
+
+    result.produtoId = produto.id
+    result.produtoNome = produto.nome
+
+    console.log('[Tiny Estoque] Atualizando estoque:', {
+      produtoId: produto.id,
+      produtoNome: produto.nome,
+      produtoUnidade: produto.unidade,
+      quantidade,
+      tipo: tipo === 'E' ? 'Entrada' : 'Saida',
+      observacoes
+    })
+
+    const url = 'https://api.tiny.com.br/api2/produto.atualizar.estoque.php'
+    const params = new URLSearchParams({
+      token,
+      formato: 'json',
+      idProduto: produto.id,
+      tipo,
+      quantidade: quantidade.toString(),
+      observacoes
+    })
+
+    const response = await fetch(`${url}?${params}`, {
+      method: 'POST'
+    })
+
+    const data = await response.json()
+    result.data = data
+
+    console.log('[Tiny Estoque] Resposta atualizacao:', JSON.stringify(data, null, 2))
+
+    if (data.retorno?.status === 'Erro') {
+      result.error = data.retorno.erros?.[0]?.erro || 'Erro desconhecido da Tiny'
+      console.error('[Tiny Estoque] Erro:', result.error)
+    } else {
+      result.success = true
+      console.log('[Tiny Estoque] Estoque atualizado com sucesso!')
+    }
+
+    return result
+  } catch (error) {
+    console.error('[Tiny Estoque] Excecao:', error)
+    result.error = error instanceof Error ? error.message : String(error)
+    return result
+  }
+}
+
+/**
+ * Dá entrada no estoque (aumenta quantidade)
+ */
+export async function entradaEstoqueTiny(
+  sku: string,
+  quantidade: number,
+  observacoes: string
+): Promise<TinyEstoqueResult> {
+  return atualizarEstoqueTiny(sku, quantidade, 'E', observacoes)
+}
+
+/**
+ * Dá saída no estoque (diminui quantidade)
+ */
+export async function saidaEstoqueTiny(
+  sku: string,
+  quantidade: number,
+  observacoes: string
+): Promise<TinyEstoqueResult> {
+  return atualizarEstoqueTiny(sku, quantidade, 'S', observacoes)
+}
+
+// ==========================================
+// GESTÃO DE PEDIDOS TINY
+// ==========================================
+
 export async function getTinyOrderDetails(orderNumber: string): Promise<TinyOrderDetails | null> {
   try {
     const token = await getTinyApiToken()
