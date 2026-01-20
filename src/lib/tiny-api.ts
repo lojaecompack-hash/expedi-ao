@@ -13,11 +13,18 @@ interface TinyApiResponse<T = unknown> {
 }
 
 export async function getTinyApiToken(): Promise<string> {
-  // Prioridade 1: Variável de ambiente (para ambientes de teste/preview na Vercel)
-  const envToken = process.env.TINY_API_TOKEN_OVERRIDE
-  if (envToken) {
-    console.log('[Tiny API] Usando token de VARIÁVEL DE AMBIENTE (preview/dev)')
-    return envToken
+  // Detectar se está em ambiente de desenvolvimento pelo hostname
+  const isDev = typeof window !== 'undefined' 
+    ? window.location.hostname === 'dev.ecomlogic.com.br'
+    : process.env.VERCEL_URL?.includes('dev.ecomlogic.com.br')
+
+  // Prioridade 1: Se for dev.ecomlogic.com.br, usar token de teste
+  if (isDev) {
+    const envToken = process.env.TINY_API_TOKEN_OVERRIDE
+    if (envToken) {
+      console.log('[Tiny API] Usando token de TESTE (dev.ecomlogic.com.br)')
+      return envToken
+    }
   }
 
   // Prioridade 2: Token do banco de dados (produção)
