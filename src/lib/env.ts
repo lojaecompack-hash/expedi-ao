@@ -18,7 +18,20 @@ function detectEnvironment(): Environment {
   // Server-side: usar VERCEL_URL
   const vercelUrl = process.env.VERCEL_URL || ''
   
+  // Se for dev.ecomlogic.com.br, é desenvolvimento
   if (vercelUrl.includes('dev.ecomlogic.com.br')) {
+    return 'development'
+  }
+  
+  // Se for www.ecomlogic.com.br ou expedi-ao.vercel.app, é produção
+  if (vercelUrl.includes('www.ecomlogic.com.br') || vercelUrl.includes('expedi-ao.vercel.app')) {
+    return 'production'
+  }
+  
+  // Default: usar VERCEL_ENV para determinar
+  // Preview = desenvolvimento, Production = produção
+  const vercelEnv = process.env.VERCEL_ENV
+  if (vercelEnv === 'preview') {
     return 'development'
   }
   
@@ -32,21 +45,21 @@ export const IS_PROD = ENV === 'production'
 
 // Log do ambiente atual
 console.log(`[ENV] Ambiente detectado: ${ENV.toUpperCase()}`)
+console.log(`[ENV] VERCEL_URL: ${process.env.VERCEL_URL}`)
+console.log(`[ENV] VERCEL_ENV: ${process.env.VERCEL_ENV}`)
 
 /**
  * Configurações do banco de dados
  */
 export function getDatabaseUrl(): string {
+  // Desenvolvimento: usar variáveis de Preview
   if (IS_DEV) {
-    const devUrl = process.env.DATABASE_URL_DEV
-    if (devUrl) {
-      console.log('[ENV] Usando DATABASE_URL_DEV (desenvolvimento)')
-      return devUrl
-    }
-    console.warn('[ENV] DATABASE_URL_DEV não configurada, usando DATABASE_URL')
+    console.log('[ENV] Usando DATABASE_URL (Preview/Desenvolvimento)')
+    return process.env.DATABASE_URL || ''
   }
   
-  console.log('[ENV] Usando DATABASE_URL (produção)')
+  // Produção: usar DATABASE_URL
+  console.log('[ENV] Usando DATABASE_URL (Production)')
   return process.env.DATABASE_URL || ''
 }
 
@@ -54,30 +67,14 @@ export function getDatabaseUrl(): string {
  * Configurações do Supabase
  */
 export function getSupabaseUrl(): string {
-  if (IS_DEV) {
-    const devUrl = process.env.NEXT_PUBLIC_SUPABASE_URL_DEV
-    if (devUrl) {
-      console.log('[ENV] Usando SUPABASE_URL_DEV (desenvolvimento)')
-      return devUrl
-    }
-    console.warn('[ENV] SUPABASE_URL_DEV não configurada, usando padrão')
-  }
-  
-  console.log('[ENV] Usando SUPABASE_URL (produção)')
+  // Desenvolvimento e Produção usam as mesmas variáveis
+  // A Vercel separa automaticamente por ambiente (Production/Preview)
   return process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 }
 
 export function getSupabaseAnonKey(): string {
-  if (IS_DEV) {
-    const devKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY_DEV
-    if (devKey) {
-      console.log('[ENV] Usando SUPABASE_ANON_KEY_DEV (desenvolvimento)')
-      return devKey
-    }
-    console.warn('[ENV] SUPABASE_ANON_KEY_DEV não configurada, usando padrão')
-  }
-  
-  console.log('[ENV] Usando SUPABASE_ANON_KEY (produção)')
+  // Desenvolvimento e Produção usam as mesmas variáveis
+  // A Vercel separa automaticamente por ambiente (Production/Preview)
   return process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 }
 
