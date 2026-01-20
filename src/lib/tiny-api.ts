@@ -278,13 +278,10 @@ export async function atualizarEstoqueTiny(
       observacoes
     })
 
-    // Usar formato XML conforme documentação da Tiny
-    const estoqueXml = `<estoque>
-      <idProduto>${produto.id}</idProduto>
-      <tipo>${tipo}</tipo>
-      <quantidade>${quantidade}</quantidade>
-      <observacoes>${observacoes}</observacoes>
-    </estoque>`
+    // Usar formato XML conforme documentação da Tiny (sem indentação para evitar problemas)
+    // Escapar caracteres especiais nas observações
+    const obsEscaped = observacoes.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    const estoqueXml = `<estoque><idProduto>${produto.id}</idProduto><tipo>${tipo}</tipo><quantidade>${quantidade}</quantidade><observacoes>${obsEscaped}</observacoes></estoque>`
 
     const url = 'https://api.tiny.com.br/api2/produto.atualizar.estoque.php'
     
