@@ -279,8 +279,10 @@ export async function atualizarEstoqueTiny(
     })
 
     // Usar formato de parametro estoque como JSON estruturado
+    // idDeposito vazio usa o depósito padrão da Tiny
     const estoqueData = {
       idProduto: produto.id,
+      idDeposito: '',
       tipo: tipo,
       quantidade: quantidade.toString(),
       observacoes: observacoes
