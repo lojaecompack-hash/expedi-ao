@@ -1,5 +1,6 @@
 import { prisma } from './prisma'
 import { decrypt } from './crypto'
+import { IS_DEV, getTinyTestToken, ENV } from './env'
 
 interface TinyApiResponse<T = unknown> {
   retorno: {
@@ -13,21 +14,19 @@ interface TinyApiResponse<T = unknown> {
 }
 
 export async function getTinyApiToken(): Promise<string> {
-  // Detectar se está em ambiente de desenvolvimento pelo hostname
-  const isDev = typeof window !== 'undefined' 
-    ? window.location.hostname === 'dev.ecomlogic.com.br'
-    : process.env.VERCEL_URL?.includes('dev.ecomlogic.com.br')
+  console.log(`[Tiny API] Ambiente: ${ENV.toUpperCase()}`)
 
-  // Prioridade 1: Se for dev.ecomlogic.com.br, usar token de teste
-  if (isDev) {
-    const envToken = process.env.TINY_API_TOKEN_OVERRIDE
-    if (envToken) {
-      console.log('[Tiny API] Usando token de TESTE (dev.ecomlogic.com.br)')
-      return envToken
+  // Se for ambiente de desenvolvimento, usar token de teste
+  if (IS_DEV) {
+    const testToken = getTinyTestToken()
+    if (testToken) {
+      console.log('[Tiny API] Usando TOKEN DE TESTE (desenvolvimento)')
+      return testToken
     }
+    console.warn('[Tiny API] Token de teste não configurado, usando banco')
   }
 
-  // Prioridade 2: Token do banco de dados (produção)
+  // Token do banco de dados (produção ou fallback)
   const workspace = await prisma.workspace.findFirst({
     where: { name: 'Default' },
     include: { tinySettings: true }
@@ -37,7 +36,7 @@ export async function getTinyApiToken(): Promise<string> {
     throw new Error('Tiny ERP não configurado. Configure em /settings/integrations/tiny')
   }
 
-  console.log('[Tiny API] Usando token do BANCO DE DADOS (produção)')
+  console.log('[Tiny API] Usando TOKEN DO BANCO (produção)')
   return decrypt(workspace.tinySettings.apiTokenEncrypted)
 }
 
