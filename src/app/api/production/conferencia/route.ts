@@ -151,22 +151,15 @@ export async function POST(request: NextRequest) {
     try {
       const token = await getTinyApiToken()
       
-      // Usar endpoint de atualização de estoque
       const tinyUrl = 'https://api.tiny.com.br/api2/produto.atualizar.estoque.php'
       
-      // Preparar dados para entrada de estoque
-      const estoqueData = {
-        idProduto: order.productSku, // SKU do produto
-        tipo: 'E', // E = Entrada
-        quantidade: pacotesConferido,
-        observacoes: `Produção OP ${order.code} - Conferência`
-      }
-
       const params = new URLSearchParams({
         token,
         formato: 'json',
-        ...estoqueData,
-        quantidade: pacotesConferido.toString()
+        idProduto: order.productSku,
+        tipo: 'E',
+        quantidade: pacotesConferido.toString(),
+        observacoes: `Producao OP ${order.code} - Conferencia`
       })
 
       const tinyResponse = await fetch(`${tinyUrl}?${params}`, {
@@ -175,16 +168,15 @@ export async function POST(request: NextRequest) {
 
       const tinyData = await tinyResponse.json()
       
-      console.log('[Conferência] Resposta Tiny entrada estoque:', JSON.stringify(tinyData, null, 2))
+      console.log('[Conferencia] Resposta Tiny entrada estoque:', JSON.stringify(tinyData, null, 2))
 
       if (tinyData.retorno?.status === 'Erro') {
-        console.error('[Conferência] Erro ao dar entrada no estoque Tiny:', tinyData.retorno)
+        console.error('[Conferencia] Erro ao dar entrada no estoque Tiny:', tinyData.retorno)
       } else {
-        console.log('[Conferência] Entrada de estoque realizada com sucesso:', order.productSku, pacotesConferido, 'un')
+        console.log('[Conferencia] Entrada de estoque realizada com sucesso:', order.productSku, pacotesConferido, 'un')
       }
     } catch (tinyError) {
-      console.error('[Conferência] Erro ao integrar com Tiny:', tinyError)
-      // Não falha a conferência se houver erro na Tiny
+      console.error('[Conferencia] Erro ao integrar com Tiny:', tinyError)
     }
 
     return NextResponse.json({ 
