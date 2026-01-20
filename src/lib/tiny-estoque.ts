@@ -94,25 +94,26 @@ export async function atualizarEstoqueTinyV2(
       tipo: tipo === 'E' ? 'Entrada' : 'Saida'
     })
 
-    // XML SEM INDENTAÇÃO - usar codigo ao invés de idProduto
-    const obsEscaped = observacoes.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    const estoqueXml = `<estoque><codigo>${produto.codigo}</codigo><tipo>${tipo}</tipo><quantidade>${quantidade}</quantidade><observacoes>${obsEscaped}</observacoes></estoque>`
+    // FORMATO CORRETO: JSON com objeto aninhado "estoque"
+    const estoqueObj = {
+      estoque: {
+        idProduto: parseInt(produto.id),
+        tipo: tipo,
+        quantidade: quantidade,
+        observacoes: observacoes
+      }
+    }
 
     const url = 'https://api.tiny.com.br/api2/produto.atualizar.estoque.php'
-    
-    const formData = new URLSearchParams()
-    formData.append('token', token)
-    formData.append('formato', 'json')
-    formData.append('estoque', estoqueXml)
+    const postData = `token=${token}&formato=json&estoque=${encodeURIComponent(JSON.stringify(estoqueObj))}`
 
     console.log('[Tiny Estoque v2] Token usado:', token.substring(0, 20) + '...')
-    console.log('[Tiny Estoque v2] XML enviado (SEM indentacao):', estoqueXml)
-    console.log('[Tiny Estoque v2] Body completo:', formData.toString())
+    console.log('[Tiny Estoque v2] JSON enviado:', JSON.stringify(estoqueObj))
 
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: formData.toString()
+      body: postData
     })
 
     const data = await response.json()
