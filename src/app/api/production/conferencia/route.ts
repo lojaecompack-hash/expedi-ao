@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
-import { entradaEstoqueTiny } from '@/lib/tiny-api'
+import { entradaEstoqueTinyV2 } from '@/lib/tiny-estoque'
 
 // GET - Listar ordens aguardando conferência (agrupadas por turno)
 export async function GET() {
@@ -148,7 +148,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Dar entrada no estoque da Tiny (produto final produzido)
-    const tinyIntegrationResult = await entradaEstoqueTiny(
+    const tinyIntegrationResult = await entradaEstoqueTinyV2(
       order.productSku,
       pacotesConferido,
       `Producao OP ${order.code} - Conferencia`
