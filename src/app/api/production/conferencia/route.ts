@@ -148,35 +148,54 @@ export async function POST(request: NextRequest) {
     })
 
     // Dar entrada no estoque da Tiny (produto final produzido)
+    let tinyIntegrationResult: { success: boolean; error: string | null; data: unknown } = { success: false, error: null, data: null }
     try {
       const token = await getTinyApiToken()
       
-      const tinyUrl = 'https://api.tiny.com.br/api2/produto.atualizar.estoque.php'
-      
-      const params = new URLSearchParams({
-        token,
-        formato: 'json',
-        idProduto: order.productSku,
-        tipo: 'E',
-        quantidade: pacotesConferido.toString(),
-        observacoes: `Producao OP ${order.code} - Conferencia`
-      })
-
-      const tinyResponse = await fetch(`${tinyUrl}?${params}`, {
-        method: 'POST'
-      })
-
-      const tinyData = await tinyResponse.json()
-      
-      console.log('[Conferencia] Resposta Tiny entrada estoque:', JSON.stringify(tinyData, null, 2))
-
-      if (tinyData.retorno?.status === 'Erro') {
-        console.error('[Conferencia] Erro ao dar entrada no estoque Tiny:', tinyData.retorno)
+      if (!token) {
+        console.error('[Conferencia] Token Tiny nao encontrado')
+        tinyIntegrationResult.error = 'Token nao encontrado'
       } else {
-        console.log('[Conferencia] Entrada de estoque realizada com sucesso:', order.productSku, pacotesConferido, 'un')
+        const tinyUrl = 'https://api.tiny.com.br/api2/produto.atualizar.estoque.php'
+        
+        const params = new URLSearchParams({
+          token,
+          formato: 'json',
+          idProduto: order.productSku,
+          tipo: 'E',
+          quantidade: pacotesConferido.toString(),
+          observacoes: `Producao OP ${order.code} - Conferencia`
+        })
+
+        console.log('[Conferencia] Enviando para Tiny:', {
+          url: tinyUrl,
+          idProduto: order.productSku,
+          tipo: 'E',
+          quantidade: pacotesConferido,
+          observacoes: `Producao OP ${order.code} - Conferencia`
+        })
+
+        const tinyResponse = await fetch(`${tinyUrl}?${params}`, {
+          method: 'POST'
+        })
+
+        const tinyData = await tinyResponse.json()
+        
+        console.log('[Conferencia] Resposta Tiny entrada estoque:', JSON.stringify(tinyData, null, 2))
+
+        if (tinyData.retorno?.status === 'Erro') {
+          console.error('[Conferencia] Erro ao dar entrada no estoque Tiny:', tinyData.retorno)
+          tinyIntegrationResult.error = tinyData.retorno.erros?.[0]?.erro || 'Erro desconhecido'
+          tinyIntegrationResult.data = tinyData.retorno
+        } else {
+          console.log('[Conferencia] Entrada de estoque realizada com sucesso:', order.productSku, pacotesConferido, 'un')
+          tinyIntegrationResult.success = true
+          tinyIntegrationResult.data = tinyData.retorno
+        }
       }
     } catch (tinyError) {
       console.error('[Conferencia] Erro ao integrar com Tiny:', tinyError)
+      tinyIntegrationResult.error = tinyError instanceof Error ? tinyError.message : String(tinyError)
     }
 
     return NextResponse.json({ 
@@ -186,7 +205,8 @@ export async function POST(request: NextRequest) {
       consumoEstimado: {
         cola: consumoCola,
         line: consumoLine
-      }
+      },
+      tinyIntegration: tinyIntegrationResult
     })
   } catch (error) {
     console.error('Erro ao realizar conferência:', error)
