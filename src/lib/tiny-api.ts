@@ -278,25 +278,23 @@ export async function atualizarEstoqueTiny(
       observacoes
     })
 
-    // Usar formato de parametro estoque como JSON estruturado
-    // idDeposito vazio usa o depósito padrão da Tiny
-    const estoqueData = {
-      idProduto: produto.id,
-      idDeposito: '',
-      tipo: tipo,
-      quantidade: quantidade.toString(),
-      observacoes: observacoes
-    }
+    // Usar formato XML conforme documentação da Tiny
+    const estoqueXml = `<estoque>
+      <idProduto>${produto.id}</idProduto>
+      <tipo>${tipo}</tipo>
+      <quantidade>${quantidade}</quantidade>
+      <observacoes>${observacoes}</observacoes>
+    </estoque>`
 
     const url = 'https://api.tiny.com.br/api2/produto.atualizar.estoque.php'
     
-    // Enviar como POST com body
+    // Enviar como POST com body usando formato XML
     const formData = new URLSearchParams()
     formData.append('token', token)
     formData.append('formato', 'json')
-    formData.append('estoque', JSON.stringify(estoqueData))
+    formData.append('estoque', estoqueXml)
 
-    console.log('[Tiny Estoque] Enviando estoque:', JSON.stringify(estoqueData))
+    console.log('[Tiny Estoque] Enviando estoque XML:', estoqueXml)
 
     const response = await fetch(url, {
       method: 'POST',
