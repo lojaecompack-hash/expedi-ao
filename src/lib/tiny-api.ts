@@ -13,6 +13,14 @@ interface TinyApiResponse<T = unknown> {
 }
 
 export async function getTinyApiToken(): Promise<string> {
+  // Prioridade 1: Variável de ambiente (para ambientes de teste/preview na Vercel)
+  const envToken = process.env.TINY_API_TOKEN_OVERRIDE
+  if (envToken) {
+    console.log('[Tiny API] Usando token de VARIÁVEL DE AMBIENTE (preview/dev)')
+    return envToken
+  }
+
+  // Prioridade 2: Token do banco de dados (produção)
   const workspace = await prisma.workspace.findFirst({
     where: { name: 'Default' },
     include: { tinySettings: true }
@@ -22,17 +30,8 @@ export async function getTinyApiToken(): Promise<string> {
     throw new Error('Tiny ERP não configurado. Configure em /settings/integrations/tiny')
   }
 
-  const settings = workspace.tinySettings
-  
-  // Usar token de teste se environment = "test" e token de teste existir
-  if (settings.environment === 'test' && settings.apiTokenTestEncrypted) {
-    console.log('[Tiny API] Usando token de TESTE')
-    return decrypt(settings.apiTokenTestEncrypted)
-  }
-  
-  // Usar token de produção por padrão
-  console.log('[Tiny API] Usando token de PRODUÇÃO')
-  return decrypt(settings.apiTokenEncrypted)
+  console.log('[Tiny API] Usando token do BANCO DE DADOS (produção)')
+  return decrypt(workspace.tinySettings.apiTokenEncrypted)
 }
 
 interface TinyPedido {
