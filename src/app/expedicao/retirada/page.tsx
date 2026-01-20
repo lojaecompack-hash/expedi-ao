@@ -372,13 +372,17 @@ export default function RetiradaPage() {
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-zinc-900">Foto do Produto/Documento</label>
                   <div className="space-y-3">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      onChange={handlePhotoCapture}
-                      className="w-full text-sm text-zinc-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#FFD700] file:text-zinc-900 hover:file:bg-[#FFC700] cursor-pointer"
-                    />
+                    <label className="w-full bg-[#FFD700] text-zinc-900 font-semibold py-3 px-6 rounded-xl hover:bg-[#FFC700] transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer">
+                      <span className="text-2xl">📷</span>
+                      <span>{photo ? 'Tirar nova foto' : 'Tirar foto'}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        onChange={handlePhotoCapture}
+                        className="hidden"
+                      />
+                    </label>
                     {photo && (
                       <div className="relative">
                         <img src={photo} alt="Preview" className="w-full h-48 object-cover rounded-lg border border-zinc-200" />
