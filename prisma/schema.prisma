@@ -113,6 +113,8 @@ model TinySettings {
   id                String    @id @default(cuid())
   workspaceId       String    @unique
   apiTokenEncrypted String
+  apiTokenTestEncrypted String? // Token de teste da Tiny
+  environment       String    @default("production") // "production" ou "test"
   isActive          Boolean   @default(true)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt

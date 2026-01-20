@@ -22,7 +22,17 @@ export async function getTinyApiToken(): Promise<string> {
     throw new Error('Tiny ERP não configurado. Configure em /settings/integrations/tiny')
   }
 
-  return decrypt(workspace.tinySettings.apiTokenEncrypted)
+  const settings = workspace.tinySettings
+  
+  // Usar token de teste se environment = "test" e token de teste existir
+  if (settings.environment === 'test' && settings.apiTokenTestEncrypted) {
+    console.log('[Tiny API] Usando token de TESTE')
+    return decrypt(settings.apiTokenTestEncrypted)
+  }
+  
+  // Usar token de produção por padrão
+  console.log('[Tiny API] Usando token de PRODUÇÃO')
+  return decrypt(settings.apiTokenEncrypted)
 }
 
 interface TinyPedido {
