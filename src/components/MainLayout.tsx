@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
-import { Package, Truck, Users, BarChart3, Wrench, Home, LogOut, Factory } from "lucide-react"
+import { Package, Truck, Users, BarChart3, Wrench, Home, LogOut, Factory, Menu, X } from "lucide-react"
 
 type UserRole = 'ADMIN' | 'EXPEDICAO' | 'PRODUCAO' | null
 
@@ -17,6 +17,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const [userRole, setUserRole] = useState<UserRole>(null)
   const [userEmail, setUserEmail] = useState<string>('')
   const [loading, setLoading] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
     fetchUserRole()
@@ -80,9 +81,35 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
   return (
     <div className="min-h-screen bg-[#F9FAFB]">
+      {/* Mobile Header */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 h-16 bg-white border-b border-zinc-200 flex items-center justify-between px-4">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-[#FFD700] rounded-lg flex items-center justify-center">
+            <Package className="w-5 h-5 text-zinc-900" />
+          </div>
+          <span className="text-xl font-semibold text-zinc-900">Ecompack</span>
+        </div>
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="p-2 hover:bg-zinc-100 rounded-lg transition-colors"
+        >
+          {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
+      </div>
+
+      {/* Overlay for mobile */}
+      {sidebarOpen && (
+        <div
+          className="lg:hidden fixed inset-0 z-40 bg-black/50"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-white border-r border-zinc-200">
-        <div className="flex h-16 items-center px-6 border-b border-zinc-200">
+      <aside className={`fixed left-0 top-0 z-50 h-screen w-64 bg-white border-r border-zinc-200 transition-transform duration-300 ${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      } lg:translate-x-0`}>
+        <div className="hidden lg:flex h-16 items-center px-6 border-b border-zinc-200">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-[#FFD700] rounded-lg flex items-center justify-center">
               <Package className="w-5 h-5 text-zinc-900" />
@@ -141,8 +168,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <div className="pl-64">
-        <main className="p-8">
+      <div className="pt-16 lg:pt-0 lg:pl-64">
+        <main className="p-4 sm:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>
