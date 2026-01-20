@@ -278,18 +278,30 @@ export async function atualizarEstoqueTiny(
       observacoes
     })
 
-    const url = 'https://api.tiny.com.br/api2/produto.atualizar.estoque.php'
-    const params = new URLSearchParams({
-      token,
-      formato: 'json',
+    // Usar formato de parametro estoque como JSON estruturado
+    const estoqueData = {
       idProduto: produto.id,
-      tipo,
+      tipo: tipo,
       quantidade: quantidade.toString(),
-      observacoes
-    })
+      observacoes: observacoes
+    }
 
-    const response = await fetch(`${url}?${params}`, {
-      method: 'POST'
+    const url = 'https://api.tiny.com.br/api2/produto.atualizar.estoque.php'
+    
+    // Enviar como POST com body
+    const formData = new URLSearchParams()
+    formData.append('token', token)
+    formData.append('formato', 'json')
+    formData.append('estoque', JSON.stringify(estoqueData))
+
+    console.log('[Tiny Estoque] Enviando estoque:', JSON.stringify(estoqueData))
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: formData.toString()
     })
 
     const data = await response.json()
