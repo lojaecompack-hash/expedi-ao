@@ -7,6 +7,8 @@ export async function GET() {
     const supabase = await createSupabaseServerClient()
     const { data: { user } } = await supabase.auth.getUser()
 
+    console.log('[User Role API] Auth user email:', user?.email)
+
     if (!user) {
       return NextResponse.json(
         { ok: false, error: 'Usuário não autenticado' },
@@ -17,15 +19,20 @@ export async function GET() {
     // Buscar role do usuário no banco
     const dbUser = await prisma.user.findUnique({
       where: { email: user.email || '' },
-      select: { role: true, email: true, name: true }
+      select: { role: true, email: true, name: true, id: true }
     })
 
+    console.log('[User Role API] DB user found:', dbUser)
+
     if (!dbUser) {
+      console.log('[User Role API] Usuário não encontrado no banco para email:', user.email)
       return NextResponse.json(
         { ok: false, error: 'Usuário não encontrado no banco' },
         { status: 404 }
       )
     }
+
+    console.log('[User Role API] Retornando role:', dbUser.role)
 
     return NextResponse.json({
       ok: true,
