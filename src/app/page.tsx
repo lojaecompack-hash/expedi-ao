@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Package, TrendingUp, Users, Truck, BarChart3 } from "lucide-react"
 import Link from "next/link"
@@ -9,6 +10,7 @@ import DateFilter, { DateFilterOption } from "@/components/DateFilter"
 import StatsCard from "@/components/StatsCard"
 
 export default function Home() {
+  const router = useRouter()
   const [stats, setStats] = useState({
     retiradasHoje: 0,
     retiradasSemana: 0,
@@ -19,6 +21,31 @@ export default function Home() {
   const [dateFilter, setDateFilter] = useState<DateFilterOption>('hoje')
   const [customStartDate, setCustomStartDate] = useState('')
   const [customEndDate, setCustomEndDate] = useState('')
+  const [checkingRole, setCheckingRole] = useState(true)
+
+  // Verificar role do usuário e redirecionar se for OPERATOR
+  useEffect(() => {
+    async function checkUserRole() {
+      try {
+        const response = await fetch('/api/user/me')
+        if (response.ok) {
+          const userData = await response.json()
+          
+          // Se for OPERATOR, redirecionar para expedição
+          if (userData.role === 'OPERATOR' || userData.role === 'EXPEDICAO' || userData.role === 'PRODUCAO') {
+            router.replace('/expedicao/retirada')
+            return
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao verificar role:', error)
+      } finally {
+        setCheckingRole(false)
+      }
+    }
+    
+    checkUserRole()
+  }, [router])
 
   const fetchStats = useCallback(async () => {
     try {
@@ -102,6 +129,15 @@ export default function Home() {
   useEffect(() => {
     fetchStats()
   }, [fetchStats])
+
+  // Mostrar loading enquanto verifica role
+  if (checkingRole) {
+    return (
+      <div className="min-h-screen bg-zinc-50 flex items-center justify-center">
+        <div className="text-zinc-600">Carregando...</div>
+      </div>
+    )
+  }
 
   return (
     <MainLayout>
