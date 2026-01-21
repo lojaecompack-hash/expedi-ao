@@ -39,7 +39,24 @@ export default function LoginPage() {
         return
       }
 
-      window.location.href = nextPath
+      // Buscar role do usuário no banco
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (user) {
+        const response = await fetch('/api/user/me')
+        const userData = await response.json()
+        
+        // Redirecionar baseado na role
+        if (userData.role === 'ADMIN' || userData.role === 'OWNER') {
+          window.location.href = '/dashboard'
+        } else if (userData.role === 'OPERATOR') {
+          window.location.href = '/expedicao/retirada'
+        } else {
+          window.location.href = nextPath
+        }
+      } else {
+        window.location.href = nextPath
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Erro desconhecido'
       setError(msg)
