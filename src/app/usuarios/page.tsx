@@ -56,6 +56,13 @@ export default function UsuariosPage() {
         body: JSON.stringify(formData)
       })
 
+      // Verificar se a resposta é válida
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Erro desconhecido' }))
+        alert(errorData.error || `Erro HTTP ${res.status}`)
+        return
+      }
+
       const data = await res.json()
 
       if (data.ok) {
@@ -67,7 +74,9 @@ export default function UsuariosPage() {
       }
     } catch (error) {
       console.error('Erro ao criar usuário:', error)
-      alert('Erro ao criar usuário')
+      alert('Erro ao criar usuário. Verifique se o usuário foi criado antes de tentar novamente.')
+      // Atualizar lista mesmo em caso de erro, pois o usuário pode ter sido criado
+      fetchUsers()
     } finally {
       setCreating(false)
     }
