@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { prisma } from '@/lib/prisma'
 import { ModulePermission } from '@prisma/client'
 import bcrypt from 'bcryptjs'
@@ -53,9 +54,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Email já cadastrado' }, { status: 400 })
     }
 
-    // Criar usuário no Supabase Auth
+    // Criar usuário no Supabase Auth usando admin client
     console.log('[API /api/users/create] Criando usuário no Supabase Auth...')
-    const { data: newAuthUser, error: authError } = await supabase.auth.admin.createUser({
+    const supabaseAdmin = createSupabaseAdminClient()
+    const { data: newAuthUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
       email_confirm: true
