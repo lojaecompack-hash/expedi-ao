@@ -294,7 +294,12 @@ export default function RetiradaPage() {
             >
               <form onSubmit={onSubmit} className="space-y-6">
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-zinc-900">Número do pedido (Tiny)</label>
+                  <label className="block text-sm font-medium text-zinc-900">
+                    Número do pedido (Tiny)
+                    <span className="text-xs text-zinc-500 ml-2">
+                      Digite manualmente ou use leitor de código de barras
+                    </span>
+                  </label>
                   <div className="relative">
                     <Package className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-400" />
                     <input
@@ -303,8 +308,9 @@ export default function RetiradaPage() {
                       onChange={(e) => handleOrderNumberChange(e.target.value)}
                       inputMode="numeric"
                       className="w-full pl-10 pr-4 py-3 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent transition-all"
-                      placeholder="Ex: 12345"
+                      placeholder="Ex: 12345 ou use leitor de código de barras"
                       required
+                      autoFocus
                     />
                     {loadingOrder && (
                       <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
@@ -312,6 +318,9 @@ export default function RetiradaPage() {
                       </div>
                     )}
                   </div>
+                  <p className="text-xs text-zinc-500">
+                    💡 Dica: Mantenha o cursor neste campo e use o leitor de código de barras para preencher automaticamente
+                  </p>
                 </div>
 
                 <div className="space-y-2">
