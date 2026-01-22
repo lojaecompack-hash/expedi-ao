@@ -25,15 +25,21 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
   const fetchUserRole = async () => {
     try {
+      console.log('[MainLayout] Buscando role do usuário...')
       const res = await fetch('/api/user-role')
       const data = await res.json()
       
+      console.log('[MainLayout] Resposta da API:', data)
+      
       if (data.ok) {
+        console.log('[MainLayout] Role recebida:', data.role)
         setUserRole(data.role)
         setUserEmail(data.email || '')
+      } else {
+        console.error('[MainLayout] API retornou erro:', data.error)
       }
     } catch (error) {
-      console.error('Erro ao buscar role:', error)
+      console.error('[MainLayout] Erro ao buscar role:', error)
     } finally {
       setLoading(false)
     }
@@ -153,7 +159,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 {userEmail || 'Usuário'}
               </div>
               <div className="text-xs text-zinc-500">
-                {userRole === 'ADMIN' ? 'Administrador' : userRole === 'PRODUCAO' ? 'Produção' : 'Expedição'}
+                {userRole === 'ADMIN' ? 'Administrador' : userRole === 'PRODUCAO' ? 'Produção' : userRole === 'EXPEDICAO' ? 'Expedição' : 'Carregando...'}
               </div>
             </div>
           </div>
