@@ -78,10 +78,11 @@ export async function POST(request: NextRequest) {
     console.log('[API /api/users/create] Gerando hash da senha...')
     const passwordHash = await bcrypt.hash(password, 10)
 
-    // Criar usuário no banco
-    console.log('[API /api/users/create] Criando usuário no banco...')
+    // Criar usuário no banco com o MESMO ID do Supabase Auth
+    console.log('[API /api/users/create] Criando usuário no banco com ID:', newAuthUser.user.id)
     const newUser = await prisma.user.create({
       data: {
+        id: newAuthUser.user.id, // Usar o mesmo ID do Supabase Auth
         email,
         name,
         role,
