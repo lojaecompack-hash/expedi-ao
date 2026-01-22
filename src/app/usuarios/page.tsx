@@ -106,6 +106,30 @@ export default function UsuariosPage() {
     }
   }
 
+  const handleDelete = async (userId: string, userEmail: string) => {
+    if (!confirm(`Deseja realmente EXCLUIR o usuário ${userEmail}?\n\nEsta ação não pode ser desfeita!`)) return
+
+    try {
+      const res = await fetch('/api/users/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId })
+      })
+
+      const data = await res.json()
+
+      if (data.ok) {
+        alert('Usuário excluído com sucesso!')
+        fetchUsers()
+      } else {
+        alert(data.error || 'Erro ao excluir usuário')
+      }
+    } catch (error) {
+      console.error('Erro ao excluir usuário:', error)
+      alert('Erro ao excluir usuário')
+    }
+  }
+
   return (
     <MainLayout>
       <div className="space-y-8">
@@ -183,14 +207,25 @@ export default function UsuariosPage() {
                               <Eye className="w-4 h-4" />
                               Ver
                             </button>
-                            {user.isActive && user.role !== 'ADMIN' && (
-                              <button
-                                onClick={() => handleDeactivate(user.id)}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                                Desativar
-                              </button>
+                            {user.role !== 'ADMIN' && (
+                              <>
+                                {user.isActive && (
+                                  <button
+                                    onClick={() => handleDeactivate(user.id)}
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                    Desativar
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => handleDelete(user.id, user.email)}
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  Excluir
+                                </button>
+                              </>
                             )}
                           </div>
                         </td>
