@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
+import { ModulePermission } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
 export async function POST(request: NextRequest) {
@@ -96,9 +97,9 @@ export async function POST(request: NextRequest) {
 
     if (workspace) {
       // Criar membership
-      const permissions = role === 'ADMIN' 
-        ? ['ADMIN', 'SETTINGS', 'EXPEDICAO'] 
-        : ['EXPEDICAO']
+      const permissions: ModulePermission[] = role === 'ADMIN' 
+        ? [ModulePermission.ADMIN, ModulePermission.SETTINGS, ModulePermission.EXPEDICAO] 
+        : [ModulePermission.EXPEDICAO]
 
       console.log('[API /api/users/create] Criando membership com permissões:', permissions)
       await prisma.membership.create({
