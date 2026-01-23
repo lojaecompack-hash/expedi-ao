@@ -250,14 +250,18 @@ export default function RetiradaPage() {
       return
     }
 
-    // Se operador foi selecionado, validar senha
-    if (operatorId) {
-      setPendingSubmit(true)
-      setShowPasswordModal(true)
-    } else {
-      // Se não tem operador, processar direto
-      handlePasswordValidated()
+    // Operador é obrigatório
+    if (!operatorId) {
+      setSuccess(false)
+      setResult("❌ Selecione um operador")
+      // Auto-fechar erro após 2 segundos
+      setTimeout(() => setResult(""), 2000)
+      return
     }
+
+    // Validar senha do operador
+    setPendingSubmit(true)
+    setShowPasswordModal(true)
   }
 
   const handlePasswordValidated = async () => {
