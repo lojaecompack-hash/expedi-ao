@@ -150,10 +150,12 @@ export async function POST(req: Request) {
         cpfLast4,
         operatorId,
         operatorName,
+        customerName: pedido.cliente?.nome || body.retrieverName || null,
+        customerCpfCnpj: pedido.cliente?.cpf_cnpj || cpfDigits || null,
         retrieverName: body.retrieverName || null,
         photo: body.photo || null,
       },
-      select: { id: true, cpfLast4: true, operatorId: true, operatorName: true, retrieverName: true, photo: true, createdAt: true },
+      select: { id: true, cpfLast4: true, operatorId: true, operatorName: true, customerName: true, customerCpfCnpj: true, retrieverName: true, photo: true, createdAt: true },
     })
 
     return NextResponse.json({

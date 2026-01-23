@@ -175,14 +175,16 @@ model ProductionOperator {
 }
 
 model Pickup {
-  id            String    @id @default(cuid())
-  orderId       String
-  cpfLast4      String?
-  operatorId    String?
-  operatorName  String?
-  retrieverName String?
-  photo         String?   @db.Text
-  createdAt     DateTime  @default(now())
+  id              String    @id @default(cuid())
+  orderId         String
+  cpfLast4        String?
+  operatorId      String?
+  operatorName    String?
+  customerName    String?
+  customerCpfCnpj String?
+  retrieverName   String?
+  photo           String?   @db.Text
+  createdAt       DateTime  @default(now())
 
   order         Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
   operator      Operator? @relation(fields: [operatorId], references: [id])
