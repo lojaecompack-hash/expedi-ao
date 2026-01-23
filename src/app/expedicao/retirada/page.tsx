@@ -296,17 +296,29 @@ export default function RetiradaPage() {
 
       const data = await res.json()
       
+      console.log('[Retirada] Status HTTP:', res.status)
+      console.log('[Retirada] Response OK:', res.ok)
+      console.log('[Retirada] Data:', data)
+      console.log('[Retirada] Data.ok:', data.ok)
+      
       if (res.ok && data.ok) {
         setSuccess(true)
-        setResult(`✅ Retirada registrada com sucesso!\n\nPedido: ${data.order.orderNumber}\nID: ${data.order.tinyOrderId}\nOperador: ${data.pickup.operator || "Não informado"}\nStatus: ${data.tiny.situacao}`)
-        setOrderNumber("")
-        setCpf("")
-        setOperatorId("")
-        setRetrieverName("")
-        setOrderDetails(null)
-        setCheckedItems({})
-        setPhoto(null)
+        const operatorName = data.pickup?.operatorId ? operators.find(op => op.id === data.pickup.operatorId)?.name || "Não informado" : "Não informado"
+        setResult(`✅ Retirada registrada com sucesso!\n\nPedido: ${data.order.orderNumber}\nID: ${data.order.tinyOrderId}\nOperador: ${operatorName}\nStatus: ${data.tiny.situacao}`)
+        
+        // Limpar formulário após 3 segundos
+        setTimeout(() => {
+          setOrderNumber("")
+          setCpf("")
+          setOperatorId("")
+          setRetrieverName("")
+          setOrderDetails(null)
+          setCheckedItems({})
+          setPhoto(null)
+          setResult("")
+        }, 3000)
       } else {
+        console.error('[Retirada] Erro na resposta:', data.error)
         setSuccess(false)
         setResult(`❌ Erro ao registrar retirada\n\n${data.error || "Erro desconhecido"}`)
         // Auto-fechar erro após 2 segundos
