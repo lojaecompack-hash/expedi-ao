@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { CheckCircle, AlertCircle, User, Settings, Package, Truck, Camera } from "lucide-react"
 import MainLayout from "@/components/MainLayout"
 import PasswordValidationModal from "@/components/PasswordValidationModal"
+import { BrowserMultiFormatReader } from "@zxing/library"
 
 interface OrderDetails {
   id: string
@@ -143,17 +144,43 @@ export default function RetiradaPage() {
     scannerInputRef.current?.click()
   }
   
-  // Processar imagem escaneada
+  // Processar imagem escaneada e ler código de barras automaticamente
   const handleScanCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     
-    // Por enquanto, vamos pedir ao usuário digitar o número
-    // TODO: Implementar OCR para ler código de barras da imagem
-    const number = prompt('Digite o número do pedido que aparece no código de barras:')
-    if (number) {
-      setOrderNumber(number)
-      searchOrder(number)
+    try {
+      // Criar URL da imagem
+      const imageUrl = URL.createObjectURL(file)
+      
+      // Criar elemento de imagem
+      const img = new Image()
+      img.src = imageUrl
+      
+      await new Promise((resolve) => {
+        img.onload = resolve
+      })
+      
+      // Ler código de barras da imagem
+      const codeReader = new BrowserMultiFormatReader()
+      const result = await codeReader.decodeFromImageElement(img)
+      
+      // Limpar URL temporária
+      URL.revokeObjectURL(imageUrl)
+      
+      if (result && result.getText()) {
+        const barcode = result.getText()
+        console.log('Código de barras lido:', barcode)
+        
+        // Carregar pedido automaticamente
+        setOrderNumber(barcode)
+        searchOrder(barcode)
+      } else {
+        alert('Não foi possível ler o código de barras. Tente novamente ou digite manualmente.')
+      }
+    } catch (error) {
+      console.error('Erro ao ler código de barras:', error)
+      alert('Erro ao ler código de barras. Tente novamente ou digite manualmente.')
     }
     
     // Limpar input para permitir nova captura
