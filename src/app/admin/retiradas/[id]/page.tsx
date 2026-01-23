@@ -9,7 +9,10 @@ import { useParams } from "next/navigation"
 interface Retirada {
   id: string
   cpfLast4: string | null
-  operator: string | null
+  operatorId: string | null
+  operatorName: string | null
+  customerName: string | null
+  customerCpfCnpj: string | null
   retrieverName: string | null
   photo: string | null
   createdAt: string
@@ -196,11 +199,11 @@ export default function DetalhesRetirada() {
               </div>
               <div>
                 <p className="text-sm text-zinc-600 mb-1">CPF</p>
-                <p className="text-lg font-semibold text-zinc-900">***{retirada.cpfLast4 || 'N/A'}</p>
+                <p className="text-lg font-semibold text-zinc-900">{retirada.customerCpfCnpj || retirada.cpfLast4 || 'N/A'}</p>
               </div>
               <div>
                 <p className="text-sm text-zinc-600 mb-1">Operador</p>
-                <p className="text-lg font-semibold text-zinc-900">{retirada.operator || 'Não informado'}</p>
+                <p className="text-lg font-semibold text-zinc-900">{retirada.operatorName || 'Não informado'}</p>
               </div>
               <div>
                 <p className="text-sm text-zinc-600 mb-1">Data da Retirada</p>

@@ -9,7 +9,10 @@ import MainLayout from "@/components/MainLayout"
 interface Retirada {
   id: string
   cpfLast4: string | null
-  operator: string | null
+  operatorId: string | null
+  operatorName: string | null
+  customerName: string | null
+  customerCpfCnpj: string | null
   retrieverName: string | null
   photo: string | null
   createdAt: string
@@ -51,7 +54,7 @@ export default function RelatorioRetiradas() {
   const filteredRetiradas = retiradas.filter(r => 
     r.order.orderNumber.toLowerCase().includes(search.toLowerCase()) ||
     r.retrieverName?.toLowerCase().includes(search.toLowerCase()) ||
-    r.operator?.toLowerCase().includes(search.toLowerCase())
+    r.operatorName?.toLowerCase().includes(search.toLowerCase())
   )
 
   return (
@@ -176,11 +179,11 @@ export default function RelatorioRetiradas() {
                         <td className="px-6 py-4">
                           <div>
                             <p className="font-medium text-zinc-900">{retirada.retrieverName || 'N/A'}</p>
-                            <p className="text-sm text-zinc-600">CPF: ***{retirada.cpfLast4 || 'N/A'}</p>
+                            <p className="text-sm text-zinc-600">CPF: {retirada.customerCpfCnpj || retirada.cpfLast4 || 'N/A'}</p>
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <p className="text-zinc-900">{retirada.operator || 'N/A'}</p>
+                          <p className="text-zinc-900">{retirada.operatorName || 'N/A'}</p>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2 text-zinc-600">
