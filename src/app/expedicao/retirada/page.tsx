@@ -245,8 +245,8 @@ export default function RetiradaPage() {
     if (!orderNumber || !cpf || !retrieverName.trim()) {
       setSuccess(false)
       setResult("❌ Preencha todos os campos obrigatórios")
-      // Auto-fechar erro após 2 segundos
-      setTimeout(() => setResult(""), 2000)
+      // Auto-fechar erro após 10 segundos
+      setTimeout(() => setResult(""), 10000)
       return
     }
 
@@ -254,8 +254,8 @@ export default function RetiradaPage() {
     if (!operatorId) {
       setSuccess(false)
       setResult("❌ Selecione um operador")
-      // Auto-fechar erro após 2 segundos
-      setTimeout(() => setResult(""), 2000)
+      // Auto-fechar erro após 10 segundos
+      setTimeout(() => setResult(""), 10000)
       return
     }
 
@@ -263,8 +263,8 @@ export default function RetiradaPage() {
     if (!photo) {
       setSuccess(false)
       setResult("❌ Tire uma foto do produto/documento")
-      // Auto-fechar erro após 2 segundos
-      setTimeout(() => setResult(""), 2000)
+      // Auto-fechar erro após 10 segundos
+      setTimeout(() => setResult(""), 10000)
       return
     }
 
@@ -283,8 +283,8 @@ export default function RetiradaPage() {
     if (orderDetails && !allItemsChecked) {
       setResult("❌ Todos os produtos devem ser conferidos (marcados)")
       setSuccess(false)
-      // Auto-fechar erro após 2 segundos
-      setTimeout(() => setResult(""), 2000)
+      // Auto-fechar erro após 10 segundos
+      setTimeout(() => setResult(""), 10000)
       return
     }
     
@@ -334,15 +334,15 @@ export default function RetiradaPage() {
         console.error('[Retirada] Erro na resposta:', data.error)
         setSuccess(false)
         setResult(`❌ Erro ao registrar retirada\n\n${data.error || "Erro desconhecido"}`)
-        // Auto-fechar erro após 2 segundos
-        setTimeout(() => setResult(""), 2000)
+        // Auto-fechar erro após 10 segundos
+        setTimeout(() => setResult(""), 10000)
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Erro desconhecido"
       setSuccess(false)
       setResult(`❌ Erro de conexão\n\n${msg}`)
-      // Auto-fechar erro após 2 segundos
-      setTimeout(() => setResult(""), 2000)
+      // Auto-fechar erro após 10 segundos
+      setTimeout(() => setResult(""), 10000)
     } finally {
       setLoading(false)
     }
