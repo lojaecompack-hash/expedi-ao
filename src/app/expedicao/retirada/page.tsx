@@ -2,10 +2,9 @@
 
 import { useState, useEffect, useRef } from "react"
 import { motion } from "framer-motion"
-import { CheckCircle, AlertCircle, User, Settings, Package, Truck, Camera, X } from "lucide-react"
+import { CheckCircle, AlertCircle, User, Settings, Package, Truck, Camera } from "lucide-react"
 import MainLayout from "@/components/MainLayout"
 import PasswordValidationModal from "@/components/PasswordValidationModal"
-import { Html5Qrcode } from "html5-qrcode"
 
 interface OrderDetails {
   id: string
@@ -52,23 +51,12 @@ export default function RetiradaPage() {
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [pendingSubmit, setPendingSubmit] = useState(false)
   
-  // Estados para scanner de código de barras
-  const [showScanner, setShowScanner] = useState(false)
-  const [scanning, setScanning] = useState(false)
-  const scannerRef = useRef<Html5Qrcode | null>(null)
+  // Ref para input de scanner
+  const scannerInputRef = useRef<HTMLInputElement>(null)
   
   useEffect(() => {
     fetchOperators()
   }, [])
-  
-  // Cleanup scanner on unmount
-  useEffect(() => {
-    return () => {
-      if (scannerRef.current && scanning) {
-        scannerRef.current.stop().catch(console.error)
-      }
-    }
-  }, [scanning])
   
   const fetchOperators = async () => {
     try {
@@ -150,54 +138,26 @@ export default function RetiradaPage() {
     setSearchTimeout(timeout)
   }
   
-  // Iniciar scanner de código de barras
-  const startScanner = async () => {
-    setShowScanner(true)
-    setScanning(true)
-    
-    try {
-      const scanner = new Html5Qrcode("barcode-reader")
-      scannerRef.current = scanner
-      
-      await scanner.start(
-        { facingMode: "environment" },
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 150 },
-          aspectRatio: 1.777778
-        },
-        (decodedText) => {
-          // Código lido com sucesso - carregar dados IMEDIATAMENTE
-          console.log("Código lido:", decodedText)
-          setOrderNumber(decodedText)
-          searchOrder(decodedText) // Buscar dados imediatamente
-          stopScanner()
-        },
-        (errorMessage) => {
-          // Erro de leitura (normal durante scan)
-        }
-      )
-    } catch (err) {
-      console.error("Erro ao iniciar scanner:", err)
-      alert("Erro ao acessar câmera. Verifique as permissões.")
-      setShowScanner(false)
-      setScanning(false)
-    }
+  // Abrir câmera para escanear
+  const handleScanClick = () => {
+    scannerInputRef.current?.click()
   }
   
-  // Parar scanner
-  const stopScanner = async () => {
-    if (scannerRef.current && scanning) {
-      try {
-        await scannerRef.current.stop()
-        scannerRef.current.clear()
-      } catch (err) {
-        console.error("Erro ao parar scanner:", err)
-      }
+  // Processar imagem escaneada
+  const handleScanCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    // Por enquanto, vamos pedir ao usuário digitar o número
+    // TODO: Implementar OCR para ler código de barras da imagem
+    const number = prompt('Digite o número do pedido que aparece no código de barras:')
+    if (number) {
+      setOrderNumber(number)
+      searchOrder(number)
     }
-    setShowScanner(false)
-    setScanning(false)
-    scannerRef.current = null
+    
+    // Limpar input para permitir nova captura
+    e.target.value = ''
   }
 
   // Toggle checkbox individual
@@ -366,12 +326,20 @@ export default function RetiradaPage() {
                   {/* Botão de Scanner */}
                   <button
                     type="button"
-                    onClick={startScanner}
+                    onClick={handleScanClick}
                     className="w-full bg-[#FFD700] text-zinc-900 font-semibold py-4 px-6 rounded-xl hover:bg-[#FFC700] transition-all duration-200 flex items-center justify-center gap-3 shadow-sm"
                   >
                     <Camera className="w-6 h-6" />
                     <span className="text-lg">Escanear Pedido</span>
                   </button>
+                  <input
+                    ref={scannerInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handleScanCapture}
+                    className="hidden"
+                  />
                   
                   <div className="text-center text-sm text-zinc-500">
                     ou digite manualmente:
@@ -570,30 +538,7 @@ export default function RetiradaPage() {
             )}
           </motion.div>
 
-          {/* Modal de Scanner */}
-          {showScanner && (
-            <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden">
-                <div className="p-4 bg-[#FFD700] flex items-center justify-between">
-                  <h3 className="font-semibold text-zinc-900 text-lg">Escanear Pedido</h3>
-                  <button
-                    onClick={stopScanner}
-                    className="w-8 h-8 bg-zinc-900 text-white rounded-lg flex items-center justify-center hover:bg-zinc-800 transition-colors"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-                <div className="p-4">
-                  <div id="barcode-reader" className="w-full rounded-lg overflow-hidden"></div>
-                  <p className="text-sm text-zinc-600 mt-4 text-center">
-                    Aponte a câmera para o código de barras do pedido
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Modal de Validação de Senha */}
+          {/* Modal de Validação de Senha */
           {showPasswordModal && operatorId && (
             <PasswordValidationModal
               operatorId={operatorId}
