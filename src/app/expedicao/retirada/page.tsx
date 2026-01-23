@@ -222,16 +222,66 @@ export default function RetiradaPage() {
     setCheckedItems(newChecks)
   }
 
-  // Capturar foto via input file
-  const handlePhotoCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Comprimir imagem usando Canvas
+  const compressImage = (file: File, maxWidth: number = 800, quality: number = 0.6): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const img = new Image()
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          let width = img.width
+          let height = img.height
+          
+          // Redimensionar se for maior que maxWidth
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width
+            width = maxWidth
+          }
+          
+          canvas.width = width
+          canvas.height = height
+          
+          const ctx = canvas.getContext('2d')
+          if (!ctx) {
+            reject(new Error('Erro ao criar contexto canvas'))
+            return
+          }
+          
+          ctx.drawImage(img, 0, 0, width, height)
+          
+          // Converter para JPEG com qualidade reduzida
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', quality)
+          console.log('[Foto] Original:', Math.round(file.size / 1024), 'KB')
+          console.log('[Foto] Comprimido:', Math.round(compressedDataUrl.length / 1024), 'KB')
+          resolve(compressedDataUrl)
+        }
+        img.onerror = () => reject(new Error('Erro ao carregar imagem'))
+        img.src = e.target?.result as string
+      }
+      reader.onerror = () => reject(new Error('Erro ao ler arquivo'))
+      reader.readAsDataURL(file)
+    })
+  }
+
+  // Capturar foto via input file (com compressão)
+  const handlePhotoCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      setPhoto(reader.result as string)
+    try {
+      // Comprimir imagem para max 800px largura e 60% qualidade
+      const compressedPhoto = await compressImage(file, 800, 0.6)
+      setPhoto(compressedPhoto)
+    } catch (error) {
+      console.error('[Foto] Erro ao comprimir:', error)
+      // Fallback para método original se compressão falhar
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setPhoto(reader.result as string)
+      }
+      reader.readAsDataURL(file)
     }
-    reader.readAsDataURL(file)
   }
 
   // Limpar foto
