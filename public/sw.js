@@ -1,5 +1,5 @@
 // Service Worker para PWA
-const CACHE_NAME = 'expedicao-v2';
+const CACHE_NAME = 'expedicao-v3';
 
 self.addEventListener('install', (event) => {
   console.log('[SW] Service Worker instalado');
