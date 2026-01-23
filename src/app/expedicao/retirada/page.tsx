@@ -56,29 +56,10 @@ export default function RetiradaPage() {
   const [showScanner, setShowScanner] = useState(false)
   const [scanning, setScanning] = useState(false)
   const scannerRef = useRef<Html5Qrcode | null>(null)
-  const [cameraPermissionRequested, setCameraPermissionRequested] = useState(false)
   
   useEffect(() => {
     fetchOperators()
-    
-    // Solicitar permissão de câmera automaticamente ao carregar a página
-    const requestCameraPermission = async () => {
-      if (cameraPermissionRequested) return
-      
-      try {
-        // Solicitar permissão de câmera
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-        // Parar o stream imediatamente após obter permissão
-        stream.getTracks().forEach(track => track.stop())
-        setCameraPermissionRequested(true)
-      } catch (err) {
-        console.log('Permissão de câmera não concedida:', err)
-        setCameraPermissionRequested(true)
-      }
-    }
-    
-    requestCameraPermission()
-  }, [cameraPermissionRequested])
+  }, [])
   
   // Cleanup scanner on unmount
   useEffect(() => {
