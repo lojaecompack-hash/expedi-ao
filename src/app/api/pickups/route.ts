@@ -43,6 +43,16 @@ export async function POST(req: Request) {
     const operatorId = body.operatorId || null
     const cpfLast4 = cpfDigits.slice(-4)
 
+    // Buscar nome do operador se operatorId foi fornecido
+    let operatorName: string | null = null
+    if (operatorId) {
+      const operator = await prisma.operator.findUnique({
+        where: { id: operatorId },
+        select: { name: true }
+      })
+      operatorName = operator?.name || null
+    }
+
     console.log('[Pickups] Buscando pedido no Tiny:', orderNumber)
     let pedido
     try {
@@ -139,10 +149,11 @@ export async function POST(req: Request) {
         orderId: order.id,
         cpfLast4,
         operatorId,
+        operatorName,
         retrieverName: body.retrieverName || null,
         photo: body.photo || null,
       },
-      select: { id: true, cpfLast4: true, operatorId: true, retrieverName: true, photo: true, createdAt: true },
+      select: { id: true, cpfLast4: true, operatorId: true, operatorName: true, retrieverName: true, photo: true, createdAt: true },
     })
 
     return NextResponse.json({
