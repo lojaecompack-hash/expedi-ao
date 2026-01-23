@@ -179,6 +179,7 @@ model Pickup {
   orderId       String
   cpfLast4      String?
   operatorId    String?
+  operatorName  String?
   retrieverName String?
   photo         String?   @db.Text
   createdAt     DateTime  @default(now())
