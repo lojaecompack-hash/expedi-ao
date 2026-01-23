@@ -289,12 +289,45 @@ export default function RetiradaPage() {
     setPhoto(null)
   }
 
+  // Validar nome do retirante
+  const validateRetrieverName = (name: string): { valid: boolean; message: string } => {
+    const trimmedName = name.trim()
+    
+    // Verificar se contém números
+    if (/\d/.test(trimmedName)) {
+      return { valid: false, message: "Nome do retirante não pode conter números" }
+    }
+    
+    // Verificar se tem pelo menos nome e sobrenome (2 palavras)
+    const words = trimmedName.split(/\s+/).filter(word => word.length > 0)
+    if (words.length < 2) {
+      return { valid: false, message: "Informe o nome completo (nome e sobrenome)" }
+    }
+    
+    // Verificar se cada palavra tem pelo menos 2 caracteres
+    if (words.some(word => word.length < 2)) {
+      return { valid: false, message: "Nome e sobrenome devem ter pelo menos 2 letras cada" }
+    }
+    
+    return { valid: true, message: "" }
+  }
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     if (!orderNumber || !cpf || !retrieverName.trim()) {
       setSuccess(false)
       setResult("❌ Preencha todos os campos obrigatórios")
+      // Auto-fechar erro após 10 segundos
+      setTimeout(() => setResult(""), 10000)
+      return
+    }
+
+    // Validar nome do retirante
+    const nameValidation = validateRetrieverName(retrieverName)
+    if (!nameValidation.valid) {
+      setSuccess(false)
+      setResult(`❌ ${nameValidation.message}`)
       // Auto-fechar erro após 10 segundos
       setTimeout(() => setResult(""), 10000)
       return
