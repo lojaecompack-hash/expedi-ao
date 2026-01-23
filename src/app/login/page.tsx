@@ -49,8 +49,10 @@ export default function LoginPage() {
         // Redirecionar baseado na role
         if (userData.role === 'ADMIN' || userData.role === 'OWNER') {
           window.location.href = '/dashboard'
-        } else if (userData.role === 'OPERATOR') {
+        } else if (userData.role === 'EXPEDICAO' || userData.role === 'OPERATOR') {
           window.location.href = '/expedicao/retirada'
+        } else if (userData.role === 'PRODUCAO') {
+          window.location.href = '/producao'
         } else {
           window.location.href = nextPath
         }
