@@ -307,10 +307,23 @@ export default function RetiradaPage() {
         }),
       })
 
-      const data = await res.json()
-      
       console.log('[Retirada] Status HTTP:', res.status)
       console.log('[Retirada] Response OK:', res.ok)
+      console.log('[Retirada] Content-Type:', res.headers.get('content-type'))
+
+      // Verificar se a resposta é JSON
+      const contentType = res.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await res.text()
+        console.error('[Retirada] Resposta não é JSON:', text)
+        setSuccess(false)
+        setResult(`❌ Erro no servidor\n\nStatus: ${res.status}\nResposta inválida (não é JSON)\n\nDetalhes: ${text.substring(0, 200)}`)
+        setTimeout(() => setResult(""), 10000)
+        return
+      }
+
+      const data = await res.json()
+      
       console.log('[Retirada] Data:', data)
       console.log('[Retirada] Data.ok:', data.ok)
       
@@ -339,6 +352,7 @@ export default function RetiradaPage() {
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Erro desconhecido"
+      console.error('[Retirada] Exception:', err)
       setSuccess(false)
       setResult(`❌ Erro de conexão\n\n${msg}`)
       // Auto-fechar erro após 10 segundos
