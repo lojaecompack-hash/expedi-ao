@@ -259,6 +259,15 @@ export default function RetiradaPage() {
       return
     }
 
+    // Foto é obrigatória
+    if (!photo) {
+      setSuccess(false)
+      setResult("❌ Tire uma foto do produto/documento")
+      // Auto-fechar erro após 2 segundos
+      setTimeout(() => setResult(""), 2000)
+      return
+    }
+
     // Validar senha do operador
     setPendingSubmit(true)
     setShowPasswordModal(true)
@@ -475,7 +484,7 @@ export default function RetiradaPage() {
 
                 {/* Campo de Foto */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-zinc-900">Foto do Produto/Documento</label>
+                  <label className="block text-sm font-medium text-zinc-900">Foto do Produto/Documento *</label>
                   <div className="space-y-3">
                     <label className="w-full bg-[#FFD700] text-zinc-900 font-semibold py-3 px-6 rounded-xl hover:bg-[#FFC700] transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer">
                       <span className="text-2xl">📷</span>
