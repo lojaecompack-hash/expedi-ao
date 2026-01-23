@@ -452,7 +452,7 @@ export default function RetiradaPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-zinc-900">Operador (opcional)</label>
+                  <label className="block text-sm font-medium text-zinc-900">Operador *</label>
                   <div className="relative">
                     <Settings className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-400 pointer-events-none" />
                     <select
