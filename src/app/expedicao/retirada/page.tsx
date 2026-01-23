@@ -232,18 +232,19 @@ export default function RetiradaPage() {
     if (!orderNumber || !cpf || !retrieverName.trim()) {
       setSuccess(false)
       setResult("❌ Preencha todos os campos obrigatórios")
+      // Auto-fechar erro após 2 segundos
+      setTimeout(() => setResult(""), 2000)
       return
     }
 
-    if (!operatorId) {
-      setSuccess(false)
-      setResult("❌ Selecione um operador")
-      return
+    // Se operador foi selecionado, validar senha
+    if (operatorId) {
+      setPendingSubmit(true)
+      setShowPasswordModal(true)
+    } else {
+      // Se não tem operador, processar direto
+      handlePasswordValidated()
     }
-
-    // Mostrar modal de validação de senha
-    setPendingSubmit(true)
-    setShowPasswordModal(true)
   }
 
   const handlePasswordValidated = async () => {
@@ -256,6 +257,8 @@ export default function RetiradaPage() {
     if (orderDetails && !allItemsChecked) {
       setResult("❌ Todos os produtos devem ser conferidos (marcados)")
       setSuccess(false)
+      // Auto-fechar erro após 2 segundos
+      setTimeout(() => setResult(""), 2000)
       return
     }
     
@@ -293,11 +296,15 @@ export default function RetiradaPage() {
       } else {
         setSuccess(false)
         setResult(`❌ Erro ao registrar retirada\n\n${data.error || "Erro desconhecido"}`)
+        // Auto-fechar erro após 2 segundos
+        setTimeout(() => setResult(""), 2000)
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Erro desconhecido"
       setSuccess(false)
       setResult(`❌ Erro de conexão\n\n${msg}`)
+      // Auto-fechar erro após 2 segundos
+      setTimeout(() => setResult(""), 2000)
     } finally {
       setLoading(false)
     }
@@ -534,34 +541,46 @@ export default function RetiradaPage() {
               </form>
             </motion.div>
 
-            {/* Result */}
+            {/* Modal de Resultado */}
             {result && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className={`rounded-2xl border p-6 ${
-                  success 
-                    ? "bg-green-50 border-green-200" 
-                    : "bg-red-50 border-red-200"
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  {success ? (
-                    <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
-                  ) : (
-                    <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
-                  )}
-                  <div className="flex-1">
-                    <h3 className={`font-semibold ${success ? "text-green-900" : "text-red-900"}`}>
-                      {success ? "Retirada Registrada!" : "Erro na Operação"}
-                    </h3>
-                    <pre className={`mt-2 text-sm whitespace-pre-wrap ${success ? "text-green-700" : "text-red-700"}`}>
-                      {result}
-                    </pre>
+              <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.2 }}
+                  className={`w-full max-w-md rounded-2xl border p-6 shadow-xl ${
+                    success 
+                      ? "bg-green-50 border-green-200" 
+                      : "bg-red-50 border-red-200"
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    {success ? (
+                      <CheckCircle className="w-6 h-6 text-green-600 mt-0.5 shrink-0" />
+                    ) : (
+                      <AlertCircle className="w-6 h-6 text-red-600 mt-0.5 shrink-0" />
+                    )}
+                    <div className="flex-1">
+                      <h3 className={`font-semibold text-lg ${success ? "text-green-900" : "text-red-900"}`}>
+                        {success ? "Retirada Registrada!" : "Erro na Operação"}
+                      </h3>
+                      <pre className={`mt-2 text-sm whitespace-pre-wrap ${success ? "text-green-700" : "text-red-700"}`}>
+                        {result}
+                      </pre>
+                    </div>
+                    <button
+                      onClick={() => setResult("")}
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                        success
+                          ? "hover:bg-green-200 text-green-900"
+                          : "hover:bg-red-200 text-red-900"
+                      }`}
+                    >
+                      <span className="text-xl font-bold">×</span>
+                    </button>
                   </div>
-                </div>
-              </motion.div>
+                </motion.div>
+              </div>
             )}
           </motion.div>
 
