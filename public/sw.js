@@ -7,7 +7,12 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Estratégia: Network First, depois Cache
+  // Não fazer cache de requisições POST, PUT, DELETE, PATCH
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
+  // Estratégia: Network First, depois Cache (apenas para GET)
   event.respondWith(
     fetch(event.request)
       .then((response) => {
