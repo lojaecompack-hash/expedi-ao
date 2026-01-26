@@ -694,11 +694,11 @@ export default function RetiradaPage() {
                   </p>
                 </div>
 
-                {/* Campo de Transportadora (vem da Tiny - somente leitura) */}
+                {/* Campo de Forma de Envio (vem da Tiny - somente leitura) */}
                 {orderDetails && (
                   <div className="space-y-2">
                     <label className="block text-sm font-medium text-zinc-900">
-                      Transportadora
+                      Forma de Envio
                     </label>
                     <div className="relative">
                       <Truck className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-400" />
@@ -710,7 +710,7 @@ export default function RetiradaPage() {
                       />
                     </div>
                     <p className="text-xs text-zinc-500">
-                      Transportadora configurada no pedido da Tiny (não editável).
+                      Forma de envio configurada no pedido da Tiny (não editável).
                     </p>
                   </div>
                 )}
