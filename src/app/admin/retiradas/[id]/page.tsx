@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Package, Truck, User, Calendar, ArrowLeft, Image as ImageIcon } from "lucide-react"
+import { Package, Truck, User, Calendar, ArrowLeft, Image as ImageIcon, Edit2, Save, X, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 
@@ -34,11 +34,17 @@ export default function DetalhesRetirada() {
   
   const [retirada, setRetirada] = useState<Retirada | null>(null)
   const [loading, setLoading] = useState(true)
+  
+  // Estados para edição do rastreio
+  const [editingTracking, setEditingTracking] = useState(false)
+  const [trackingCode, setTrackingCode] = useState("")
+  const [savingTracking, setSavingTracking] = useState(false)
 
   useEffect(() => {
     if (id) {
       fetchRetirada()
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   const fetchRetirada = async () => {
@@ -49,12 +55,47 @@ export default function DetalhesRetirada() {
       
       if (data.ok) {
         setRetirada(data.retirada)
+        setTrackingCode(data.retirada.trackingCode || "")
       }
     } catch (error) {
       console.error('Erro ao buscar retirada:', error)
     } finally {
       setLoading(false)
     }
+  }
+
+  // Função para salvar rastreio editado
+  const saveTrackingCode = async () => {
+    if (!retirada) return
+    
+    setSavingTracking(true)
+    try {
+      const res = await fetch(`/api/retiradas/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trackingCode: trackingCode.trim() })
+      })
+      
+      const data = await res.json()
+      
+      if (data.ok) {
+        setRetirada({ ...retirada, trackingCode: trackingCode.trim() })
+        setEditingTracking(false)
+      } else {
+        alert('Erro ao salvar rastreio: ' + (data.error || 'Erro desconhecido'))
+      }
+    } catch (error) {
+      console.error('Erro ao salvar rastreio:', error)
+      alert('Erro ao salvar rastreio')
+    } finally {
+      setSavingTracking(false)
+    }
+  }
+
+  // Cancelar edição
+  const cancelEditTracking = () => {
+    setTrackingCode(retirada?.trackingCode || "")
+    setEditingTracking(false)
   }
 
   if (loading) {
@@ -214,23 +255,66 @@ export default function DetalhesRetirada() {
                 </div>
               </div>
               <div className="col-span-2">
-                <p className="text-sm text-zinc-600 mb-1">Código de Rastreio</p>
-                {retirada.trackingCode ? (
-                  retirada.trackingCode.startsWith('http') ? (
-                    <a 
-                      href={retirada.trackingCode} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline text-lg font-semibold flex items-center gap-2"
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-sm text-zinc-600">Código de Rastreio</p>
+                  {!editingTracking && (
+                    <button
+                      onClick={() => setEditingTracking(true)}
+                      className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
                     >
-                      <Truck className="w-5 h-5" />
-                      Abrir rastreio
-                    </a>
-                  ) : (
-                    <p className="text-lg font-semibold text-zinc-900">{retirada.trackingCode}</p>
-                  )
+                      <Edit2 className="w-4 h-4" />
+                      Editar
+                    </button>
+                  )}
+                </div>
+                
+                {editingTracking ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={trackingCode}
+                      onChange={(e) => setTrackingCode(e.target.value)}
+                      placeholder="Digite o código ou link de rastreio"
+                      className="flex-1 px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-[#FFD700] focus:border-transparent"
+                    />
+                    <button
+                      onClick={saveTrackingCode}
+                      disabled={savingTracking}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {savingTracking ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Save className="w-4 h-4" />
+                      )}
+                      Salvar
+                    </button>
+                    <button
+                      onClick={cancelEditTracking}
+                      disabled={savingTracking}
+                      className="px-4 py-2 bg-zinc-200 text-zinc-700 rounded-lg hover:bg-zinc-300 disabled:opacity-50"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
                 ) : (
-                  <p className="text-lg font-semibold text-zinc-400">Não informado</p>
+                  retirada.trackingCode ? (
+                    retirada.trackingCode.startsWith('http') ? (
+                      <a 
+                        href={retirada.trackingCode} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline text-lg font-semibold flex items-center gap-2"
+                      >
+                        <Truck className="w-5 h-5" />
+                        Abrir rastreio
+                      </a>
+                    ) : (
+                      <p className="text-lg font-semibold text-zinc-900">{retirada.trackingCode}</p>
+                    )
+                  ) : (
+                    <p className="text-lg font-semibold text-zinc-400">Não informado</p>
+                  )
                 )}
               </div>
             </div>
