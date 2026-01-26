@@ -377,6 +377,17 @@ export default function RetiradaPage() {
         }),
       })
 
+      // Verificar se resposta é JSON
+      const contentType = res.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await res.text()
+        console.error('[Tracking] Resposta não é JSON:', text)
+        setSuccess(false)
+        setResult(`❌ Erro no servidor\n\nStatus: ${res.status}\n${text.substring(0, 300)}`)
+        setTimeout(() => setResult(""), 15000)
+        return
+      }
+
       const data = await res.json()
 
       if (data.ok) {
@@ -386,14 +397,16 @@ export default function RetiradaPage() {
         setTimeout(() => setResult(""), 5000)
       } else {
         setSuccess(false)
-        setResult(`❌ Erro ao salvar rastreio\n\n${data.error || "Erro desconhecido"}`)
-        setTimeout(() => setResult(""), 10000)
+        const details = data.details ? `\n\nDetalhes: ${data.details}` : ''
+        setResult(`❌ Erro ao salvar rastreio\n\n${data.error || "Erro desconhecido"}${details}`)
+        setTimeout(() => setResult(""), 15000)
       }
     } catch (error) {
       const msg = error instanceof Error ? error.message : "Erro desconhecido"
+      console.error('[Tracking] Erro:', error)
       setSuccess(false)
       setResult(`❌ Erro de conexão\n\n${msg}`)
-      setTimeout(() => setResult(""), 10000)
+      setTimeout(() => setResult(""), 15000)
     } finally {
       setLoadingTracking(false)
     }
