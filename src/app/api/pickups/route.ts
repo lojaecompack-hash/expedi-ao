@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 
 import { prisma } from '@/lib/prisma'
-import { getTinyOrder, markOrderAsShipped } from '@/lib/tiny-api'
+import { getTinyOrder, getTinyOrderDetails, markOrderAsShipped } from '@/lib/tiny-api'
 
 function onlyDigits(v: string): string {
   return v.replace(/\D+/g, '')
@@ -150,8 +150,17 @@ export async function POST(req: Request) {
       where: { orderId: order.id }
     })
 
-    // Extrair nome do vendedor do pedido Tiny
-    const vendedorNome = pedido.nome_vendedor || pedido.vendedor || null
+    // Buscar detalhes completos do pedido para obter vendedor
+    let vendedorNome: string | null = null
+    try {
+      const detalhes = await getTinyOrderDetails(orderNumber)
+      if (detalhes) {
+        vendedorNome = detalhes.vendedor !== 'Não informado' ? detalhes.vendedor : null
+        console.log('[Pickups] Vendedor obtido dos detalhes:', vendedorNome)
+      }
+    } catch (err) {
+      console.log('[Pickups] Erro ao buscar detalhes para vendedor:', err)
+    }
 
     let pickup
     if (existingPickup) {
