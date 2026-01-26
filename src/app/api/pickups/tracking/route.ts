@@ -94,16 +94,17 @@ export async function POST(req: Request) {
       })
       console.log('[Tracking API] Pickup atualizado:', pickup.id)
     } else {
-      // Criar novo pickup apenas com o rastreio (operatorName é obrigatório)
+      // Criar novo pickup apenas com o rastreio (status = AGUARDANDO_RETIRADA)
       pickup = await prisma.pickup.create({
         data: {
           orderId: order.id,
           trackingCode: trackingCode.trim(),
           operatorId: operatorId || null,
           operatorName: operatorName || 'Rastreio Salvo',
+          status: 'AGUARDANDO_RETIRADA',
         }
       })
-      console.log('[Tracking API] Pickup criado:', pickup.id)
+      console.log('[Tracking API] Pickup criado com status AGUARDANDO_RETIRADA:', pickup.id)
     }
 
     return NextResponse.json({

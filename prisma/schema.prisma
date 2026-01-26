@@ -184,6 +184,7 @@ model Pickup {
   customerCpfCnpj String?
   retrieverName   String?
   trackingCode    String?
+  status          String    @default("RETIRADO") // AGUARDANDO_RETIRADA ou RETIRADO
   photo           String?   @db.Text
   createdAt       DateTime  @default(now())
 

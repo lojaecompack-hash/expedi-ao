@@ -15,6 +15,7 @@ interface Retirada {
   customerCpfCnpj: string | null
   retrieverName: string | null
   trackingCode: string | null
+  status: string | null
   photo: string | null
   createdAt: string
   order: {
@@ -257,7 +258,8 @@ export default function DetalhesRetirada() {
               <div className="col-span-2">
                 <div className="flex items-center justify-between mb-1">
                   <p className="text-sm text-zinc-600">Código de Rastreio</p>
-                  {!editingTracking && (
+                  {/* Só permite editar se status for AGUARDANDO_RETIRADA (não RETIRADO) */}
+                  {!editingTracking && retirada.status === 'AGUARDANDO_RETIRADA' && (
                     <button
                       onClick={() => setEditingTracking(true)}
                       className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"

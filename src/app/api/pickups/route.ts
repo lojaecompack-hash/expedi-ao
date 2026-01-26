@@ -152,7 +152,7 @@ export async function POST(req: Request) {
 
     let pickup
     if (existingPickup) {
-      // Atualizar pickup existente (preservar rastreio se já existir)
+      // Atualizar pickup existente (preservar rastreio se já existir, status = RETIRADO)
       pickup = await prisma.pickup.update({
         where: { id: existingPickup.id },
         data: {
@@ -163,13 +163,14 @@ export async function POST(req: Request) {
           customerCpfCnpj: pedido.cliente?.cpf_cnpj || cpfDigits || null,
           retrieverName: body.retrieverName || null,
           trackingCode: body.trackingCode || existingPickup.trackingCode || null,
+          status: 'RETIRADO',
           photo: body.photo || null,
         },
-        select: { id: true, cpfLast4: true, operatorId: true, operatorName: true, customerName: true, customerCpfCnpj: true, retrieverName: true, trackingCode: true, photo: true, createdAt: true },
+        select: { id: true, cpfLast4: true, operatorId: true, operatorName: true, customerName: true, customerCpfCnpj: true, retrieverName: true, trackingCode: true, status: true, photo: true, createdAt: true },
       })
-      console.log('[Pickups] Pickup atualizado:', pickup.id)
+      console.log('[Pickups] Pickup atualizado com status RETIRADO:', pickup.id)
     } else {
-      // Criar novo pickup
+      // Criar novo pickup (status = RETIRADO pois é retirada completa)
       pickup = await prisma.pickup.create({
         data: {
           orderId: order.id,
@@ -180,11 +181,12 @@ export async function POST(req: Request) {
           customerCpfCnpj: pedido.cliente?.cpf_cnpj || cpfDigits || null,
           retrieverName: body.retrieverName || null,
           trackingCode: body.trackingCode || null,
+          status: 'RETIRADO',
           photo: body.photo || null,
         },
-        select: { id: true, cpfLast4: true, operatorId: true, operatorName: true, customerName: true, customerCpfCnpj: true, retrieverName: true, trackingCode: true, photo: true, createdAt: true },
+        select: { id: true, cpfLast4: true, operatorId: true, operatorName: true, customerName: true, customerCpfCnpj: true, retrieverName: true, trackingCode: true, status: true, photo: true, createdAt: true },
       })
-      console.log('[Pickups] Pickup criado:', pickup.id)
+      console.log('[Pickups] Pickup criado com status RETIRADO:', pickup.id)
     }
 
     return NextResponse.json({

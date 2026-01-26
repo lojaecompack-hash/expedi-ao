@@ -15,6 +15,7 @@ interface Retirada {
   customerCpfCnpj: string | null
   retrieverName: string | null
   trackingCode: string | null
+  status: string | null
   photo: string | null
   createdAt: string
   order: {
@@ -31,6 +32,7 @@ export default function RelatorioRetiradas() {
   const [retiradas, setRetiradas] = useState<Retirada[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
+  const [statusFilter, setStatusFilter] = useState<string>("TODOS")
 
   useEffect(() => {
     fetchRetiradas()
@@ -52,11 +54,21 @@ export default function RelatorioRetiradas() {
     }
   }
 
-  const filteredRetiradas = retiradas.filter(r => 
-    r.order.orderNumber.toLowerCase().includes(search.toLowerCase()) ||
-    r.retrieverName?.toLowerCase().includes(search.toLowerCase()) ||
-    r.operatorName?.toLowerCase().includes(search.toLowerCase())
-  )
+  const filteredRetiradas = retiradas.filter(r => {
+    // Filtro de busca
+    const matchesSearch = 
+      r.order.orderNumber.toLowerCase().includes(search.toLowerCase()) ||
+      r.retrieverName?.toLowerCase().includes(search.toLowerCase()) ||
+      r.operatorName?.toLowerCase().includes(search.toLowerCase())
+    
+    // Filtro de status
+    const matchesStatus = 
+      statusFilter === "TODOS" || 
+      r.status === statusFilter ||
+      (statusFilter === "RETIRADO" && !r.status) // Registros antigos sem status são considerados RETIRADO
+    
+    return matchesSearch && matchesStatus
+  })
 
   return (
     <MainLayout>
@@ -67,16 +79,27 @@ export default function RelatorioRetiradas() {
           <p className="text-zinc-600 mt-1">Visualize todas as retiradas realizadas</p>
         </div>
 
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-400" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por pedido, retirante ou operador..."
-              className="w-full pl-10 pr-4 py-3 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent"
-            />
+          {/* Search and Filter */}
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-400" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar por pedido, retirante ou operador..."
+                className="w-full pl-10 pr-4 py-3 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent"
+              />
+            </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-4 py-3 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent bg-white min-w-[200px]"
+            >
+              <option value="TODOS">Todos os Status</option>
+              <option value="AGUARDANDO_RETIRADA">Aguardando Retirada</option>
+              <option value="RETIRADO">Retirado</option>
+            </select>
           </div>
 
           {/* Stats */}
@@ -104,12 +127,12 @@ export default function RelatorioRetiradas() {
               className="bg-white rounded-2xl border border-zinc-200 p-6"
             >
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
-                  <Truck className="w-6 h-6 text-green-600" />
+                <div className="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center">
+                  <Truck className="w-6 h-6 text-amber-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-zinc-600">Com Foto</p>
-                  <p className="text-2xl font-bold text-zinc-900">{retiradas.filter(r => r.photo).length}</p>
+                  <p className="text-sm text-zinc-600">Aguardando Retirada</p>
+                  <p className="text-2xl font-bold text-zinc-900">{retiradas.filter(r => r.status === 'AGUARDANDO_RETIRADA').length}</p>
                 </div>
               </div>
             </motion.div>
@@ -165,7 +188,7 @@ export default function RelatorioRetiradas() {
                       <th className="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Operador</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Rastreio</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Data</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Foto</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Status</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Ações</th>
                     </tr>
                   </thead>
@@ -217,13 +240,13 @@ export default function RelatorioRetiradas() {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          {retirada.photo ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-lg text-xs font-medium">
-                              ✓ Sim
+                          {retirada.status === 'AGUARDANDO_RETIRADA' ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 rounded-lg text-xs font-medium">
+                              ⏳ Aguardando
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-zinc-100 text-zinc-600 rounded-lg text-xs font-medium">
-                              ✕ Não
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-lg text-xs font-medium">
+                              ✓ Retirado
                             </span>
                           )}
                         </td>
