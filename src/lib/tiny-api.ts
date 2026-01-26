@@ -47,6 +47,8 @@ interface TinyPedido {
     nome?: string
     cpf_cnpj?: string
   }
+  vendedor?: string
+  nome_vendedor?: string
   itens?: Array<{
     item: {
       id?: string
@@ -191,6 +193,7 @@ export interface TinyOrderDetails {
   numero: string
   situacao: string
   clienteNome: string
+  vendedor: string
   itens: Array<{
     id: string
     descricao: string
@@ -418,11 +421,13 @@ export async function getTinyOrderDetails(orderNumber: string): Promise<TinyOrde
     
     // Extrair dados necessários
     const situacao = typeof pedido.situacao === 'string' ? pedido.situacao : 'desconhecido'
+    const vendedor = pedido.nome_vendedor || pedido.vendedor || 'Não informado'
     const detalhes: TinyOrderDetails = {
       id: String(pedido.id),
       numero: String(pedido.numero),
       situacao,
       clienteNome: pedido.cliente?.nome || 'Cliente não informado',
+      vendedor: typeof vendedor === 'string' ? vendedor : 'Não informado',
       itens: (pedido.itens || []).map((item, index) => ({
         id: item.item?.id || String(index),
         descricao: item.item?.descricao || 'Produto sem descrição',

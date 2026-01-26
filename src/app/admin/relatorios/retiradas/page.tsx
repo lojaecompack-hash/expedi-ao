@@ -15,6 +15,7 @@ interface Retirada {
   customerCpfCnpj: string | null
   retrieverName: string | null
   trackingCode: string | null
+  vendedor: string | null
   status: string | null
   photo: string | null
   createdAt: string
@@ -33,6 +34,7 @@ export default function RelatorioRetiradas() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("TODOS")
+  const [vendedorFilter, setVendedorFilter] = useState<string>("TODOS")
 
   useEffect(() => {
     fetchRetiradas()
@@ -54,12 +56,16 @@ export default function RelatorioRetiradas() {
     }
   }
 
+  // Lista única de vendedores para o filtro
+  const vendedores = [...new Set(retiradas.map(r => r.vendedor).filter(Boolean))] as string[]
+
   const filteredRetiradas = retiradas.filter(r => {
     // Filtro de busca
     const matchesSearch = 
       r.order.orderNumber.toLowerCase().includes(search.toLowerCase()) ||
       r.retrieverName?.toLowerCase().includes(search.toLowerCase()) ||
-      r.operatorName?.toLowerCase().includes(search.toLowerCase())
+      r.operatorName?.toLowerCase().includes(search.toLowerCase()) ||
+      r.vendedor?.toLowerCase().includes(search.toLowerCase())
     
     // Filtro de status
     const matchesStatus = 
@@ -67,7 +73,12 @@ export default function RelatorioRetiradas() {
       r.status === statusFilter ||
       (statusFilter === "RETIRADO" && !r.status) // Registros antigos sem status são considerados RETIRADO
     
-    return matchesSearch && matchesStatus
+    // Filtro de vendedor
+    const matchesVendedor = 
+      vendedorFilter === "TODOS" || 
+      r.vendedor === vendedorFilter
+    
+    return matchesSearch && matchesStatus && matchesVendedor
   })
 
   return (
@@ -87,18 +98,28 @@ export default function RelatorioRetiradas() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar por pedido, retirante ou operador..."
+                placeholder="Buscar por pedido, retirante, operador ou vendedor..."
                 className="w-full pl-10 pr-4 py-3 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent"
               />
             </div>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-3 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent bg-white min-w-[200px]"
+              className="px-4 py-3 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent bg-white min-w-[180px]"
             >
               <option value="TODOS">Todos os Status</option>
               <option value="AGUARDANDO_RETIRADA">Aguardando Retirada</option>
               <option value="RETIRADO">Retirado</option>
+            </select>
+            <select
+              value={vendedorFilter}
+              onChange={(e) => setVendedorFilter(e.target.value)}
+              className="px-4 py-3 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent bg-white min-w-[180px]"
+            >
+              <option value="TODOS">Todos os Vendedores</option>
+              {vendedores.map(vendedor => (
+                <option key={vendedor} value={vendedor}>{vendedor}</option>
+              ))}
             </select>
           </div>
 
@@ -186,6 +207,7 @@ export default function RelatorioRetiradas() {
                       <th className="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Pedido</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Retirante</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Operador</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Vendedor</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Rastreio</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Data</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Status</th>
@@ -209,6 +231,9 @@ export default function RelatorioRetiradas() {
                         </td>
                         <td className="px-6 py-4">
                           <p className="text-zinc-900">{retirada.operatorName || 'N/A'}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="text-zinc-900">{retirada.vendedor || '-'}</p>
                         </td>
                         <td className="px-6 py-4">
                           {retirada.trackingCode ? (

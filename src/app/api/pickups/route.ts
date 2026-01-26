@@ -150,6 +150,9 @@ export async function POST(req: Request) {
       where: { orderId: order.id }
     })
 
+    // Extrair nome do vendedor do pedido Tiny
+    const vendedorNome = pedido.nome_vendedor || pedido.vendedor || null
+
     let pickup
     if (existingPickup) {
       // Atualizar pickup existente (preservar rastreio se já existir, status = RETIRADO)
@@ -163,10 +166,11 @@ export async function POST(req: Request) {
           customerCpfCnpj: pedido.cliente?.cpf_cnpj || cpfDigits || null,
           retrieverName: body.retrieverName || null,
           trackingCode: body.trackingCode || existingPickup.trackingCode || null,
+          vendedor: typeof vendedorNome === 'string' ? vendedorNome : existingPickup.vendedor || null,
           status: 'RETIRADO',
           photo: body.photo || null,
         },
-        select: { id: true, cpfLast4: true, operatorId: true, operatorName: true, customerName: true, customerCpfCnpj: true, retrieverName: true, trackingCode: true, status: true, photo: true, createdAt: true },
+        select: { id: true, cpfLast4: true, operatorId: true, operatorName: true, customerName: true, customerCpfCnpj: true, retrieverName: true, trackingCode: true, vendedor: true, status: true, photo: true, createdAt: true },
       })
       console.log('[Pickups] Pickup atualizado com status RETIRADO:', pickup.id)
     } else {
@@ -181,10 +185,11 @@ export async function POST(req: Request) {
           customerCpfCnpj: pedido.cliente?.cpf_cnpj || cpfDigits || null,
           retrieverName: body.retrieverName || null,
           trackingCode: body.trackingCode || null,
+          vendedor: typeof vendedorNome === 'string' ? vendedorNome : null,
           status: 'RETIRADO',
           photo: body.photo || null,
         },
-        select: { id: true, cpfLast4: true, operatorId: true, operatorName: true, customerName: true, customerCpfCnpj: true, retrieverName: true, trackingCode: true, status: true, photo: true, createdAt: true },
+        select: { id: true, cpfLast4: true, operatorId: true, operatorName: true, customerName: true, customerCpfCnpj: true, retrieverName: true, trackingCode: true, vendedor: true, status: true, photo: true, createdAt: true },
       })
       console.log('[Pickups] Pickup criado com status RETIRADO:', pickup.id)
     }
