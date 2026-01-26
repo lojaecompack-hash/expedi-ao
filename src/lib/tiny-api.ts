@@ -419,37 +419,19 @@ export async function getTinyOrderDetails(orderNumber: string): Promise<TinyOrde
       return null
     }
     
-    // LOG DETALHADO - ver todos os campos do pedido para encontrar vendedor
-    const pedidoAny = pedido as Record<string, unknown>
-    console.log('[Tiny API] ====== CAMPOS DO PEDIDO ======')
-    console.log('[Tiny API] Todas as chaves:', Object.keys(pedido))
-    console.log('[Tiny API] Pedido completo (JSON):', JSON.stringify(pedido, null, 2))
-    console.log('[Tiny API] vendedor:', pedidoAny.vendedor)
-    console.log('[Tiny API] nome_vendedor:', pedidoAny.nome_vendedor)
-    console.log('[Tiny API] nomeVendedor:', pedidoAny.nomeVendedor)
-    console.log('[Tiny API] id_vendedor:', pedidoAny.id_vendedor)
-    console.log('[Tiny API] idVendedor:', pedidoAny.idVendedor)
-    console.log('[Tiny API] vendedor_id:', pedidoAny.vendedor_id)
-    console.log('[Tiny API] ================================')
-    
     // Extrair dados necessários
+    const pedidoAny = pedido as Record<string, unknown>
     const situacao = typeof pedido.situacao === 'string' ? pedido.situacao : 'desconhecido'
-    // Tentar TODAS as variações possíveis para o campo vendedor
-    const vendedorRaw = pedidoAny.nome_vendedor || 
-                        pedidoAny.nomeVendedor || 
-                        pedidoAny.vendedor ||
-                        pedidoAny.id_vendedor ||
-                        pedidoAny.idVendedor ||
-                        pedidoAny.vendedor_id ||
-                        'Não informado'
-    const vendedor = typeof vendedorRaw === 'string' ? vendedorRaw : 'Não informado'
-    console.log('[Tiny API] Vendedor extraído:', vendedor)
+    
+    // Campo vendedor confirmado: nome_vendedor
+    const vendedor = typeof pedidoAny.nome_vendedor === 'string' ? pedidoAny.nome_vendedor : null
+    console.log('[Tiny API] Vendedor:', vendedor)
     const detalhes: TinyOrderDetails = {
       id: String(pedido.id),
       numero: String(pedido.numero),
       situacao,
       clienteNome: pedido.cliente?.nome || 'Cliente não informado',
-      vendedor: typeof vendedor === 'string' ? vendedor : 'Não informado',
+      vendedor: vendedor || 'Não informado',
       itens: (pedido.itens || []).map((item, index) => ({
         id: item.item?.id || String(index),
         descricao: item.item?.descricao || 'Produto sem descrição',
