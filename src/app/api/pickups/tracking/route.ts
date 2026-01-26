@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getTinyOrder } from '@/lib/tiny-api'
 
 // Salvar código de rastreio para um pedido (antes da retirada completa)
 export async function POST(req: Request) {
@@ -23,16 +24,45 @@ export async function POST(req: Request) {
       )
     }
 
-    // Buscar pedido pelo número
-    const order = await prisma.order.findFirst({
+    // Primeiro, tentar buscar pedido no banco local
+    let order = await prisma.order.findFirst({
       where: { orderNumber: orderNumber.toString() }
     })
 
+    // Se não encontrar localmente, buscar no Tiny e criar Order local
     if (!order) {
-      return NextResponse.json(
-        { ok: false, error: 'Pedido não encontrado' },
-        { status: 404 }
-      )
+      console.log('[Tracking API] Pedido não encontrado localmente, buscando no Tiny...')
+      
+      try {
+        const pedidoTiny = await getTinyOrder(orderNumber.toString())
+        
+        if (!pedidoTiny || !pedidoTiny.id) {
+          return NextResponse.json(
+            { ok: false, error: 'Pedido não encontrado no Tiny' },
+            { status: 404 }
+          )
+        }
+
+        console.log('[Tracking API] Pedido encontrado no Tiny:', pedidoTiny.id)
+
+        // Criar Order local com status "aguardando_rastreio" (não altera status no Tiny)
+        order = await prisma.order.create({
+          data: {
+            tinyOrderId: String(pedidoTiny.id),
+            orderNumber: orderNumber.toString(),
+            statusTiny: pedidoTiny.situacao || 'preparando_envio',
+            statusInterno: 'AGUARDANDO_RETIRADA',
+          }
+        })
+        console.log('[Tracking API] Order local criada:', order.id)
+      } catch (tinyError) {
+        const msg = tinyError instanceof Error ? tinyError.message : 'Erro desconhecido'
+        console.error('[Tracking API] Erro ao buscar no Tiny:', msg)
+        return NextResponse.json(
+          { ok: false, error: 'Erro ao buscar pedido no Tiny', details: msg },
+          { status: 500 }
+        )
+      }
     }
 
     // Buscar nome do operador se fornecido
