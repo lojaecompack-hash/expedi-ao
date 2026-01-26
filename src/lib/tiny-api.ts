@@ -419,9 +419,25 @@ export async function getTinyOrderDetails(orderNumber: string): Promise<TinyOrde
       return null
     }
     
+    // LOG DETALHADO - ver todos os campos do pedido para encontrar vendedor
+    console.log('[Tiny API] ====== CAMPOS DO PEDIDO ======')
+    console.log('[Tiny API] Todas as chaves:', Object.keys(pedido))
+    console.log('[Tiny API] Pedido completo (JSON):', JSON.stringify(pedido, null, 2))
+    console.log('[Tiny API] vendedor:', pedido.vendedor)
+    console.log('[Tiny API] nome_vendedor:', pedido.nome_vendedor)
+    console.log('[Tiny API] id_vendedor:', (pedido as Record<string, unknown>).id_vendedor)
+    console.log('[Tiny API] vendedor_id:', (pedido as Record<string, unknown>).vendedor_id)
+    console.log('[Tiny API] ================================')
+    
     // Extrair dados necessários
     const situacao = typeof pedido.situacao === 'string' ? pedido.situacao : 'desconhecido'
-    const vendedor = pedido.nome_vendedor || pedido.vendedor || 'Não informado'
+    // Tentar vários nomes possíveis para o campo vendedor
+    const vendedorRaw = pedido.nome_vendedor || pedido.vendedor || 
+                        (pedido as Record<string, unknown>).id_vendedor ||
+                        (pedido as Record<string, unknown>).vendedor_id ||
+                        'Não informado'
+    const vendedor = typeof vendedorRaw === 'string' ? vendedorRaw : 'Não informado'
+    console.log('[Tiny API] Vendedor extraído:', vendedor)
     const detalhes: TinyOrderDetails = {
       id: String(pedido.id),
       numero: String(pedido.numero),
