@@ -194,6 +194,7 @@ export interface TinyOrderDetails {
   situacao: string
   clienteNome: string
   vendedor: string
+  transportadora: string
   itens: Array<{
     id: string
     descricao: string
@@ -425,13 +426,17 @@ export async function getTinyOrderDetails(orderNumber: string): Promise<TinyOrde
     
     // Campo vendedor confirmado: nome_vendedor
     const vendedor = typeof pedidoAny.nome_vendedor === 'string' ? pedidoAny.nome_vendedor : null
-    console.log('[Tiny API] Vendedor:', vendedor)
+    // Campo transportadora confirmado: nome_transportador
+    const transportadora = typeof pedidoAny.nome_transportador === 'string' ? pedidoAny.nome_transportador : null
+    console.log('[Tiny API] Vendedor:', vendedor, '| Transportadora:', transportadora)
+    
     const detalhes: TinyOrderDetails = {
       id: String(pedido.id),
       numero: String(pedido.numero),
       situacao,
       clienteNome: pedido.cliente?.nome || 'Cliente não informado',
       vendedor: vendedor || 'Não informado',
+      transportadora: transportadora || 'Não definida',
       itens: (pedido.itens || []).map((item, index) => ({
         id: item.item?.id || String(index),
         descricao: item.item?.descricao || 'Produto sem descrição',

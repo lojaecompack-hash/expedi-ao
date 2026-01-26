@@ -12,6 +12,7 @@ interface OrderDetails {
   numero: string
   situacao: string
   clienteNome: string
+  transportadora: string
   itens: Array<{
     id: string
     descricao: string
@@ -692,6 +693,27 @@ export default function RetiradaPage() {
                     Para pedidos Lalamove, cole o link ou número de rastreio aqui. Você pode salvar o rastreio agora e completar a retirada depois.
                   </p>
                 </div>
+
+                {/* Campo de Transportadora (vem da Tiny - somente leitura) */}
+                {orderDetails && (
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-zinc-900">
+                      Transportadora
+                    </label>
+                    <div className="relative">
+                      <Truck className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-400" />
+                      <input
+                        type="text"
+                        value={orderDetails.transportadora || 'Não definida'}
+                        readOnly
+                        className="w-full pl-10 pr-4 py-3 border border-zinc-200 rounded-xl bg-zinc-50 text-zinc-600 cursor-not-allowed"
+                      />
+                    </div>
+                    <p className="text-xs text-zinc-500">
+                      Transportadora configurada no pedido da Tiny (não editável).
+                    </p>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-zinc-900">Nome do retirante *</label>

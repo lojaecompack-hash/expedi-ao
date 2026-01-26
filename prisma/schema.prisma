@@ -184,6 +184,7 @@ model Pickup {
   customerCpfCnpj String?
   retrieverName   String?
   trackingCode    String?
+  transportadora  String?   // Nome da transportadora do pedido (vem do Tiny)
   vendedor        String?   // Nome do vendedor do pedido (vem do Tiny)
   status          String    @default("RETIRADO") // AGUARDANDO_RETIRADA ou RETIRADO
   photo           String?   @db.Text

@@ -150,16 +150,18 @@ export async function POST(req: Request) {
       where: { orderId: order.id }
     })
 
-    // Buscar detalhes completos do pedido para obter vendedor
+    // Buscar detalhes completos do pedido para obter vendedor e transportadora
     let vendedorNome: string | null = null
+    let transportadoraNome: string | null = null
     try {
       const detalhes = await getTinyOrderDetails(orderNumber)
       if (detalhes) {
         vendedorNome = detalhes.vendedor !== 'Não informado' ? detalhes.vendedor : null
-        console.log('[Pickups] Vendedor obtido dos detalhes:', vendedorNome)
+        transportadoraNome = detalhes.transportadora !== 'Não definida' ? detalhes.transportadora : null
+        console.log('[Pickups] Vendedor:', vendedorNome, '| Transportadora:', transportadoraNome)
       }
     } catch (err) {
-      console.log('[Pickups] Erro ao buscar detalhes para vendedor:', err)
+      console.log('[Pickups] Erro ao buscar detalhes:', err)
     }
 
     let pickup
@@ -175,11 +177,12 @@ export async function POST(req: Request) {
           customerCpfCnpj: pedido.cliente?.cpf_cnpj || cpfDigits || null,
           retrieverName: body.retrieverName || null,
           trackingCode: body.trackingCode || existingPickup.trackingCode || null,
+          transportadora: typeof transportadoraNome === 'string' ? transportadoraNome : existingPickup.transportadora || null,
           vendedor: typeof vendedorNome === 'string' ? vendedorNome : existingPickup.vendedor || null,
           status: 'RETIRADO',
           photo: body.photo || null,
         },
-        select: { id: true, cpfLast4: true, operatorId: true, operatorName: true, customerName: true, customerCpfCnpj: true, retrieverName: true, trackingCode: true, vendedor: true, status: true, photo: true, createdAt: true },
+        select: { id: true, cpfLast4: true, operatorId: true, operatorName: true, customerName: true, customerCpfCnpj: true, retrieverName: true, trackingCode: true, transportadora: true, vendedor: true, status: true, photo: true, createdAt: true },
       })
       console.log('[Pickups] Pickup atualizado com status RETIRADO:', pickup.id)
     } else {
@@ -194,11 +197,12 @@ export async function POST(req: Request) {
           customerCpfCnpj: pedido.cliente?.cpf_cnpj || cpfDigits || null,
           retrieverName: body.retrieverName || null,
           trackingCode: body.trackingCode || null,
+          transportadora: typeof transportadoraNome === 'string' ? transportadoraNome : null,
           vendedor: typeof vendedorNome === 'string' ? vendedorNome : null,
           status: 'RETIRADO',
           photo: body.photo || null,
         },
-        select: { id: true, cpfLast4: true, operatorId: true, operatorName: true, customerName: true, customerCpfCnpj: true, retrieverName: true, trackingCode: true, vendedor: true, status: true, photo: true, createdAt: true },
+        select: { id: true, cpfLast4: true, operatorId: true, operatorName: true, customerName: true, customerCpfCnpj: true, retrieverName: true, trackingCode: true, transportadora: true, vendedor: true, status: true, photo: true, createdAt: true },
       })
       console.log('[Pickups] Pickup criado com status RETIRADO:', pickup.id)
     }
