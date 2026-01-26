@@ -420,21 +420,27 @@ export async function getTinyOrderDetails(orderNumber: string): Promise<TinyOrde
     }
     
     // LOG DETALHADO - ver todos os campos do pedido para encontrar vendedor
+    const pedidoAny = pedido as Record<string, unknown>
     console.log('[Tiny API] ====== CAMPOS DO PEDIDO ======')
     console.log('[Tiny API] Todas as chaves:', Object.keys(pedido))
     console.log('[Tiny API] Pedido completo (JSON):', JSON.stringify(pedido, null, 2))
-    console.log('[Tiny API] vendedor:', pedido.vendedor)
-    console.log('[Tiny API] nome_vendedor:', pedido.nome_vendedor)
-    console.log('[Tiny API] id_vendedor:', (pedido as Record<string, unknown>).id_vendedor)
-    console.log('[Tiny API] vendedor_id:', (pedido as Record<string, unknown>).vendedor_id)
+    console.log('[Tiny API] vendedor:', pedidoAny.vendedor)
+    console.log('[Tiny API] nome_vendedor:', pedidoAny.nome_vendedor)
+    console.log('[Tiny API] nomeVendedor:', pedidoAny.nomeVendedor)
+    console.log('[Tiny API] id_vendedor:', pedidoAny.id_vendedor)
+    console.log('[Tiny API] idVendedor:', pedidoAny.idVendedor)
+    console.log('[Tiny API] vendedor_id:', pedidoAny.vendedor_id)
     console.log('[Tiny API] ================================')
     
     // Extrair dados necessários
     const situacao = typeof pedido.situacao === 'string' ? pedido.situacao : 'desconhecido'
-    // Tentar vários nomes possíveis para o campo vendedor
-    const vendedorRaw = pedido.nome_vendedor || pedido.vendedor || 
-                        (pedido as Record<string, unknown>).id_vendedor ||
-                        (pedido as Record<string, unknown>).vendedor_id ||
+    // Tentar TODAS as variações possíveis para o campo vendedor
+    const vendedorRaw = pedidoAny.nome_vendedor || 
+                        pedidoAny.nomeVendedor || 
+                        pedidoAny.vendedor ||
+                        pedidoAny.id_vendedor ||
+                        pedidoAny.idVendedor ||
+                        pedidoAny.vendedor_id ||
                         'Não informado'
     const vendedor = typeof vendedorRaw === 'string' ? vendedorRaw : 'Não informado'
     console.log('[Tiny API] Vendedor extraído:', vendedor)
