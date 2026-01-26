@@ -57,6 +57,11 @@ export default function RetiradaPage() {
   const [scannerError, setScannerError] = useState<string | null>(null)
   const scannerRef = useRef<Html5Qrcode | null>(null)
   
+  // Estados para rastreio
+  const [trackingCode, setTrackingCode] = useState("")
+  const [savedTrackingCode, setSavedTrackingCode] = useState<string | null>(null)
+  const [loadingTracking, setLoadingTracking] = useState(false)
+  
   useEffect(() => {
     fetchOperators()
   }, [])
@@ -116,10 +121,30 @@ export default function RetiradaPage() {
         initialChecks[item.id] = false
       })
       setCheckedItems(initialChecks)
+      
+      // Buscar rastreio existente para este pedido
+      try {
+        const trackingRes = await fetch(`/api/pickups/tracking?orderNumber=${encodeURIComponent(number)}`)
+        const trackingData = await trackingRes.json()
+        if (trackingData.ok && trackingData.trackingCode) {
+          console.log('[Client] Rastreio encontrado:', trackingData.trackingCode)
+          setTrackingCode(trackingData.trackingCode)
+          setSavedTrackingCode(trackingData.trackingCode)
+        } else {
+          setTrackingCode("")
+          setSavedTrackingCode(null)
+        }
+      } catch (trackingError) {
+        console.error('[Client] Erro ao buscar rastreio:', trackingError)
+        setTrackingCode("")
+        setSavedTrackingCode(null)
+      }
     } catch (error) {
       console.error('[Client] Erro ao buscar pedido:', error)
       setOrderDetails(null)
       setCheckedItems({})
+      setTrackingCode("")
+      setSavedTrackingCode(null)
     } finally {
       setLoadingOrder(false)
       console.log('[Client] Busca finalizada')
@@ -287,6 +312,56 @@ export default function RetiradaPage() {
   // Limpar foto
   const clearPhoto = () => {
     setPhoto(null)
+  }
+
+  // Salvar rastreio parcialmente (antes da retirada completa)
+  const saveTracking = async () => {
+    if (!orderNumber) {
+      setSuccess(false)
+      setResult("❌ Informe o número do pedido primeiro")
+      setTimeout(() => setResult(""), 5000)
+      return
+    }
+
+    if (!trackingCode.trim()) {
+      setSuccess(false)
+      setResult("❌ Informe o código de rastreio")
+      setTimeout(() => setResult(""), 5000)
+      return
+    }
+
+    setLoadingTracking(true)
+    try {
+      const res = await fetch('/api/pickups/tracking', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderNumber,
+          trackingCode: trackingCode.trim(),
+          operatorId: operatorId || null,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (data.ok) {
+        setSuccess(true)
+        setSavedTrackingCode(trackingCode.trim())
+        setResult(`✅ Rastreio salvo com sucesso!\n\nPedido: ${data.order.orderNumber}\nRastreio: ${trackingCode.trim()}`)
+        setTimeout(() => setResult(""), 5000)
+      } else {
+        setSuccess(false)
+        setResult(`❌ Erro ao salvar rastreio\n\n${data.error || "Erro desconhecido"}`)
+        setTimeout(() => setResult(""), 10000)
+      }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Erro desconhecido"
+      setSuccess(false)
+      setResult(`❌ Erro de conexão\n\n${msg}`)
+      setTimeout(() => setResult(""), 10000)
+    } finally {
+      setLoadingTracking(false)
+    }
   }
 
   // Validar nome do retirante
@@ -523,6 +598,51 @@ export default function RetiradaPage() {
                       </div>
                     )}
                   </div>
+                </div>
+
+                {/* Campo de Rastreio (Lalamove ou outro) */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-zinc-900">
+                    Código de Rastreio (opcional)
+                    {savedTrackingCode && (
+                      <span className="ml-2 text-green-600 text-xs font-normal">✓ Salvo</span>
+                    )}
+                  </label>
+                  <div className="relative">
+                    <Truck className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-400" />
+                    <input
+                      type="text"
+                      value={trackingCode}
+                      onChange={(e) => setTrackingCode(e.target.value)}
+                      className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent transition-all ${
+                        savedTrackingCode ? 'border-green-300 bg-green-50' : 'border-zinc-200'
+                      }`}
+                      placeholder="Ex: https://lalamove.com/track/... ou número"
+                    />
+                  </div>
+                  {orderNumber && trackingCode.trim() && trackingCode !== savedTrackingCode && (
+                    <button
+                      type="button"
+                      onClick={saveTracking}
+                      disabled={loadingTracking}
+                      className="w-full bg-blue-500 text-white font-semibold py-3 px-4 rounded-xl hover:bg-blue-600 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      {loadingTracking ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          <span>Salvando...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Truck className="w-5 h-5" />
+                          <span>Salvar Rastreio</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                  <p className="text-xs text-zinc-500">
+                    Para pedidos Lalamove, cole o link ou número de rastreio aqui. Você pode salvar o rastreio agora e completar a retirada depois.
+                  </p>
                 </div>
 
                 <div className="space-y-2">

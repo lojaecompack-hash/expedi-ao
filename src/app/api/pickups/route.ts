@@ -16,6 +16,7 @@ export async function POST(req: Request) {
       cpf?: string
       operatorId?: string
       retrieverName?: string
+      trackingCode?: string
       photo?: string
       dryRun?: boolean
     }
@@ -144,19 +145,47 @@ export async function POST(req: Request) {
       select: { id: true, tinyOrderId: true, orderNumber: true },
     })
 
-    const pickup = await prisma.pickup.create({
-      data: {
-        orderId: order.id,
-        cpfLast4,
-        operatorId,
-        operatorName,
-        customerName: pedido.cliente?.nome || body.retrieverName || null,
-        customerCpfCnpj: pedido.cliente?.cpf_cnpj || cpfDigits || null,
-        retrieverName: body.retrieverName || null,
-        photo: body.photo || null,
-      },
-      select: { id: true, cpfLast4: true, operatorId: true, operatorName: true, customerName: true, customerCpfCnpj: true, retrieverName: true, photo: true, createdAt: true },
+    // Verificar se já existe um pickup para este pedido (pode ter sido criado com rastreio)
+    const existingPickup = await prisma.pickup.findFirst({
+      where: { orderId: order.id }
     })
+
+    let pickup
+    if (existingPickup) {
+      // Atualizar pickup existente (preservar rastreio se já existir)
+      pickup = await prisma.pickup.update({
+        where: { id: existingPickup.id },
+        data: {
+          cpfLast4,
+          operatorId,
+          operatorName,
+          customerName: pedido.cliente?.nome || body.retrieverName || null,
+          customerCpfCnpj: pedido.cliente?.cpf_cnpj || cpfDigits || null,
+          retrieverName: body.retrieverName || null,
+          trackingCode: body.trackingCode || existingPickup.trackingCode || null,
+          photo: body.photo || null,
+        },
+        select: { id: true, cpfLast4: true, operatorId: true, operatorName: true, customerName: true, customerCpfCnpj: true, retrieverName: true, trackingCode: true, photo: true, createdAt: true },
+      })
+      console.log('[Pickups] Pickup atualizado:', pickup.id)
+    } else {
+      // Criar novo pickup
+      pickup = await prisma.pickup.create({
+        data: {
+          orderId: order.id,
+          cpfLast4,
+          operatorId,
+          operatorName,
+          customerName: pedido.cliente?.nome || body.retrieverName || null,
+          customerCpfCnpj: pedido.cliente?.cpf_cnpj || cpfDigits || null,
+          retrieverName: body.retrieverName || null,
+          trackingCode: body.trackingCode || null,
+          photo: body.photo || null,
+        },
+        select: { id: true, cpfLast4: true, operatorId: true, operatorName: true, customerName: true, customerCpfCnpj: true, retrieverName: true, trackingCode: true, photo: true, createdAt: true },
+      })
+      console.log('[Pickups] Pickup criado:', pickup.id)
+    }
 
     return NextResponse.json({
       ok: true,

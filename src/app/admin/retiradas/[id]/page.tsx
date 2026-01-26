@@ -14,6 +14,7 @@ interface Retirada {
   customerName: string | null
   customerCpfCnpj: string | null
   retrieverName: string | null
+  trackingCode: string | null
   photo: string | null
   createdAt: string
   order: {
@@ -211,6 +212,26 @@ export default function DetalhesRetirada() {
                   <Calendar className="w-4 h-4" />
                   <span className="font-semibold">{new Date(retirada.createdAt).toLocaleString('pt-BR')}</span>
                 </div>
+              </div>
+              <div className="col-span-2">
+                <p className="text-sm text-zinc-600 mb-1">Código de Rastreio</p>
+                {retirada.trackingCode ? (
+                  retirada.trackingCode.startsWith('http') ? (
+                    <a 
+                      href={retirada.trackingCode} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline text-lg font-semibold flex items-center gap-2"
+                    >
+                      <Truck className="w-5 h-5" />
+                      Abrir rastreio
+                    </a>
+                  ) : (
+                    <p className="text-lg font-semibold text-zinc-900">{retirada.trackingCode}</p>
+                  )
+                ) : (
+                  <p className="text-lg font-semibold text-zinc-400">Não informado</p>
+                )}
               </div>
             </div>
           </motion.div>

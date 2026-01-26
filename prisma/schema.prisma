@@ -183,6 +183,7 @@ model Pickup {
   customerName    String?
   customerCpfCnpj String?
   retrieverName   String?
+  trackingCode    String?
   photo           String?   @db.Text
   createdAt       DateTime  @default(now())
 

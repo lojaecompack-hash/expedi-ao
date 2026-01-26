@@ -14,6 +14,7 @@ interface Retirada {
   customerName: string | null
   customerCpfCnpj: string | null
   retrieverName: string | null
+  trackingCode: string | null
   photo: string | null
   createdAt: string
   order: {
@@ -162,6 +163,7 @@ export default function RelatorioRetiradas() {
                       <th className="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Pedido</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Retirante</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Operador</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Rastreio</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Data</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Foto</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Ações</th>
@@ -184,6 +186,27 @@ export default function RelatorioRetiradas() {
                         </td>
                         <td className="px-6 py-4">
                           <p className="text-zinc-900">{retirada.operatorName || 'N/A'}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          {retirada.trackingCode ? (
+                            retirada.trackingCode.startsWith('http') ? (
+                              <a 
+                                href={retirada.trackingCode} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:underline text-sm truncate max-w-[150px] block"
+                                title={retirada.trackingCode}
+                              >
+                                🔗 Ver rastreio
+                              </a>
+                            ) : (
+                              <span className="text-sm text-zinc-900 truncate max-w-[150px] block" title={retirada.trackingCode}>
+                                {retirada.trackingCode}
+                              </span>
+                            )
+                          ) : (
+                            <span className="text-sm text-zinc-400">-</span>
+                          )}
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2 text-zinc-600">
