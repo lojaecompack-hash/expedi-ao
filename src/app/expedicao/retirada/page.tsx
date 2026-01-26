@@ -10,12 +10,25 @@ import { Html5Qrcode } from "html5-qrcode"
 interface OrderDetails {
   id: string
   numero: string
+  situacao: string
   clienteNome: string
   itens: Array<{
     id: string
     descricao: string
     quantidade: number
   }>
+}
+
+// Status bloqueados para retirada
+const BLOCKED_STATUS = ['aberto', 'em aberto', 'enviado', 'entregue', 'cancelado']
+
+// Mensagens de bloqueio por status
+const BLOCKED_STATUS_MESSAGES: Record<string, string> = {
+  'aberto': 'Este pedido ainda está em aberto e não pode ser retirado.',
+  'em aberto': 'Este pedido ainda está em aberto e não pode ser retirado.',
+  'enviado': 'Este pedido já foi enviado anteriormente.',
+  'entregue': 'Este pedido já foi entregue ao cliente.',
+  'cancelado': 'Este pedido foi cancelado e não pode ser processado.',
 }
 
 interface Operator {
@@ -61,6 +74,11 @@ export default function RetiradaPage() {
   const [trackingCode, setTrackingCode] = useState("")
   const [savedTrackingCode, setSavedTrackingCode] = useState<string | null>(null)
   const [loadingTracking, setLoadingTracking] = useState(false)
+  
+  // Estados para modal de bloqueio por status
+  const [showBlockedModal, setShowBlockedModal] = useState(false)
+  const [blockedStatus, setBlockedStatus] = useState<string>("")
+  const [blockedMessage, setBlockedMessage] = useState<string>("")
   
   useEffect(() => {
     fetchOperators()
@@ -113,6 +131,23 @@ export default function RetiradaPage() {
       }
       
       console.log('[Client] Definindo orderDetails:', details)
+      console.log('[Client] Status do pedido:', details.situacao)
+      
+      // Verificar se o status está bloqueado
+      const statusLower = (details.situacao || '').toLowerCase()
+      const isBlocked = BLOCKED_STATUS.some(blocked => statusLower.includes(blocked))
+      
+      if (isBlocked) {
+        console.log('[Client] Pedido bloqueado por status:', statusLower)
+        const message = BLOCKED_STATUS_MESSAGES[statusLower] || 
+          `Este pedido está com status "${details.situacao}" e não pode ser processado para retirada.`
+        setBlockedStatus(details.situacao)
+        setBlockedMessage(message)
+        setShowBlockedModal(true)
+        setOrderDetails(null)
+        return
+      }
+      
       setOrderDetails(details)
       
       // Inicializar checkboxes desmarcados
@@ -853,6 +888,57 @@ export default function RetiradaPage() {
                   </p>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* Modal de Bloqueio por Status */}
+          {showBlockedModal && (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.2 }}
+                className="w-full max-w-md bg-white rounded-2xl border border-red-200 shadow-xl overflow-hidden"
+              >
+                {/* Header com X para fechar */}
+                <div className="bg-red-500 px-6 py-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <AlertCircle className="w-6 h-6 text-white" />
+                    <h3 className="font-bold text-lg text-white">Pedido Bloqueado</h3>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setShowBlockedModal(false)
+                      setOrderNumber("")
+                    }}
+                    className="w-8 h-8 bg-white/20 hover:bg-white/30 rounded-lg flex items-center justify-center transition-colors"
+                  >
+                    <X className="w-5 h-5 text-white" />
+                  </button>
+                </div>
+                
+                {/* Conteúdo */}
+                <div className="p-6 space-y-4">
+                  <div className="flex items-center gap-3 p-4 bg-red-50 rounded-xl border border-red-100">
+                    <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center shrink-0">
+                      <Package className="w-6 h-6 text-red-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-red-600 font-medium">Status do Pedido</p>
+                      <p className="text-lg font-bold text-red-700 uppercase">{blockedStatus}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="p-4 bg-zinc-50 rounded-xl">
+                    <p className="text-zinc-700 font-medium">Motivo do Bloqueio:</p>
+                    <p className="text-zinc-600 mt-1">{blockedMessage}</p>
+                  </div>
+                  
+                  <p className="text-sm text-zinc-500 text-center">
+                    Feche esta janela para tentar outro pedido.
+                  </p>
+                </div>
+              </motion.div>
             </div>
           )}
 

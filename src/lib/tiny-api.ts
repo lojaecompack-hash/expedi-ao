@@ -189,6 +189,7 @@ export async function markOrderAsShipped(orderNumber: string, orderId?: string) 
 export interface TinyOrderDetails {
   id: string
   numero: string
+  situacao: string
   clienteNome: string
   itens: Array<{
     id: string
@@ -419,6 +420,7 @@ export async function getTinyOrderDetails(orderNumber: string): Promise<TinyOrde
     const detalhes: TinyOrderDetails = {
       id: String(pedido.id),
       numero: String(pedido.numero),
+      situacao: pedido.situacao || 'desconhecido',
       clienteNome: pedido.cliente?.nome || 'Cliente não informado',
       itens: (pedido.itens || []).map((item, index) => ({
         id: item.item?.id || String(index),
