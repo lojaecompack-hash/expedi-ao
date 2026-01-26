@@ -76,6 +76,9 @@ export default function RetiradaPage() {
   const [savedTrackingCode, setSavedTrackingCode] = useState<string | null>(null)
   const [loadingTracking, setLoadingTracking] = useState(false)
   
+  // Estados para transportadora
+  const [transportadoraDisplay, setTransportadoraDisplay] = useState<string>("Não definida")
+  
   // Estados para modal de bloqueio por status
   const [showBlockedModal, setShowBlockedModal] = useState(false)
   const [blockedStatus, setBlockedStatus] = useState<string>("")
@@ -157,6 +160,28 @@ export default function RetiradaPage() {
         initialChecks[item.id] = false
       })
       setCheckedItems(initialChecks)
+      
+      // Fazer match de transportadora
+      if (details.transportadora && details.transportadora !== 'Não definida') {
+        try {
+          const matchRes = await fetch('/api/transportadoras/match', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nomeTransportador: details.transportadora })
+          })
+          const matchData = await matchRes.json()
+          if (matchData.ok && matchData.nomeDisplay) {
+            setTransportadoraDisplay(matchData.nomeDisplay)
+          } else {
+            setTransportadoraDisplay(details.transportadora)
+          }
+        } catch (matchError) {
+          console.error('[Client] Erro ao fazer match de transportadora:', matchError)
+          setTransportadoraDisplay(details.transportadora)
+        }
+      } else {
+        setTransportadoraDisplay('Não definida')
+      }
       
       // Buscar rastreio existente para este pedido
       try {
@@ -694,23 +719,23 @@ export default function RetiradaPage() {
                   </p>
                 </div>
 
-                {/* Campo de Forma de Envio (vem da Tiny - somente leitura) */}
+                {/* Campo de Transportadora (vem da Tiny com match - somente leitura) */}
                 {orderDetails && (
                   <div className="space-y-2">
                     <label className="block text-sm font-medium text-zinc-900">
-                      Forma de Envio
+                      Transportadora
                     </label>
                     <div className="relative">
                       <Truck className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-400" />
                       <input
                         type="text"
-                        value={orderDetails.transportadora || 'Não definida'}
+                        value={transportadoraDisplay}
                         readOnly
                         className="w-full pl-10 pr-4 py-3 border border-zinc-200 rounded-xl bg-zinc-50 text-zinc-600 cursor-not-allowed"
                       />
                     </div>
                     <p className="text-xs text-zinc-500">
-                      Forma de envio configurada no pedido da Tiny (não editável).
+                      Transportadora configurada no pedido da Tiny (não editável).
                     </p>
                   </div>
                 )}

@@ -217,6 +217,17 @@ model SyncJob {
   @@index([scheduledAt])
 }
 
+// Transportadoras cadastradas para match automático
+model Transportadora {
+  id          String   @id @default(cuid())
+  nome        String   @unique  // Nome exato para match (ex: "LALAMOVE", "Go Fretes")
+  nomeDisplay String?           // Nome para exibição (opcional)
+  aliases     String[] @default([]) // Nomes alternativos para match (ex: ["LALAMOVE/99 - MOGI", "Lalamove via frenet"])
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 // ========================================
 // MÓDULO DE PRODUÇÃO - CORTE E SOLDA
 // ========================================

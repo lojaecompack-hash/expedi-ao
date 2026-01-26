@@ -426,31 +426,12 @@ export async function getTinyOrderDetails(orderNumber: string): Promise<TinyOrde
     
     // Campo vendedor confirmado: nome_vendedor
     const vendedor = typeof pedidoAny.nome_vendedor === 'string' ? pedidoAny.nome_vendedor : null
-    // Mapeamento de códigos de forma de envio para descrições
-    const FORMA_ENVIO_MAP: Record<string, string> = {
-      'S': 'Sem Frete',
-      'R': 'Retira',
-      'X': 'Outros',
-      'C': 'Correios',
-      'T': 'Transportadora',
-      'D': 'Motoboy',
-      'E': 'Entrega',
-    }
-    
-    // Campos de envio: forma_envio e nome_transportador
-    const formaEnvioCodigo = typeof pedidoAny.forma_envio === 'string' ? pedidoAny.forma_envio : null
+    // Campos de envio: nome_transportador
     const nomeTransportador = typeof pedidoAny.nome_transportador === 'string' && pedidoAny.nome_transportador.trim() !== '' ? pedidoAny.nome_transportador : null
     
-    // Traduzir código para descrição
-    let transportadora: string | null = null
-    if (nomeTransportador) {
-      // Se tem nome do transportador, usar ele
-      transportadora = nomeTransportador
-    } else if (formaEnvioCodigo) {
-      // Senão, traduzir o código
-      transportadora = FORMA_ENVIO_MAP[formaEnvioCodigo] || formaEnvioCodigo
-    }
-    console.log('[Tiny API] Vendedor:', vendedor, '| Forma Envio:', formaEnvioCodigo, '->', transportadora)
+    // Usar nome do transportador diretamente se existir
+    const transportadora = nomeTransportador || null
+    console.log('[Tiny API] Vendedor:', vendedor, '| Transportadora:', transportadora)
     
     const detalhes: TinyOrderDetails = {
       id: String(pedido.id),
