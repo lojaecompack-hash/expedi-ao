@@ -47,12 +47,22 @@ export async function GET(req: Request) {
       }
     }
 
+    // Buscar campos relacionados a envio/transporte/frete
+    const camposEnvio: Record<string, unknown> = {}
+    for (const campo of campos) {
+      const lower = campo.toLowerCase()
+      if (lower.includes('envio') || lower.includes('transport') || lower.includes('frete') || lower.includes('logistic')) {
+        camposEnvio[campo] = pedido[campo]
+      }
+    }
+
     return NextResponse.json({
       ok: true,
       id,
       campos_total: campos.length,
       todos_campos: campos,
       campos_vendedor: camposVendedor,
+      campos_envio: camposEnvio,
       pedido_completo: pedido
     })
   } catch (error) {
