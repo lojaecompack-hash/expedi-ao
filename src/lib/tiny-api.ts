@@ -417,10 +417,11 @@ export async function getTinyOrderDetails(orderNumber: string): Promise<TinyOrde
     }
     
     // Extrair dados necessários
+    const situacao = typeof pedido.situacao === 'string' ? pedido.situacao : 'desconhecido'
     const detalhes: TinyOrderDetails = {
       id: String(pedido.id),
       numero: String(pedido.numero),
-      situacao: pedido.situacao || 'desconhecido',
+      situacao,
       clienteNome: pedido.cliente?.nome || 'Cliente não informado',
       itens: (pedido.itens || []).map((item, index) => ({
         id: item.item?.id || String(index),

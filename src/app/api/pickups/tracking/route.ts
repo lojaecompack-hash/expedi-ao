@@ -45,13 +45,14 @@ export async function POST(req: Request) {
 
         console.log('[Tracking API] Pedido encontrado no Tiny:', pedidoTiny.id)
 
-        // Criar Order local com status "aguardando_rastreio" (não altera status no Tiny)
+        // Criar Order local com status NOVO (não altera status no Tiny)
+        const situacaoTiny = typeof pedidoTiny.situacao === 'string' ? pedidoTiny.situacao : 'preparando_envio'
         order = await prisma.order.create({
           data: {
             tinyOrderId: String(pedidoTiny.id),
             orderNumber: orderNumber.toString(),
-            statusTiny: pedidoTiny.situacao || 'preparando_envio',
-            statusInterno: 'AGUARDANDO_RETIRADA',
+            statusTiny: situacaoTiny,
+            statusInterno: 'NOVO',
           }
         })
         console.log('[Tracking API] Order local criada:', order.id)
