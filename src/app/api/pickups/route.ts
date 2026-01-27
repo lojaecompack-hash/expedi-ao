@@ -150,19 +150,21 @@ export async function POST(req: Request) {
       where: { orderId: order.id }
     })
 
-    // Buscar detalhes completos do pedido para obter vendedor e transportadora
+    // Buscar detalhes completos do pedido para obter vendedor
     let vendedorNome: string | null = null
-    let transportadoraNome: string | null = null
     try {
       const detalhes = await getTinyOrderDetails(orderNumber)
       if (detalhes) {
         vendedorNome = detalhes.vendedor !== 'Não informado' ? detalhes.vendedor : null
-        transportadoraNome = detalhes.transportadora !== 'Não definida' ? detalhes.transportadora : null
-        console.log('[Pickups] Vendedor:', vendedorNome, '| Transportadora:', transportadoraNome)
+        console.log('[Pickups] Vendedor:', vendedorNome)
       }
     } catch (err) {
       console.log('[Pickups] Erro ao buscar detalhes:', err)
     }
+    
+    // Usar transportadora enviada pelo frontend
+    const transportadoraNome = body.transportadora && body.transportadora.trim() !== '' ? body.transportadora.trim() : null
+    console.log('[Pickups] Transportadora selecionada:', transportadoraNome)
 
     let pickup
     if (existingPickup) {

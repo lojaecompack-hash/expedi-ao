@@ -77,7 +77,30 @@ export default function RetiradaPage() {
   const [loadingTracking, setLoadingTracking] = useState(false)
   
   // Estados para transportadora
-  const [transportadoraDisplay, setTransportadoraDisplay] = useState<string>("Não definida")
+  const [transportadoraSelecionada, setTransportadoraSelecionada] = useState<string>("")
+  const [transportadoraSugestoes, setTransportadoraSugestoes] = useState<string[]>([])
+  const [showSugestoes, setShowSugestoes] = useState(false)
+  
+  // Lista de transportadoras
+  const TRANSPORTADORAS = [
+    "CLIENTE RETIRA",
+    "LALAMOVE",
+    "GENEROSO",
+    "CAMILO DOS SANTOS",
+    "LLS TRANSPORTES",
+    "LUZ TRANSPORTES",
+    "CAIAPÓ",
+    "TS CURSINO",
+    "MEYVIS TRANSPORTES",
+    "GO FRETES",
+    "VERA CRUZ",
+    "RISSO TRANSPORTES",
+    "TRANSPEROLA",
+    "TRANSMINAS",
+    "TRANSPORTADORA MARCOS",
+    "SUIÇA TRANSPORTADORA",
+    "RODONAVES"
+  ]
   
   // Estados para modal de bloqueio por status
   const [showBlockedModal, setShowBlockedModal] = useState(false)
@@ -87,6 +110,40 @@ export default function RetiradaPage() {
   useEffect(() => {
     fetchOperators()
   }, [])
+  
+  // Função para normalizar texto (remover acentos e converter para maiúsculas)
+  const normalizeText = (text: string): string => {
+    return text
+      .toUpperCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+  }
+  
+  // Função de fuzzy match para filtrar transportadoras
+  const handleTransportadoraChange = (value: string) => {
+    setTransportadoraSelecionada(value)
+    
+    if (value.trim() === '') {
+      setTransportadoraSugestoes([])
+      setShowSugestoes(false)
+      return
+    }
+    
+    const normalizedInput = normalizeText(value)
+    const filtradas = TRANSPORTADORAS.filter(t => {
+      const normalizedTransp = normalizeText(t)
+      return normalizedTransp.includes(normalizedInput)
+    })
+    
+    setTransportadoraSugestoes(filtradas)
+    setShowSugestoes(filtradas.length > 0)
+  }
+  
+  // Função para selecionar transportadora da lista
+  const selecionarTransportadora = (transportadora: string) => {
+    setTransportadoraSelecionada(transportadora)
+    setShowSugestoes(false)
+  }
   
   const fetchOperators = async () => {
     try {
@@ -161,27 +218,8 @@ export default function RetiradaPage() {
       })
       setCheckedItems(initialChecks)
       
-      // Fazer match de transportadora
-      if (details.transportadora && details.transportadora !== 'Não definida') {
-        try {
-          const matchRes = await fetch('/api/transportadoras/match', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nomeTransportador: details.transportadora })
-          })
-          const matchData = await matchRes.json()
-          if (matchData.ok && matchData.nomeDisplay) {
-            setTransportadoraDisplay(matchData.nomeDisplay)
-          } else {
-            setTransportadoraDisplay(details.transportadora)
-          }
-        } catch (matchError) {
-          console.error('[Client] Erro ao fazer match de transportadora:', matchError)
-          setTransportadoraDisplay(details.transportadora)
-        }
-      } else {
-        setTransportadoraDisplay('Não definida')
-      }
+      // Inicializar transportadora vazia (operador vai selecionar)
+      setTransportadoraSelecionada("")
       
       // Buscar rastreio existente para este pedido
       try {
@@ -467,7 +505,14 @@ export default function RetiradaPage() {
     if (!orderNumber || !cpf || !retrieverName.trim()) {
       setSuccess(false)
       setResult("❌ Preencha todos os campos obrigatórios")
-      // Auto-fechar erro após 10 segundos
+      setTimeout(() => setResult(""), 10000)
+      return
+    }
+
+    // Validar transportadora
+    if (!transportadoraSelecionada.trim()) {
+      setSuccess(false)
+      setResult("❌ Selecione uma transportadora")
       setTimeout(() => setResult(""), 10000)
       return
     }
@@ -477,7 +522,6 @@ export default function RetiradaPage() {
     if (!nameValidation.valid) {
       setSuccess(false)
       setResult(`❌ ${nameValidation.message}`)
-      // Auto-fechar erro após 10 segundos
       setTimeout(() => setResult(""), 10000)
       return
     }
@@ -486,7 +530,6 @@ export default function RetiradaPage() {
     if (!operatorId) {
       setSuccess(false)
       setResult("❌ Selecione um operador")
-      // Auto-fechar erro após 10 segundos
       setTimeout(() => setResult(""), 10000)
       return
     }
@@ -495,7 +538,6 @@ export default function RetiradaPage() {
     if (!photo) {
       setSuccess(false)
       setResult("❌ Tire uma foto do produto/documento")
-      // Auto-fechar erro após 10 segundos
       setTimeout(() => setResult(""), 10000)
       return
     }
@@ -535,6 +577,7 @@ export default function RetiradaPage() {
           cpf,
           operatorId: operatorId,
           retrieverName: retrieverName.trim(),
+          transportadora: transportadoraSelecionada.trim(),
           photo: photo || null,
         }),
       })
@@ -719,23 +762,45 @@ export default function RetiradaPage() {
                   </p>
                 </div>
 
-                {/* Campo de Transportadora (vem da Tiny com match - somente leitura) */}
+                {/* Campo de Transportadora (editável com autocomplete) */}
                 {orderDetails && (
                   <div className="space-y-2">
                     <label className="block text-sm font-medium text-zinc-900">
-                      Transportadora
+                      Transportadora *
                     </label>
                     <div className="relative">
                       <Truck className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-400" />
                       <input
                         type="text"
-                        value={transportadoraDisplay}
-                        readOnly
-                        className="w-full pl-10 pr-4 py-3 border border-zinc-200 rounded-xl bg-zinc-50 text-zinc-600 cursor-not-allowed"
+                        value={transportadoraSelecionada}
+                        onChange={(e) => handleTransportadoraChange(e.target.value)}
+                        onFocus={() => {
+                          if (transportadoraSelecionada.trim() !== '' && transportadoraSugestoes.length > 0) {
+                            setShowSugestoes(true)
+                          }
+                        }}
+                        placeholder="Digite para buscar..."
+                        className="w-full pl-10 pr-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
+                      
+                      {/* Lista de sugestões */}
+                      {showSugestoes && transportadoraSugestoes.length > 0 && (
+                        <div className="absolute z-10 w-full mt-1 bg-white border border-zinc-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                          {transportadoraSugestoes.map((transp, index) => (
+                            <button
+                              key={index}
+                              type="button"
+                              onClick={() => selecionarTransportadora(transp)}
+                              className="w-full px-4 py-3 text-left hover:bg-blue-50 transition-colors border-b border-zinc-100 last:border-b-0"
+                            >
+                              <span className="text-sm font-medium text-zinc-900">{transp}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <p className="text-xs text-zinc-500">
-                      Transportadora configurada no pedido da Tiny (não editável).
+                      Digite para buscar ou selecione da lista. Ex: LALA encontra LALAMOVE
                     </p>
                   </div>
                 )}
