@@ -41,6 +41,9 @@ export default function UserDetailPage() {
   const [productionOperators, setProductionOperators] = useState<ProductionOperator[]>([])
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editForm, setEditForm] = useState({ name: '', role: '' as 'ADMIN' | 'EXPEDICAO' | 'PRODUCAO' })
+  const [saving, setSaving] = useState(false)
 
   // Form state para criar operador
   const [operatorForm, setOperatorForm] = useState({
@@ -149,6 +152,41 @@ export default function UserDetailPage() {
     }
   }
 
+  const handleOpenEditModal = () => {
+    if (user) {
+      setEditForm({ name: user.name, role: user.role })
+      setShowEditModal(true)
+    }
+  }
+
+  const handleSaveUser = async () => {
+    if (!editForm.name.trim()) {
+      alert('Nome é obrigatório')
+      return
+    }
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/users/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editForm)
+      })
+      const data = await res.json()
+      if (data.ok) {
+        alert('Usuário atualizado com sucesso!')
+        setShowEditModal(false)
+        fetchUserDetails()
+      } else {
+        alert(data.error || 'Erro ao atualizar usuário')
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar usuário:', error)
+      alert('Erro ao atualizar usuário')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   if (loading) {
     return (
       <MainLayout>
@@ -213,7 +251,10 @@ export default function UserDetailPage() {
           </div>
 
           <div className="flex gap-3 mt-6">
-            <button className="inline-flex items-center gap-2 px-4 py-2 text-sm text-zinc-700 bg-zinc-100 hover:bg-zinc-200 rounded-lg transition-colors">
+            <button 
+              onClick={handleOpenEditModal}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm text-zinc-700 bg-zinc-100 hover:bg-zinc-200 rounded-lg transition-colors"
+            >
               <Edit className="w-4 h-4" />
               Editar
             </button>
@@ -379,6 +420,56 @@ export default function UserDetailPage() {
           />
         )}
       </div>
+
+      {/* Modal de Edição de Usuário */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+            <h2 className="text-xl font-bold text-zinc-900 mb-4">Editar Usuário</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 mb-2">Nome</label>
+                <input
+                  type="text"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-[#FFD700] focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 mb-2">Tipo</label>
+                <select
+                  value={editForm.role}
+                  onChange={(e) => setEditForm({ ...editForm, role: e.target.value as 'ADMIN' | 'EXPEDICAO' | 'PRODUCAO' })}
+                  className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-[#FFD700] focus:border-transparent"
+                >
+                  <option value="ADMIN">Administrador</option>
+                  <option value="EXPEDICAO">Expedição</option>
+                  <option value="PRODUCAO">Produção</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="flex-1 px-4 py-2 text-zinc-700 bg-zinc-100 hover:bg-zinc-200 rounded-lg transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSaveUser}
+                disabled={saving}
+                className="flex-1 px-4 py-2 bg-[#FFD700] text-zinc-900 rounded-lg hover:bg-[#FFC700] transition-colors disabled:opacity-50"
+              >
+                {saving ? 'Salvando...' : 'Salvar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </MainLayout>
   )
 }
