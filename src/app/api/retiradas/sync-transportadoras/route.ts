@@ -40,6 +40,12 @@ export async function POST() {
     
     for (const pickup of pickupsSemTransportadora) {
       try {
+        // Verificar se orderNumber existe
+        if (!pickup.order?.orderNumber) {
+          console.log(`[Sync] Pickup ${pickup.id} - sem orderNumber`)
+          continue
+        }
+        
         // Buscar detalhes do pedido na Tiny
         const detalhes = await getTinyOrderDetails(pickup.order.orderNumber)
         
