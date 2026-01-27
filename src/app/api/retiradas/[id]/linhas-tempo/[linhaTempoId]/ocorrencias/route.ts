@@ -41,7 +41,18 @@ export async function POST(
       )
     }
     
-    // Criar ocorrência com setor origem e destino
+    // Marcar TODAS as ocorrências anteriores desta linha do tempo como RESPONDIDA
+    await prisma.ocorrencia.updateMany({
+      where: {
+        linhaTempoId,
+        statusOcorrencia: 'PENDENTE'
+      },
+      data: {
+        statusOcorrencia: 'RESPONDIDA'
+      }
+    })
+    
+    // Criar nova ocorrência com setor origem e destino
     const ocorrencia = await prisma.ocorrencia.create({
       data: {
         linhaTempoId,

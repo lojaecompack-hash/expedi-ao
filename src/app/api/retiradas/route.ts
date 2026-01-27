@@ -48,18 +48,43 @@ export async function GET(req: Request) {
         linhasDoTempo: {
           select: {
             id: true,
-            status: true
+            status: true,
+            ocorrencias: {
+              select: {
+                id: true,
+                statusOcorrencia: true,
+                setorDestino: true
+              },
+              orderBy: {
+                createdAt: 'desc'
+              },
+              take: 1
+            }
           }
         }
       }
     })
     
-    // Adicionar contagem de linhas do tempo abertas
-    const retiradasComOcorrencias = retiradas.map(r => ({
-      ...r,
-      ocorrenciasAbertas: r.linhasDoTempo?.filter(l => l.status === 'ABERTA').length || 0,
-      totalOcorrencias: r.linhasDoTempo?.length || 0
-    }))
+    // Adicionar status da última ocorrência
+    const retiradasComOcorrencias = retiradas.map(r => {
+      // Pegar a última ocorrência da linha do tempo aberta
+      const linhaAberta = r.linhasDoTempo?.find(l => l.status === 'ABERTA')
+      const ultimaOcorrencia = linhaAberta?.ocorrencias?.[0]
+      
+      // Determinar status para exibição
+      let statusOcorrencia = null
+      if (linhaAberta && ultimaOcorrencia) {
+        statusOcorrencia = ultimaOcorrencia.statusOcorrencia
+      }
+      
+      return {
+        ...r,
+        ocorrenciasAbertas: r.linhasDoTempo?.filter(l => l.status === 'ABERTA').length || 0,
+        totalOcorrencias: r.linhasDoTempo?.length || 0,
+        statusUltimaOcorrencia: statusOcorrencia,
+        setorDestinoUltimaOcorrencia: ultimaOcorrencia?.setorDestino || null
+      }
+    })
     
     // Contar total
     const total = await prisma.pickup.count()

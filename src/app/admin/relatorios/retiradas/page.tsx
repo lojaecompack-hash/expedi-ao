@@ -22,6 +22,8 @@ interface Retirada {
   createdAt: string
   ocorrenciasAbertas: number
   totalOcorrencias: number
+  statusUltimaOcorrencia: string | null
+  setorDestinoUltimaOcorrencia: string | null
   order: {
     id: string
     tinyOrderId: string
@@ -291,14 +293,18 @@ export default function RelatorioRetiradas() {
                     {filteredRetiradas.map((retirada) => (
                       <tr key={retirada.id} className="hover:bg-zinc-50 transition-colors">
                         <td className="px-4 py-3">
-                          {retirada.ocorrenciasAbertas > 0 ? (
+                          {retirada.statusUltimaOcorrencia === 'PENDENTE' ? (
                             <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-lg text-xs font-medium">
                               <AlertTriangle className="w-3 h-3" />
-                              {retirada.ocorrenciasAbertas}
+                              Pendente
                             </span>
-                          ) : retirada.totalOcorrencias > 0 ? (
+                          ) : retirada.statusUltimaOcorrencia === 'RESPONDIDA' ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 rounded-lg text-xs font-medium">
+                              Respondida
+                            </span>
+                          ) : retirada.statusUltimaOcorrencia === 'RESOLVIDA' || retirada.totalOcorrencias > 0 ? (
                             <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-lg text-xs font-medium">
-                              ✓ {retirada.totalOcorrencias}
+                              ✓ Resolvida
                             </span>
                           ) : (
                             <span className="text-zinc-400">-</span>

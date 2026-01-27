@@ -34,6 +34,14 @@ export async function PATCH(
       )
     }
     
+    // Se estiver encerrando, marcar todas as ocorrências como RESOLVIDA
+    if (status === 'ENCERRADA') {
+      await prisma.ocorrencia.updateMany({
+        where: { linhaTempoId },
+        data: { statusOcorrencia: 'RESOLVIDA' }
+      })
+    }
+    
     // Atualizar linha do tempo
     const linhaAtualizada = await prisma.linhaTempoOcorrencia.update({
       where: { id: linhaTempoId },
