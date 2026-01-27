@@ -36,13 +36,15 @@ ALTER TABLE "Ocorrencia" DROP COLUMN IF EXISTS "operadorId";
 ALTER TABLE "Ocorrencia" DROP COLUMN IF EXISTS "resolvidoEm";
 ALTER TABLE "Ocorrencia" DROP COLUMN IF EXISTS "resolvidoPor";
 
--- 7. Criar índice para linhaTempoId
+-- 7. Remover índices antigos
 DROP INDEX IF EXISTS "Ocorrencia_pickupId_idx";
 DROP INDEX IF EXISTS "Ocorrencia_status_idx";
+
+-- 8. Criar índice para linhaTempoId
 CREATE INDEX IF NOT EXISTS "Ocorrencia_linhaTempoId_idx" ON "Ocorrencia"("linhaTempoId");
 
--- 8. Adicionar foreign key para Ocorrencia -> LinhaTempoOcorrencia
--- Nota: Só executar se a coluna linhaTempoId tiver valores válidos
+-- 9. Adicionar foreign key para Ocorrencia -> LinhaTempoOcorrencia
+-- Nota: Só executar depois de popular a coluna linhaTempoId
 -- ALTER TABLE "Ocorrencia" ADD CONSTRAINT "Ocorrencia_linhaTempoId_fkey" 
 --     FOREIGN KEY ("linhaTempoId") REFERENCES "LinhaTempoOcorrencia"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
