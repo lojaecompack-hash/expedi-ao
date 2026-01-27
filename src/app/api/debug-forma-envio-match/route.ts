@@ -67,6 +67,28 @@ export async function GET(req: Request) {
     
     const pedido = pedidoData.retorno?.pedido
     
+    // Extrair TODOS os campos do pedido para análise
+    const pedidoCompleto = pedido ? Object.keys(pedido) : []
+    
+    // Buscar campos que contenham "envio", "frete", "transport", "gateway", "logistic"
+    const camposRelevantes: Record<string, unknown> = {}
+    if (pedido) {
+      for (const [key, value] of Object.entries(pedido)) {
+        const keyLower = key.toLowerCase()
+        if (keyLower.includes('envio') || 
+            keyLower.includes('frete') || 
+            keyLower.includes('transport') || 
+            keyLower.includes('gateway') || 
+            keyLower.includes('logistic') ||
+            keyLower.includes('expedicao') ||
+            keyLower.includes('correio') ||
+            keyLower.includes('pac') ||
+            keyLower.includes('sedex')) {
+          camposRelevantes[key] = value
+        }
+      }
+    }
+    
     // 5. Tentar encontrar match pelo nome_transportador se existir
     let matchPorNome = null
     if (pedido?.nome_transportador && pedido.nome_transportador.trim() !== '') {
@@ -86,13 +108,16 @@ export async function GET(req: Request) {
         formaFreteId,
         formaFreteDescricao: expedicao?.formaFrete?.descricao,
         transportadoraId,
-        transportadoraNome: expedicao?.transportadora?.nome
+        transportadoraNome: expedicao?.transportadora?.nome,
+        expedicaoCompleta: expedicao
       },
       pedido: {
         forma_envio: pedido?.forma_envio,
         nome_transportador: pedido?.nome_transportador,
         deposito: pedido?.deposito
       },
+      camposRelevantes,
+      todosCamposPedido: pedidoCompleto,
       formaEnvioDetalhes,
       matchPorNome,
       totalFormasEnvio: formasEnvio.length,
