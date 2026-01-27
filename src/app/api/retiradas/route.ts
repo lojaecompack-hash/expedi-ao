@@ -9,7 +9,8 @@ export async function GET(req: Request) {
     
     console.log('[Retiradas API] Buscando retiradas, limit:', limit, 'offset:', offset)
     
-    // Buscar retiradas com dados do pedido e ocorrências
+    // Buscar retiradas com dados do pedido
+    // Nota: ocorrencias será adicionado quando a tabela existir no banco
     const retiradas = await prisma.pickup.findMany({
       take: limit,
       skip: offset,
@@ -24,21 +25,15 @@ export async function GET(req: Request) {
             statusInterno: true,
             createdAt: true,
           }
-        },
-        ocorrencias: {
-          select: {
-            id: true,
-            status: true
-          }
         }
       }
     })
     
-    // Adicionar contagem de ocorrências abertas
+    // Adicionar contagem de ocorrências (0 por enquanto até tabela ser criada)
     const retiradasComOcorrencias = retiradas.map(r => ({
       ...r,
-      ocorrenciasAbertas: r.ocorrencias.filter(o => o.status === 'ABERTO').length,
-      totalOcorrencias: r.ocorrencias.length
+      ocorrenciasAbertas: 0,
+      totalOcorrencias: 0
     }))
     
     // Contar total
