@@ -21,6 +21,8 @@ export async function GET() {
       return NextResponse.json({ ok: false, error: 'Usuário não encontrado' }, { status: 404 })
     }
 
+    console.log('[API /api/operadores] Usuário logado:', dbUser.email, 'ID:', dbUser.id, 'Role:', dbUser.role)
+    
     // Buscar operadores vinculados a este usuário
     const operadores = await prisma.operator.findMany({
       where: {
