@@ -242,12 +242,12 @@ export default function RelatorioRetiradas() {
                 <table className="w-full">
                   <thead className="bg-zinc-50 border-b border-zinc-200">
                     <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-900">Ocorr.</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-900">Pedido</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-900">Retirante</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-900">Operador</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-900">Vendedor</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-900">Transportadora</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-900">Ocorr.</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-900">Rastreio</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-900">Data</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-900">Status</th>
@@ -258,10 +258,21 @@ export default function RelatorioRetiradas() {
                     {filteredRetiradas.map((retirada) => (
                       <tr key={retirada.id} className="hover:bg-zinc-50 transition-colors">
                         <td className="px-4 py-3">
-                          <div>
-                            <p className="font-medium text-tiny text-zinc-900">#{retirada.order.orderNumber}</p>
-                            <p className="text-xs text-zinc-600">ID: {retirada.order.tinyOrderId}</p>
-                          </div>
+                          {retirada.ocorrenciasAbertas > 0 ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-lg text-xs font-medium">
+                              <AlertTriangle className="w-3 h-3" />
+                              {retirada.ocorrenciasAbertas}
+                            </span>
+                          ) : retirada.totalOcorrencias > 0 ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-lg text-xs font-medium">
+                              ✓ {retirada.totalOcorrencias}
+                            </span>
+                          ) : (
+                            <span className="text-zinc-400">-</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <p className="font-medium text-tiny text-zinc-900">#{retirada.order.orderNumber}</p>
                         </td>
                         <td className="px-4 py-3">
                           <div>
@@ -277,20 +288,6 @@ export default function RelatorioRetiradas() {
                         </td>
                         <td className="px-4 py-3">
                           <p className="text-tiny text-zinc-900">{retirada.transportadora || '-'}</p>
-                        </td>
-                        <td className="px-4 py-3">
-                          {retirada.ocorrenciasAbertas > 0 ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-lg text-xs font-medium">
-                              <AlertTriangle className="w-3 h-3" />
-                              {retirada.ocorrenciasAbertas}
-                            </span>
-                          ) : retirada.totalOcorrencias > 0 ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-lg text-xs font-medium">
-                              ✓ {retirada.totalOcorrencias}
-                            </span>
-                          ) : (
-                            <span className="text-zinc-400">-</span>
-                          )}
                         </td>
                         <td className="px-4 py-3">
                           {retirada.trackingCode ? (
