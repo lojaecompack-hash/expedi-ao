@@ -114,18 +114,9 @@ export default function RelatorioRetiradas() {
           <p className="text-xs text-zinc-600 mt-1">Visualize todas as retiradas realizadas</p>
         </div>
 
-          {/* Search and Filter */}
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-400" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar por pedido, retirante, operador ou vendedor..."
-                className="w-full pl-9 pr-3 py-2 text-tiny border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent"
-              />
-            </div>
+          {/* Filters */}
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-wrap gap-4">
             <div className="flex flex-col">
               <label className="text-xs font-medium text-zinc-700 mb-1">Status da Retirada</label>
               <select
@@ -188,6 +179,19 @@ export default function RelatorioRetiradas() {
                 <option value="Vendas">Vendas</option>
                 <option value="Financeiro">Financeiro</option>
               </select>
+            </div>
+            </div>
+            
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-400" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar por pedido, retirante, operador ou vendedor..."
+                className="w-full pl-9 pr-3 py-2 text-tiny border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent"
+              />
             </div>
           </div>
 
