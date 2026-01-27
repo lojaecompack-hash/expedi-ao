@@ -21,7 +21,7 @@ interface OrderDetails {
 }
 
 // Status bloqueados para retirada
-const BLOCKED_STATUS = ['aberto', 'em aberto', 'enviado', 'entregue', 'cancelado']
+const BLOCKED_STATUS = ['aberto', 'em aberto', 'enviado', 'entregue', 'cancelado', 'aprovado', 'preparando envio', 'faturado']
 
 // Mensagens de bloqueio por status
 const BLOCKED_STATUS_MESSAGES: Record<string, string> = {
@@ -30,6 +30,9 @@ const BLOCKED_STATUS_MESSAGES: Record<string, string> = {
   'enviado': 'Este pedido já foi enviado anteriormente.',
   'entregue': 'Este pedido já foi entregue ao cliente.',
   'cancelado': 'Este pedido foi cancelado e não pode ser processado.',
+  'aprovado': 'Pedido não embalado',
+  'preparando envio': 'Pedido não embalado',
+  'faturado': 'Pedido não embalado',
 }
 
 interface Operator {
