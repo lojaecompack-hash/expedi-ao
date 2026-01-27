@@ -6,6 +6,11 @@ import { Package, Truck, User, Calendar, ArrowLeft, Image as ImageIcon, Edit2, S
 import Link from "next/link"
 import { useParams } from "next/navigation"
 
+interface Operador {
+  id: string
+  name: string
+}
+
 interface Ocorrencia {
   id: string
   descricao: string
@@ -62,11 +67,18 @@ export default function DetalhesRetirada() {
   // Estados para linhas do tempo de ocorrências
   const [linhasDoTempo, setLinhasDoTempo] = useState<LinhaDoTempo[]>([])
   const [novaOcorrencia, setNovaOcorrencia] = useState("")
-  const [salvandoOcorrencia, setSalvandoOcorrencia] = useState(false)
   const [criandoLinhaTempo, setCriandoLinhaTempo] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [linhaTempoAtual, setLinhaTempoAtual] = useState<LinhaDoTempo | null>(null)
   const [expandedLinhas, setExpandedLinhas] = useState<Set<string>>(new Set())
+  
+  // Estados para modal de autenticação do operador
+  const [showAuthModal, setShowAuthModal] = useState(false)
+  const [operadores, setOperadores] = useState<Operador[]>([])
+  const [selectedOperadorId, setSelectedOperadorId] = useState("")
+  const [operadorSenha, setOperadorSenha] = useState("")
+  const [validandoOperador, setValidandoOperador] = useState(false)
+  const [authError, setAuthError] = useState("")
 
   useEffect(() => {
     if (id) {
@@ -139,6 +151,19 @@ export default function DetalhesRetirada() {
     }
   }
 
+  // Buscar operadores do usuário logado
+  const fetchOperadores = async () => {
+    try {
+      const res = await fetch('/api/operadores')
+      const data = await res.json()
+      if (data.ok) {
+        setOperadores(data.operadores)
+      }
+    } catch (error) {
+      console.error('Erro ao buscar operadores:', error)
+    }
+  }
+
   // Obter linha do tempo aberta (se existir)
   const linhaAberta = linhasDoTempo.find(l => l.status === 'ABERTA')
   
@@ -168,18 +193,52 @@ export default function DetalhesRetirada() {
     }
   }
 
-  // Adicionar ocorrência à linha do tempo aberta
-  const adicionarOcorrencia = async () => {
+  // Abrir modal de autenticação do operador
+  const handleAdicionarClick = () => {
     if (!novaOcorrencia.trim() || !linhaAberta) return
-    
-    setSalvandoOcorrencia(true)
+    fetchOperadores()
+    setSelectedOperadorId("")
+    setOperadorSenha("")
+    setAuthError("")
+    setShowAuthModal(true)
+  }
+
+  // Validar operador e adicionar ocorrência
+  const validarEAdicionarOcorrencia = async () => {
+    if (!selectedOperadorId || !operadorSenha) {
+      setAuthError("Selecione o operador e digite a senha")
+      return
+    }
+
+    setValidandoOperador(true)
+    setAuthError("")
+
     try {
-      const res = await fetch(`/api/retiradas/${id}/linhas-tempo/${linhaAberta.id}/ocorrencias`, {
+      // Validar senha do operador
+      const validarRes = await fetch('/api/operadores/validar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          operadorId: selectedOperadorId, 
+          senha: operadorSenha 
+        })
+      })
+
+      const validarData = await validarRes.json()
+
+      if (!validarData.ok) {
+        setAuthError(validarData.error || 'Erro ao validar operador')
+        setValidandoOperador(false)
+        return
+      }
+
+      // Operador validado - adicionar ocorrência
+      const res = await fetch(`/api/retiradas/${id}/linhas-tempo/${linhaAberta!.id}/ocorrencias`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           descricao: novaOcorrencia.trim(),
-          operadorNome: retirada?.operatorName || null
+          operadorNome: validarData.operador.name
         })
       })
       
@@ -187,17 +246,18 @@ export default function DetalhesRetirada() {
       
       if (data.ok) {
         setNovaOcorrencia("")
-        setLinhaTempoAtual(linhaAberta)
+        setShowAuthModal(false)
+        setLinhaTempoAtual(linhaAberta || null)
         setShowModal(true)
         fetchLinhasDoTempo()
       } else {
-        alert('Erro ao adicionar ocorrência: ' + (data.error || 'Erro desconhecido'))
+        setAuthError('Erro ao adicionar ocorrência: ' + (data.error || 'Erro desconhecido'))
       }
     } catch (error) {
       console.error('Erro ao adicionar ocorrência:', error)
-      alert('Erro ao adicionar ocorrência')
+      setAuthError('Erro ao adicionar ocorrência')
     } finally {
-      setSalvandoOcorrencia(false)
+      setValidandoOperador(false)
     }
   }
 
@@ -555,18 +615,14 @@ export default function DetalhesRetirada() {
                     onChange={(e) => setNovaOcorrencia(e.target.value)}
                     placeholder="Adicionar ocorrência..."
                     className="flex-1 px-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-[#FFD700] focus:border-transparent bg-white"
-                    onKeyDown={(e) => e.key === 'Enter' && adicionarOcorrencia()}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAdicionarClick()}
                   />
                   <button
-                    onClick={adicionarOcorrencia}
-                    disabled={salvandoOcorrencia || !novaOcorrencia.trim()}
+                    onClick={handleAdicionarClick}
+                    disabled={!novaOcorrencia.trim()}
                     className="px-4 py-3 bg-[#FFD700] text-zinc-900 rounded-xl hover:bg-[#FFC700] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium"
                   >
-                    {salvandoOcorrencia ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                    ) : (
-                      <Plus className="w-5 h-5" />
-                    )}
+                    <Plus className="w-5 h-5" />
                     Adicionar
                   </button>
                 </div>
@@ -648,6 +704,83 @@ export default function DetalhesRetirada() {
               </div>
             )}
           </motion.div>
+
+          {/* Modal de Autenticação do Operador */}
+          {showAuthModal && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-xl"
+              >
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center">
+                    <User className="w-6 h-6 text-amber-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-zinc-900">Identificação do Operador</h3>
+                </div>
+                
+                <div className="space-y-4 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-700 mb-1">Operador</label>
+                    <select
+                      value={selectedOperadorId}
+                      onChange={(e) => setSelectedOperadorId(e.target.value)}
+                      className="w-full px-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-[#FFD700] focus:border-transparent bg-white"
+                    >
+                      <option value="">Selecione o operador...</option>
+                      {operadores.map((op) => (
+                        <option key={op.id} value={op.id}>{op.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-700 mb-1">Senha</label>
+                    <input
+                      type="password"
+                      value={operadorSenha}
+                      onChange={(e) => setOperadorSenha(e.target.value)}
+                      placeholder="Digite sua senha..."
+                      className="w-full px-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-[#FFD700] focus:border-transparent"
+                      onKeyDown={(e) => e.key === 'Enter' && validarEAdicionarOcorrencia()}
+                    />
+                  </div>
+
+                  {authError && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-xl">
+                      <p className="text-sm text-red-600">{authError}</p>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setShowAuthModal(false)
+                      setAuthError("")
+                    }}
+                    disabled={validandoOperador}
+                    className="flex-1 px-4 py-3 border border-zinc-200 text-zinc-700 rounded-xl hover:bg-zinc-50 font-medium disabled:opacity-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={validarEAdicionarOcorrencia}
+                    disabled={validandoOperador || !selectedOperadorId || !operadorSenha}
+                    className="flex-1 px-4 py-3 bg-[#FFD700] text-zinc-900 rounded-xl hover:bg-[#FFC700] font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {validandoOperador ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <CheckCircle className="w-5 h-5" />
+                    )}
+                    {validandoOperador ? 'Validando...' : 'Registrar'}
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
 
           {/* Modal após adicionar ocorrência - pergunta se quer encerrar */}
           {showModal && linhaTempoAtual && (
