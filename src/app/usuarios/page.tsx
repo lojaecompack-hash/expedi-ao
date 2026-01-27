@@ -56,27 +56,23 @@ export default function UsuariosPage() {
         body: JSON.stringify(formData)
       })
 
-      // Verificar se a resposta é válida
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({ error: 'Erro desconhecido' }))
-        alert(errorData.error || `Erro HTTP ${res.status}`)
-        return
-      }
-
       const data = await res.json()
 
-      if (data.ok) {
+      if (res.ok && data.ok) {
         alert('Usuário criado com sucesso!')
         setFormData({ email: '', name: '', password: '', role: 'EXPEDICAO' })
-        fetchUsers()
+        await fetchUsers()
       } else {
-        alert(data.error || 'Erro ao criar usuário')
+        // Atualizar lista para verificar se usuário foi criado
+        await fetchUsers()
+        const errorMsg = data.error || data.details || 'Erro ao criar usuário'
+        alert(errorMsg)
       }
     } catch (error) {
       console.error('Erro ao criar usuário:', error)
-      alert('Erro ao criar usuário. Verifique se o usuário foi criado antes de tentar novamente.')
-      // Atualizar lista mesmo em caso de erro, pois o usuário pode ter sido criado
-      fetchUsers()
+      // Atualizar lista mesmo em caso de erro
+      await fetchUsers()
+      alert('Erro de conexão. Verifique se o usuário foi criado na lista abaixo.')
     } finally {
       setCreating(false)
     }
