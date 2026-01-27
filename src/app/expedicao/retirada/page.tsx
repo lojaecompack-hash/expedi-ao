@@ -78,29 +78,6 @@ export default function RetiradaPage() {
   
   // Estados para transportadora
   const [transportadoraSelecionada, setTransportadoraSelecionada] = useState<string>("")
-  const [transportadoraSugestoes, setTransportadoraSugestoes] = useState<string[]>([])
-  const [showSugestoes, setShowSugestoes] = useState(false)
-  
-  // Lista de transportadoras
-  const TRANSPORTADORAS = [
-    "CLIENTE RETIRA",
-    "LALAMOVE",
-    "GENEROSO",
-    "CAMILO DOS SANTOS",
-    "LLS TRANSPORTES",
-    "LUZ TRANSPORTES",
-    "CAIAPÓ",
-    "TS CURSINO",
-    "MEYVIS TRANSPORTES",
-    "GO FRETES",
-    "VERA CRUZ",
-    "RISSO TRANSPORTES",
-    "TRANSPEROLA",
-    "TRANSMINAS",
-    "TRANSPORTADORA MARCOS",
-    "SUIÇA TRANSPORTADORA",
-    "RODONAVES"
-  ]
   
   // Estados para modal de bloqueio por status
   const [showBlockedModal, setShowBlockedModal] = useState(false)
@@ -110,40 +87,6 @@ export default function RetiradaPage() {
   useEffect(() => {
     fetchOperators()
   }, [])
-  
-  // Função para normalizar texto (remover acentos e converter para maiúsculas)
-  const normalizeText = (text: string): string => {
-    return text
-      .toUpperCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '') // Remove acentos
-  }
-  
-  // Função de fuzzy match para filtrar transportadoras
-  const handleTransportadoraChange = (value: string) => {
-    setTransportadoraSelecionada(value)
-    
-    if (value.trim() === '') {
-      setTransportadoraSugestoes([])
-      setShowSugestoes(false)
-      return
-    }
-    
-    const normalizedInput = normalizeText(value)
-    const filtradas = TRANSPORTADORAS.filter(t => {
-      const normalizedTransp = normalizeText(t)
-      return normalizedTransp.includes(normalizedInput)
-    })
-    
-    setTransportadoraSugestoes(filtradas)
-    setShowSugestoes(filtradas.length > 0)
-  }
-  
-  // Função para selecionar transportadora da lista
-  const selecionarTransportadora = (transportadora: string) => {
-    setTransportadoraSelecionada(transportadora)
-    setShowSugestoes(false)
-  }
   
   const fetchOperators = async () => {
     try {
@@ -762,49 +705,27 @@ export default function RetiradaPage() {
                     </button>
                   )}
                   <p className="text-xs text-zinc-500">
-                    Para pedidos Lalamove, cole o link ou número de rastreio aqui. Você pode salvar o rastreio agora e completar a retirada depois.
+                    Cole o link ou número de rastreio aqui. Você pode salvar o rastreio agora e completar a retirada depois.
                   </p>
                 </div>
 
-                {/* Campo de Transportadora (editável com autocomplete) */}
+                {/* Campo de Transportadora (somente leitura) */}
                 {orderDetails && (
                   <div className="space-y-2">
                     <label className="block text-sm font-medium text-zinc-900">
-                      Transportadora *
+                      Transportadora
                     </label>
                     <div className="relative">
                       <Truck className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-400" />
                       <input
                         type="text"
-                        value={transportadoraSelecionada}
-                        onChange={(e) => handleTransportadoraChange(e.target.value)}
-                        onFocus={() => {
-                          if (transportadoraSelecionada.trim() !== '' && transportadoraSugestoes.length > 0) {
-                            setShowSugestoes(true)
-                          }
-                        }}
-                        placeholder="Digite para buscar..."
-                        className="w-full pl-10 pr-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        value={transportadoraSelecionada || 'Não definida'}
+                        readOnly
+                        className="w-full pl-10 pr-4 py-3 border border-zinc-200 rounded-xl bg-zinc-50 text-zinc-600 cursor-not-allowed"
                       />
-                      
-                      {/* Lista de sugestões */}
-                      {showSugestoes && transportadoraSugestoes.length > 0 && (
-                        <div className="absolute z-10 w-full mt-1 bg-white border border-zinc-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
-                          {transportadoraSugestoes.map((transp, index) => (
-                            <button
-                              key={index}
-                              type="button"
-                              onClick={() => selecionarTransportadora(transp)}
-                              className="w-full px-4 py-3 text-left hover:bg-blue-50 transition-colors border-b border-zinc-100 last:border-b-0"
-                            >
-                              <span className="text-sm font-medium text-zinc-900">{transp}</span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
                     </div>
                     <p className="text-xs text-zinc-500">
-                      Digite para buscar ou selecione da lista. Ex: LALA encontra LALAMOVE
+                      Transportadora configurada no pedido da Tiny.
                     </p>
                   </div>
                 )}
