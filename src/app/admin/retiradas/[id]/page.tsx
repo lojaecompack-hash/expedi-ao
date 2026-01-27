@@ -79,6 +79,11 @@ export default function DetalhesRetirada() {
   const [operadorSenha, setOperadorSenha] = useState("")
   const [validandoOperador, setValidandoOperador] = useState(false)
   const [authError, setAuthError] = useState("")
+  
+  // Estados para setor destino
+  const [setores, setSetores] = useState<{id: string, nome: string}[]>([])
+  const [setorAtual, setSetorAtual] = useState("")
+  const [selectedSetorDestino, setSelectedSetorDestino] = useState("")
 
   useEffect(() => {
     if (id) {
@@ -164,6 +169,20 @@ export default function DetalhesRetirada() {
     }
   }
 
+  // Buscar setores disponíveis
+  const fetchSetores = async () => {
+    try {
+      const res = await fetch('/api/setores')
+      const data = await res.json()
+      if (data.ok) {
+        setSetores(data.setores)
+        setSetorAtual(data.setorAtual)
+      }
+    } catch (error) {
+      console.error('Erro ao buscar setores:', error)
+    }
+  }
+
   // Obter linha do tempo aberta (se existir)
   const linhaAberta = linhasDoTempo.find(l => l.status === 'ABERTA')
   
@@ -197,6 +216,8 @@ export default function DetalhesRetirada() {
   const handleAdicionarClick = () => {
     if (!novaOcorrencia.trim() || !linhaAberta) return
     fetchOperadores()
+    fetchSetores()
+    setSelectedSetorDestino("")
     setSelectedOperadorId("")
     setOperadorSenha("")
     setAuthError("")
@@ -205,6 +226,10 @@ export default function DetalhesRetirada() {
 
   // Validar operador e adicionar ocorrência
   const validarEAdicionarOcorrencia = async () => {
+    if (!selectedSetorDestino) {
+      setAuthError("Selecione o setor de destino da ocorrência")
+      return
+    }
     if (!selectedOperadorId || !operadorSenha) {
       setAuthError("Selecione o operador e digite a senha")
       return
@@ -232,13 +257,15 @@ export default function DetalhesRetirada() {
         return
       }
 
-      // Operador validado - adicionar ocorrência
+      // Operador validado - adicionar ocorrência com setor
       const res = await fetch(`/api/retiradas/${id}/linhas-tempo/${linhaAberta!.id}/ocorrencias`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           descricao: novaOcorrencia.trim(),
-          operadorNome: validarData.operador.name
+          operadorNome: validarData.operador.name,
+          setorOrigem: setorAtual,
+          setorDestino: selectedSetorDestino
         })
       })
       
@@ -721,6 +748,22 @@ export default function DetalhesRetirada() {
                 </div>
                 
                 <div className="space-y-4 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-700 mb-1">
+                      Destino da Ocorrência <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={selectedSetorDestino}
+                      onChange={(e) => setSelectedSetorDestino(e.target.value)}
+                      className="w-full px-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-[#FFD700] focus:border-transparent bg-white"
+                    >
+                      <option value="">Selecione o setor...</option>
+                      {setores.map((setor) => (
+                        <option key={setor.id} value={setor.nome}>{setor.nome}</option>
+                      ))}
+                    </select>
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium text-zinc-700 mb-1">Operador</label>
                     <select

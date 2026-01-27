@@ -217,15 +217,20 @@ model LinhaTempoOcorrencia {
 
 // Ocorrências dentro de uma Linha do Tempo
 model Ocorrencia {
-  id           String   @id @default(cuid())
-  linhaTempoId String
-  descricao    String   @db.Text
-  operadorNome String?
-  createdAt    DateTime @default(now())
+  id               String   @id @default(cuid())
+  linhaTempoId     String
+  descricao        String   @db.Text
+  operadorNome     String?
+  setorOrigem      String?
+  setorDestino     String?
+  statusOcorrencia String   @default("PENDENTE")
+  createdAt        DateTime @default(now())
 
   linhaTempo   LinhaTempoOcorrencia @relation(fields: [linhaTempoId], references: [id], onDelete: Cascade)
 
   @@index([linhaTempoId])
+  @@index([setorDestino])
+  @@index([statusOcorrencia])
 }
 
 model SyncJob {

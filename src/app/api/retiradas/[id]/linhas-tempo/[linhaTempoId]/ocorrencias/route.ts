@@ -10,7 +10,7 @@ export async function POST(
     const { id, linhaTempoId } = await params
     const body = await req.json()
     
-    const { descricao, operadorNome } = body
+    const { descricao, operadorNome, setorOrigem, setorDestino } = body
     
     if (!descricao || descricao.trim() === '') {
       return NextResponse.json(
@@ -41,12 +41,15 @@ export async function POST(
       )
     }
     
-    // Criar ocorrência
+    // Criar ocorrência com setor origem e destino
     const ocorrencia = await prisma.ocorrencia.create({
       data: {
         linhaTempoId,
         descricao: descricao.trim(),
-        operadorNome: operadorNome || null
+        operadorNome: operadorNome || null,
+        setorOrigem: setorOrigem || null,
+        setorDestino: setorDestino || null,
+        statusOcorrencia: 'PENDENTE'
       }
     })
     
