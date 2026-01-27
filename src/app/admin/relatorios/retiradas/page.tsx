@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Package, Truck, User, Calendar, Search, Eye } from "lucide-react"
+import { Package, Truck, User, Calendar, Search, Eye, AlertTriangle } from "lucide-react"
 import Link from "next/link"
 import MainLayout from "@/components/MainLayout"
 
@@ -20,6 +20,8 @@ interface Retirada {
   status: string | null
   photo: string | null
   createdAt: string
+  ocorrenciasAbertas: number
+  totalOcorrencias: number
   order: {
     id: string
     tinyOrderId: string
@@ -37,6 +39,7 @@ export default function RelatorioRetiradas() {
   const [statusFilter, setStatusFilter] = useState<string>("TODOS")
   const [vendedorFilter, setVendedorFilter] = useState<string>("TODOS")
   const [transportadoraFilter, setTransportadoraFilter] = useState<string>("TODOS")
+  const [ocorrenciaFilter, setOcorrenciaFilter] = useState<string>("TODOS")
 
   useEffect(() => {
     fetchRetiradas()
@@ -88,7 +91,13 @@ export default function RelatorioRetiradas() {
       transportadoraFilter === "TODOS" || 
       r.transportadora === transportadoraFilter
     
-    return matchesSearch && matchesStatus && matchesVendedor && matchesTransportadora
+    // Filtro de ocorrências
+    const matchesOcorrencia = 
+      ocorrenciaFilter === "TODOS" || 
+      (ocorrenciaFilter === "COM_ABERTA" && r.ocorrenciasAbertas > 0) ||
+      (ocorrenciaFilter === "SEM_OCORRENCIA" && r.totalOcorrencias === 0)
+    
+    return matchesSearch && matchesStatus && matchesVendedor && matchesTransportadora && matchesOcorrencia
   })
 
   return (
@@ -140,6 +149,15 @@ export default function RelatorioRetiradas() {
               {transportadoras.map(transportadora => (
                 <option key={transportadora} value={transportadora}>{transportadora}</option>
               ))}
+            </select>
+            <select
+              value={ocorrenciaFilter}
+              onChange={(e) => setOcorrenciaFilter(e.target.value)}
+              className="px-4 py-3 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent bg-white min-w-[180px]"
+            >
+              <option value="TODOS">Todas</option>
+              <option value="COM_ABERTA">Com Ocorrência Aberta</option>
+              <option value="SEM_OCORRENCIA">Sem Ocorrência</option>
             </select>
           </div>
 
@@ -229,6 +247,7 @@ export default function RelatorioRetiradas() {
                       <th className="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Operador</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Vendedor</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Transportadora</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Ocorr.</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Rastreio</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Data</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Status</th>
@@ -258,6 +277,20 @@ export default function RelatorioRetiradas() {
                         </td>
                         <td className="px-6 py-4">
                           <p className="text-zinc-900">{retirada.transportadora || '-'}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          {retirada.ocorrenciasAbertas > 0 ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-lg text-xs font-medium">
+                              <AlertTriangle className="w-3 h-3" />
+                              {retirada.ocorrenciasAbertas}
+                            </span>
+                          ) : retirada.totalOcorrencias > 0 ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-lg text-xs font-medium">
+                              ✓ {retirada.totalOcorrencias}
+                            </span>
+                          ) : (
+                            <span className="text-zinc-400">-</span>
+                          )}
                         </td>
                         <td className="px-6 py-4">
                           {retirada.trackingCode ? (

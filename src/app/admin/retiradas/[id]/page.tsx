@@ -2,9 +2,19 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Package, Truck, User, Calendar, ArrowLeft, Image as ImageIcon, Edit2, Save, X, Loader2 } from "lucide-react"
+import { Package, Truck, User, Calendar, ArrowLeft, Image as ImageIcon, Edit2, Save, X, Loader2, AlertTriangle, CheckCircle, Plus } from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
+
+interface Ocorrencia {
+  id: string
+  descricao: string
+  status: string
+  operadorNome: string | null
+  resolvidoEm: string | null
+  resolvidoPor: string | null
+  createdAt: string
+}
 
 interface Retirada {
   id: string
@@ -15,6 +25,7 @@ interface Retirada {
   customerCpfCnpj: string | null
   retrieverName: string | null
   trackingCode: string | null
+  transportadora: string | null
   status: string | null
   photo: string | null
   createdAt: string
@@ -40,6 +51,13 @@ export default function DetalhesRetirada() {
   const [editingTracking, setEditingTracking] = useState(false)
   const [trackingCode, setTrackingCode] = useState("")
   const [savingTracking, setSavingTracking] = useState(false)
+  
+  // Estados para ocorrências
+  const [ocorrencias, setOcorrencias] = useState<Ocorrencia[]>([])
+  const [novaOcorrencia, setNovaOcorrencia] = useState("")
+  const [salvandoOcorrencia, setSalvandoOcorrencia] = useState(false)
+  const [showModal, setShowModal] = useState(false)
+  const [ocorrenciaCriada, setOcorrenciaCriada] = useState<Ocorrencia | null>(null)
 
   useEffect(() => {
     if (id) {
@@ -98,6 +116,87 @@ export default function DetalhesRetirada() {
     setTrackingCode(retirada?.trackingCode || "")
     setEditingTracking(false)
   }
+
+  // Buscar ocorrências
+  const fetchOcorrencias = async () => {
+    try {
+      const res = await fetch(`/api/retiradas/${id}/ocorrencias`)
+      const data = await res.json()
+      if (data.ok) {
+        setOcorrencias(data.ocorrencias)
+      }
+    } catch (error) {
+      console.error('Erro ao buscar ocorrências:', error)
+    }
+  }
+
+  // Criar nova ocorrência
+  const criarOcorrencia = async () => {
+    if (!novaOcorrencia.trim()) return
+    
+    setSalvandoOcorrencia(true)
+    try {
+      const res = await fetch(`/api/retiradas/${id}/ocorrencias`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          descricao: novaOcorrencia.trim(),
+          operadorNome: retirada?.operatorName || null
+        })
+      })
+      
+      const data = await res.json()
+      
+      if (data.ok) {
+        setOcorrenciaCriada(data.ocorrencia)
+        setNovaOcorrencia("")
+        setShowModal(true)
+        fetchOcorrencias()
+      } else {
+        alert('Erro ao criar ocorrência: ' + (data.error || 'Erro desconhecido'))
+      }
+    } catch (error) {
+      console.error('Erro ao criar ocorrência:', error)
+      alert('Erro ao criar ocorrência')
+    } finally {
+      setSalvandoOcorrencia(false)
+    }
+  }
+
+  // Atualizar status da ocorrência
+  const atualizarStatusOcorrencia = async (ocorrenciaId: string, novoStatus: string) => {
+    try {
+      const res = await fetch(`/api/retiradas/${id}/ocorrencias/${ocorrenciaId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          status: novoStatus,
+          resolvidoPor: retirada?.operatorName || null
+        })
+      })
+      
+      const data = await res.json()
+      
+      if (data.ok) {
+        fetchOcorrencias()
+        setShowModal(false)
+        setOcorrenciaCriada(null)
+      } else {
+        alert('Erro ao atualizar ocorrência: ' + (data.error || 'Erro desconhecido'))
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar ocorrência:', error)
+      alert('Erro ao atualizar ocorrência')
+    }
+  }
+
+  // Buscar ocorrências quando carregar a página
+  useEffect(() => {
+    if (id && retirada) {
+      fetchOcorrencias()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, retirada])
 
   if (loading) {
     return (
@@ -249,6 +348,13 @@ export default function DetalhesRetirada() {
                 <p className="text-lg font-semibold text-zinc-900">{retirada.operatorName || 'Não informado'}</p>
               </div>
               <div>
+                <p className="text-sm text-zinc-600 mb-1">Transportadora</p>
+                <div className="flex items-center gap-2">
+                  <Truck className="w-4 h-4 text-zinc-400" />
+                  <p className="text-lg font-semibold text-zinc-900">{retirada.transportadora || 'Não definida'}</p>
+                </div>
+              </div>
+              <div>
                 <p className="text-sm text-zinc-600 mb-1">Data da Retirada</p>
                 <div className="flex items-center gap-2 text-zinc-900">
                   <Calendar className="w-4 h-4" />
@@ -321,6 +427,151 @@ export default function DetalhesRetirada() {
               </div>
             </div>
           </motion.div>
+
+          {/* Ocorrências */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="bg-white rounded-2xl border border-zinc-200 p-8"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 bg-amber-500/20 rounded-xl flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+              </div>
+              <h2 className="text-xl font-bold text-zinc-900">Ocorrências</h2>
+              {ocorrencias.filter(o => o.status === 'ABERTO').length > 0 && (
+                <span className="px-2 py-1 bg-red-100 text-red-700 rounded-lg text-xs font-medium">
+                  {ocorrencias.filter(o => o.status === 'ABERTO').length} aberta(s)
+                </span>
+              )}
+            </div>
+
+            {/* Formulário para nova ocorrência */}
+            <div className="flex gap-2 mb-6">
+              <input
+                type="text"
+                value={novaOcorrencia}
+                onChange={(e) => setNovaOcorrencia(e.target.value)}
+                placeholder="Descreva a ocorrência..."
+                className="flex-1 px-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-[#FFD700] focus:border-transparent"
+                onKeyDown={(e) => e.key === 'Enter' && criarOcorrencia()}
+              />
+              <button
+                onClick={criarOcorrencia}
+                disabled={salvandoOcorrencia || !novaOcorrencia.trim()}
+                className="px-4 py-3 bg-[#FFD700] text-zinc-900 rounded-xl hover:bg-[#FFC700] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium"
+              >
+                {salvandoOcorrencia ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Plus className="w-5 h-5" />
+                )}
+                Registrar
+              </button>
+            </div>
+
+            {/* Lista de ocorrências */}
+            {ocorrencias.length === 0 ? (
+              <p className="text-zinc-500 text-center py-4">Nenhuma ocorrência registrada</p>
+            ) : (
+              <div className="space-y-4">
+                {ocorrencias.map((ocorrencia) => (
+                  <div
+                    key={ocorrencia.id}
+                    className={`p-4 rounded-xl border ${
+                      ocorrencia.status === 'ABERTO' 
+                        ? 'border-red-200 bg-red-50' 
+                        : 'border-green-200 bg-green-50'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          {ocorrencia.status === 'ABERTO' ? (
+                            <span className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-medium flex items-center gap-1">
+                              <AlertTriangle className="w-3 h-3" />
+                              ABERTO
+                            </span>
+                          ) : (
+                            <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium flex items-center gap-1">
+                              <CheckCircle className="w-3 h-3" />
+                              RESOLVIDO
+                            </span>
+                          )}
+                          <span className="text-xs text-zinc-500">
+                            {new Date(ocorrencia.createdAt).toLocaleString('pt-BR')}
+                          </span>
+                          {ocorrencia.operadorNome && (
+                            <span className="text-xs text-zinc-500">
+                              por {ocorrencia.operadorNome}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-zinc-900">{ocorrencia.descricao}</p>
+                        {ocorrencia.status === 'RESOLVIDO' && ocorrencia.resolvidoEm && (
+                          <p className="text-xs text-green-600 mt-2">
+                            Resolvido em {new Date(ocorrencia.resolvidoEm).toLocaleString('pt-BR')}
+                            {ocorrencia.resolvidoPor && ` por ${ocorrencia.resolvidoPor}`}
+                          </p>
+                        )}
+                      </div>
+                      {ocorrencia.status === 'ABERTO' && (
+                        <button
+                          onClick={() => atualizarStatusOcorrencia(ocorrencia.id, 'RESOLVIDO')}
+                          className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium flex items-center gap-1"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                          Resolver
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+
+          {/* Modal após criar ocorrência */}
+          {showModal && ocorrenciaCriada && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-xl"
+              >
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
+                    <CheckCircle className="w-6 h-6 text-green-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-zinc-900">Ocorrência Registrada</h3>
+                </div>
+                
+                <p className="text-zinc-600 mb-6">
+                  Deseja marcar esta ocorrência como resolvida agora?
+                </p>
+                
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setShowModal(false)
+                      setOcorrenciaCriada(null)
+                    }}
+                    className="flex-1 px-4 py-3 border border-zinc-200 text-zinc-700 rounded-xl hover:bg-zinc-50 font-medium"
+                  >
+                    Manter Aberta
+                  </button>
+                  <button
+                    onClick={() => atualizarStatusOcorrencia(ocorrenciaCriada.id, 'RESOLVIDO')}
+                    className="flex-1 px-4 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 font-medium flex items-center justify-center gap-2"
+                  >
+                    <CheckCircle className="w-5 h-5" />
+                    Marcar Resolvida
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
 
           {/* Foto */}
           {retirada.photo && (

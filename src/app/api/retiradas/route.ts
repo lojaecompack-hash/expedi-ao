@@ -9,7 +9,7 @@ export async function GET(req: Request) {
     
     console.log('[Retiradas API] Buscando retiradas, limit:', limit, 'offset:', offset)
     
-    // Buscar retiradas com dados do pedido
+    // Buscar retiradas com dados do pedido e ocorrências
     const retiradas = await prisma.pickup.findMany({
       take: limit,
       skip: offset,
@@ -24,9 +24,22 @@ export async function GET(req: Request) {
             statusInterno: true,
             createdAt: true,
           }
+        },
+        ocorrencias: {
+          select: {
+            id: true,
+            status: true
+          }
         }
       }
     })
+    
+    // Adicionar contagem de ocorrências abertas
+    const retiradasComOcorrencias = retiradas.map(r => ({
+      ...r,
+      ocorrenciasAbertas: r.ocorrencias.filter(o => o.status === 'ABERTO').length,
+      totalOcorrencias: r.ocorrencias.length
+    }))
     
     // Contar total
     const total = await prisma.pickup.count()
@@ -35,7 +48,7 @@ export async function GET(req: Request) {
     
     return NextResponse.json({
       ok: true,
-      retiradas,
+      retiradas: retiradasComOcorrencias,
       total,
       limit,
       offset
