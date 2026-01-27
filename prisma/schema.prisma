@@ -192,28 +192,40 @@ model Pickup {
 
   order         Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
   operator      Operator?    @relation(fields: [operatorId], references: [id])
-  ocorrencias   Ocorrencia[]
+  linhasDoTempo LinhaTempoOcorrencia[]
 
   @@index([orderId])
   @@index([operatorId])
 }
 
-// Ocorrências de retiradas
-model Ocorrencia {
+// Linha do Tempo de Ocorrências (cada linha pode ter múltiplas ocorrências)
+model LinhaTempoOcorrencia {
   id           String   @id @default(cuid())
   pickupId     String
-  descricao    String   @db.Text
-  status       String   @default("ABERTO") // ABERTO ou RESOLVIDO
-  operadorId   String?
-  operadorNome String?
-  resolvidoEm  DateTime?
-  resolvidoPor String?
+  numero       Int      // #1, #2, #3...
+  status       String   @default("ABERTA") // ABERTA ou ENCERRADA
+  encerradoEm  DateTime?
+  encerradoPor String?
   createdAt    DateTime @default(now())
 
-  pickup       Pickup   @relation(fields: [pickupId], references: [id], onDelete: Cascade)
+  pickup       Pickup       @relation(fields: [pickupId], references: [id], onDelete: Cascade)
+  ocorrencias  Ocorrencia[]
 
   @@index([pickupId])
   @@index([status])
+}
+
+// Ocorrências dentro de uma Linha do Tempo
+model Ocorrencia {
+  id           String   @id @default(cuid())
+  linhaTempoId String
+  descricao    String   @db.Text
+  operadorNome String?
+  createdAt    DateTime @default(now())
+
+  linhaTempo   LinhaTempoOcorrencia @relation(fields: [linhaTempoId], references: [id], onDelete: Cascade)
+
+  @@index([linhaTempoId])
 }
 
 model SyncJob {

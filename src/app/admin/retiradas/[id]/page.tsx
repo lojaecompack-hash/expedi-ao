@@ -2,18 +2,25 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Package, Truck, User, Calendar, ArrowLeft, Image as ImageIcon, Edit2, Save, X, Loader2, AlertTriangle, CheckCircle, Plus } from "lucide-react"
+import { Package, Truck, User, Calendar, ArrowLeft, Image as ImageIcon, Edit2, Save, X, Loader2, AlertTriangle, CheckCircle, Plus, ChevronDown, ChevronUp } from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 
 interface Ocorrencia {
   id: string
   descricao: string
-  status: string
   operadorNome: string | null
-  resolvidoEm: string | null
-  resolvidoPor: string | null
   createdAt: string
+}
+
+interface LinhaDoTempo {
+  id: string
+  numero: number
+  status: string
+  encerradoEm: string | null
+  encerradoPor: string | null
+  createdAt: string
+  ocorrencias: Ocorrencia[]
 }
 
 interface Retirada {
@@ -52,12 +59,13 @@ export default function DetalhesRetirada() {
   const [trackingCode, setTrackingCode] = useState("")
   const [savingTracking, setSavingTracking] = useState(false)
   
-  // Estados para ocorrências
-  const [ocorrencias, setOcorrencias] = useState<Ocorrencia[]>([])
+  // Estados para linhas do tempo de ocorrências
+  const [linhasDoTempo, setLinhasDoTempo] = useState<LinhaDoTempo[]>([])
   const [novaOcorrencia, setNovaOcorrencia] = useState("")
   const [salvandoOcorrencia, setSalvandoOcorrencia] = useState(false)
   const [showModal, setShowModal] = useState(false)
-  const [ocorrenciaCriada, setOcorrenciaCriada] = useState<Ocorrencia | null>(null)
+  const [linhaTempoAtual, setLinhaTempoAtual] = useState<LinhaDoTempo | null>(null)
+  const [expandedLinhas, setExpandedLinhas] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     if (id) {
@@ -117,26 +125,52 @@ export default function DetalhesRetirada() {
     setEditingTracking(false)
   }
 
-  // Buscar ocorrências
-  const fetchOcorrencias = async () => {
+  // Buscar linhas do tempo
+  const fetchLinhasDoTempo = async () => {
     try {
-      const res = await fetch(`/api/retiradas/${id}/ocorrencias`)
+      const res = await fetch(`/api/retiradas/${id}/linhas-tempo`)
       const data = await res.json()
       if (data.ok) {
-        setOcorrencias(data.ocorrencias)
+        setLinhasDoTempo(data.linhasDoTempo)
       }
     } catch (error) {
-      console.error('Erro ao buscar ocorrências:', error)
+      console.error('Erro ao buscar linhas do tempo:', error)
     }
   }
 
-  // Criar nova ocorrência
-  const criarOcorrencia = async () => {
-    if (!novaOcorrencia.trim()) return
+  // Obter linha do tempo aberta (se existir)
+  const linhaAberta = linhasDoTempo.find(l => l.status === 'ABERTA')
+  
+  // Linhas encerradas
+  const linhasEncerradas = linhasDoTempo.filter(l => l.status === 'ENCERRADA')
+
+  // Criar nova linha do tempo
+  const criarNovaLinhaTempo = async () => {
+    try {
+      const res = await fetch(`/api/retiradas/${id}/linhas-tempo`, {
+        method: 'POST'
+      })
+      
+      const data = await res.json()
+      
+      if (data.ok) {
+        fetchLinhasDoTempo()
+      } else {
+        alert('Erro ao criar linha do tempo: ' + (data.error || 'Erro desconhecido'))
+      }
+    } catch (error) {
+      console.error('Erro ao criar linha do tempo:', error)
+      alert('Erro ao criar linha do tempo')
+    }
+  }
+
+  // Adicionar ocorrência à linha do tempo aberta
+  const adicionarOcorrencia = async () => {
+    if (!novaOcorrencia.trim() || !linhaAberta) return
     
     setSalvandoOcorrencia(true)
     try {
-      const res = await fetch(`/api/retiradas/${id}/ocorrencias`, {
+      const res = await fetch(`/api/retiradas/${id}/linhas-tempo/${linhaAberta.id}/ocorrencias`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -148,52 +182,65 @@ export default function DetalhesRetirada() {
       const data = await res.json()
       
       if (data.ok) {
-        setOcorrenciaCriada(data.ocorrencia)
         setNovaOcorrencia("")
+        setLinhaTempoAtual(linhaAberta)
         setShowModal(true)
-        fetchOcorrencias()
+        fetchLinhasDoTempo()
       } else {
-        alert('Erro ao criar ocorrência: ' + (data.error || 'Erro desconhecido'))
+        alert('Erro ao adicionar ocorrência: ' + (data.error || 'Erro desconhecido'))
       }
     } catch (error) {
-      console.error('Erro ao criar ocorrência:', error)
-      alert('Erro ao criar ocorrência')
+      console.error('Erro ao adicionar ocorrência:', error)
+      alert('Erro ao adicionar ocorrência')
     } finally {
       setSalvandoOcorrencia(false)
     }
   }
 
-  // Atualizar status da ocorrência
-  const atualizarStatusOcorrencia = async (ocorrenciaId: string, novoStatus: string) => {
+  // Encerrar linha do tempo
+  const encerrarLinhaTempo = async (linhaTempoId: string) => {
     try {
-      const res = await fetch(`/api/retiradas/${id}/ocorrencias/${ocorrenciaId}`, {
+      const res = await fetch(`/api/retiradas/${id}/linhas-tempo/${linhaTempoId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          status: novoStatus,
-          resolvidoPor: retirada?.operatorName || null
+          status: 'ENCERRADA',
+          encerradoPor: retirada?.operatorName || null
         })
       })
       
       const data = await res.json()
       
       if (data.ok) {
-        fetchOcorrencias()
+        fetchLinhasDoTempo()
         setShowModal(false)
-        setOcorrenciaCriada(null)
+        setLinhaTempoAtual(null)
       } else {
-        alert('Erro ao atualizar ocorrência: ' + (data.error || 'Erro desconhecido'))
+        alert('Erro ao encerrar linha do tempo: ' + (data.error || 'Erro desconhecido'))
       }
     } catch (error) {
-      console.error('Erro ao atualizar ocorrência:', error)
-      alert('Erro ao atualizar ocorrência')
+      console.error('Erro ao encerrar linha do tempo:', error)
+      alert('Erro ao encerrar linha do tempo')
     }
   }
 
-  // Buscar ocorrências quando carregar a página
+  // Toggle expandir/colapsar linha encerrada
+  const toggleExpandLinha = (linhaId: string) => {
+    setExpandedLinhas(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(linhaId)) {
+        newSet.delete(linhaId)
+      } else {
+        newSet.add(linhaId)
+      }
+      return newSet
+    })
+  }
+
+  // Buscar linhas do tempo quando carregar a página
   useEffect(() => {
     if (id && retirada) {
-      fetchOcorrencias()
+      fetchLinhasDoTempo()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, retirada])
@@ -428,77 +475,94 @@ export default function DetalhesRetirada() {
             </div>
           </motion.div>
 
-          {/* Ocorrências */}
+          {/* Ocorrências - Sistema de Linhas do Tempo */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
             className="bg-white rounded-2xl border border-zinc-200 p-8"
           >
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-amber-500/20 rounded-xl flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-amber-600" />
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-amber-500/20 rounded-xl flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5 text-amber-600" />
+                </div>
+                <h2 className="text-xl font-bold text-zinc-900">Ocorrências</h2>
+                {linhaAberta && (
+                  <span className="px-2 py-1 bg-red-100 text-red-700 rounded-lg text-xs font-medium">
+                    Linha #{linhaAberta.numero} aberta
+                  </span>
+                )}
               </div>
-              <h2 className="text-xl font-bold text-zinc-900">Ocorrências</h2>
-              {ocorrencias.filter(o => o.status === 'ABERTO').length > 0 && (
-                <span className="px-2 py-1 bg-red-100 text-red-700 rounded-lg text-xs font-medium">
-                  {ocorrencias.filter(o => o.status === 'ABERTO').length} aberta(s)
-                </span>
+              {!linhaAberta && linhasDoTempo.length > 0 && (
+                <button
+                  onClick={criarNovaLinhaTempo}
+                  className="px-4 py-2 bg-[#FFD700] text-zinc-900 rounded-lg hover:bg-[#FFC700] text-sm font-medium flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Nova Linha do Tempo
+                </button>
               )}
             </div>
 
-            {/* Formulário para nova ocorrência */}
-            <div className="flex gap-2 mb-6">
-              <input
-                type="text"
-                value={novaOcorrencia}
-                onChange={(e) => setNovaOcorrencia(e.target.value)}
-                placeholder="Descreva a ocorrência..."
-                className="flex-1 px-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-[#FFD700] focus:border-transparent"
-                onKeyDown={(e) => e.key === 'Enter' && criarOcorrencia()}
-              />
-              <button
-                onClick={criarOcorrencia}
-                disabled={salvandoOcorrencia || !novaOcorrencia.trim()}
-                className="px-4 py-3 bg-[#FFD700] text-zinc-900 rounded-xl hover:bg-[#FFC700] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium"
-              >
-                {salvandoOcorrencia ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
+            {/* Se não tem nenhuma linha do tempo, mostrar botão para criar primeira */}
+            {linhasDoTempo.length === 0 && (
+              <div className="text-center py-8">
+                <p className="text-zinc-500 mb-4">Nenhuma ocorrência registrada</p>
+                <button
+                  onClick={criarNovaLinhaTempo}
+                  className="px-6 py-3 bg-[#FFD700] text-zinc-900 rounded-xl hover:bg-[#FFC700] font-medium flex items-center gap-2 mx-auto"
+                >
                   <Plus className="w-5 h-5" />
-                )}
-                Registrar
-              </button>
-            </div>
+                  Registrar Primeira Ocorrência
+                </button>
+              </div>
+            )}
 
-            {/* Lista de ocorrências */}
-            {ocorrencias.length === 0 ? (
-              <p className="text-zinc-500 text-center py-4">Nenhuma ocorrência registrada</p>
-            ) : (
-              <div className="space-y-4">
-                {ocorrencias.map((ocorrencia) => (
-                  <div
-                    key={ocorrencia.id}
-                    className={`p-4 rounded-xl border ${
-                      ocorrencia.status === 'ABERTO' 
-                        ? 'border-red-200 bg-red-50' 
-                        : 'border-green-200 bg-green-50'
-                    }`}
+            {/* Linha do Tempo Aberta */}
+            {linhaAberta && (
+              <div className="mb-6 p-4 border-2 border-red-200 bg-red-50 rounded-xl">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-bold">
+                      LINHA #{linhaAberta.numero} - ABERTA
+                    </span>
+                    <span className="text-xs text-zinc-500">
+                      Criada em {new Date(linhaAberta.createdAt).toLocaleString('pt-BR')}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Formulário para adicionar ocorrência */}
+                <div className="flex gap-2 mb-4">
+                  <input
+                    type="text"
+                    value={novaOcorrencia}
+                    onChange={(e) => setNovaOcorrencia(e.target.value)}
+                    placeholder="Adicionar ocorrência..."
+                    className="flex-1 px-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-[#FFD700] focus:border-transparent bg-white"
+                    onKeyDown={(e) => e.key === 'Enter' && adicionarOcorrencia()}
+                  />
+                  <button
+                    onClick={adicionarOcorrencia}
+                    disabled={salvandoOcorrencia || !novaOcorrencia.trim()}
+                    className="px-4 py-3 bg-[#FFD700] text-zinc-900 rounded-xl hover:bg-[#FFC700] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium"
                   >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          {ocorrencia.status === 'ABERTO' ? (
-                            <span className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-medium flex items-center gap-1">
-                              <AlertTriangle className="w-3 h-3" />
-                              ABERTO
-                            </span>
-                          ) : (
-                            <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium flex items-center gap-1">
-                              <CheckCircle className="w-3 h-3" />
-                              RESOLVIDO
-                            </span>
-                          )}
+                    {salvandoOcorrencia ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Plus className="w-5 h-5" />
+                    )}
+                    Adicionar
+                  </button>
+                </div>
+
+                {/* Lista de ocorrências da linha aberta */}
+                {linhaAberta.ocorrencias.length > 0 && (
+                  <div className="space-y-2 border-t border-red-200 pt-4">
+                    {linhaAberta.ocorrencias.map((ocorrencia) => (
+                      <div key={ocorrencia.id} className="p-3 bg-white rounded-lg border border-zinc-200">
+                        <div className="flex items-center gap-2 mb-1">
                           <span className="text-xs text-zinc-500">
                             {new Date(ocorrencia.createdAt).toLocaleString('pt-BR')}
                           </span>
@@ -509,31 +573,70 @@ export default function DetalhesRetirada() {
                           )}
                         </div>
                         <p className="text-zinc-900">{ocorrencia.descricao}</p>
-                        {ocorrencia.status === 'RESOLVIDO' && ocorrencia.resolvidoEm && (
-                          <p className="text-xs text-green-600 mt-2">
-                            Resolvido em {new Date(ocorrencia.resolvidoEm).toLocaleString('pt-BR')}
-                            {ocorrencia.resolvidoPor && ` por ${ocorrencia.resolvidoPor}`}
-                          </p>
-                        )}
                       </div>
-                      {ocorrencia.status === 'ABERTO' && (
-                        <button
-                          onClick={() => atualizarStatusOcorrencia(ocorrencia.id, 'RESOLVIDO')}
-                          className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium flex items-center gap-1"
-                        >
-                          <CheckCircle className="w-4 h-4" />
-                          Resolver
-                        </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Linhas do Tempo Encerradas */}
+            {linhasEncerradas.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-zinc-600 mb-2">Histórico de Linhas Encerradas</h3>
+                {linhasEncerradas.map((linha) => (
+                  <div key={linha.id} className="border border-green-200 bg-green-50 rounded-xl overflow-hidden">
+                    <button
+                      onClick={() => toggleExpandLinha(linha.id)}
+                      className="w-full p-4 flex items-center justify-between hover:bg-green-100 transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-bold flex items-center gap-1">
+                          <CheckCircle className="w-3 h-3" />
+                          LINHA #{linha.numero} - ENCERRADA
+                        </span>
+                        <span className="text-xs text-zinc-500">
+                          {linha.ocorrencias.length} ocorrência(s)
+                        </span>
+                      </div>
+                      {expandedLinhas.has(linha.id) ? (
+                        <ChevronUp className="w-5 h-5 text-zinc-400" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5 text-zinc-400" />
                       )}
-                    </div>
+                    </button>
+                    
+                    {expandedLinhas.has(linha.id) && (
+                      <div className="px-4 pb-4 space-y-2">
+                        <p className="text-xs text-green-600 mb-2">
+                          Encerrada em {linha.encerradoEm ? new Date(linha.encerradoEm).toLocaleString('pt-BR') : '-'}
+                          {linha.encerradoPor && ` por ${linha.encerradoPor}`}
+                        </p>
+                        {linha.ocorrencias.map((ocorrencia) => (
+                          <div key={ocorrencia.id} className="p-3 bg-white rounded-lg border border-zinc-200">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-xs text-zinc-500">
+                                {new Date(ocorrencia.createdAt).toLocaleString('pt-BR')}
+                              </span>
+                              {ocorrencia.operadorNome && (
+                                <span className="text-xs text-zinc-500">
+                                  por {ocorrencia.operadorNome}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-zinc-900">{ocorrencia.descricao}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
             )}
           </motion.div>
 
-          {/* Modal após criar ocorrência */}
-          {showModal && ocorrenciaCriada && (
+          {/* Modal após adicionar ocorrência - pergunta se quer encerrar */}
+          {showModal && linhaTempoAtual && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -544,29 +647,29 @@ export default function DetalhesRetirada() {
                   <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
                     <CheckCircle className="w-6 h-6 text-green-600" />
                   </div>
-                  <h3 className="text-xl font-bold text-zinc-900">Ocorrência Registrada</h3>
+                  <h3 className="text-xl font-bold text-zinc-900">Ocorrência Adicionada</h3>
                 </div>
                 
                 <p className="text-zinc-600 mb-6">
-                  Deseja marcar esta ocorrência como resolvida agora?
+                  Deseja encerrar esta linha do tempo agora?
                 </p>
                 
                 <div className="flex gap-3">
                   <button
                     onClick={() => {
                       setShowModal(false)
-                      setOcorrenciaCriada(null)
+                      setLinhaTempoAtual(null)
                     }}
                     className="flex-1 px-4 py-3 border border-zinc-200 text-zinc-700 rounded-xl hover:bg-zinc-50 font-medium"
                   >
                     Manter Aberta
                   </button>
                   <button
-                    onClick={() => atualizarStatusOcorrencia(ocorrenciaCriada.id, 'RESOLVIDO')}
+                    onClick={() => encerrarLinhaTempo(linhaTempoAtual.id)}
                     className="flex-1 px-4 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 font-medium flex items-center justify-center gap-2"
                   >
                     <CheckCircle className="w-5 h-5" />
-                    Marcar Resolvida
+                    Encerrar Linha
                   </button>
                 </div>
               </motion.div>
