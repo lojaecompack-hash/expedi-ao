@@ -218,8 +218,12 @@ export default function RetiradaPage() {
       })
       setCheckedItems(initialChecks)
       
-      // Inicializar transportadora vazia (operador vai selecionar)
-      setTransportadoraSelecionada("")
+      // Pré-preencher transportadora com valor da Tiny se existir
+      if (details.transportadora && details.transportadora !== 'Não definida') {
+        setTransportadoraSelecionada(details.transportadora)
+      } else {
+        setTransportadoraSelecionada("")
+      }
       
       // Buscar rastreio existente para este pedido
       try {

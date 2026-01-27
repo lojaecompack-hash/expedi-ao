@@ -426,12 +426,13 @@ export async function getTinyOrderDetails(orderNumber: string): Promise<TinyOrde
     
     // Campo vendedor confirmado: nome_vendedor
     const vendedor = typeof pedidoAny.nome_vendedor === 'string' ? pedidoAny.nome_vendedor : null
-    // Campos de envio: nome_transportador
-    const nomeTransportador = typeof pedidoAny.nome_transportador === 'string' && pedidoAny.nome_transportador.trim() !== '' ? pedidoAny.nome_transportador : null
+    // Campos de envio: forma_frete (principal) e nome_transportador (fallback)
+    const formaFrete = typeof pedidoAny.forma_frete === 'string' && pedidoAny.forma_frete.trim() !== '' ? pedidoAny.forma_frete.trim() : null
+    const nomeTransportador = typeof pedidoAny.nome_transportador === 'string' && pedidoAny.nome_transportador.trim() !== '' ? pedidoAny.nome_transportador.trim() : null
     
-    // Usar nome do transportador diretamente se existir
-    const transportadora = nomeTransportador || null
-    console.log('[Tiny API] Vendedor:', vendedor, '| Transportadora:', transportadora)
+    // Prioridade: forma_frete > nome_transportador
+    const transportadora = formaFrete || nomeTransportador || null
+    console.log('[Tiny API] Vendedor:', vendedor, '| Forma Frete:', formaFrete, '| Transportadora:', transportadora)
     
     const detalhes: TinyOrderDetails = {
       id: String(pedido.id),
