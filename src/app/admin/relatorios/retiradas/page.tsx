@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Package, Truck, User, Calendar, Search, Eye, AlertTriangle } from "lucide-react"
+import { Package, Truck, User, Search, Eye, AlertTriangle } from "lucide-react"
 import Link from "next/link"
 import MainLayout from "@/components/MainLayout"
 
@@ -39,7 +39,7 @@ export default function RelatorioRetiradas() {
   const [statusFilter, setStatusFilter] = useState<string>("TODOS")
   const [vendedorFilter, setVendedorFilter] = useState<string>("TODOS")
   const [transportadoraFilter, setTransportadoraFilter] = useState<string>("TODOS")
-  const [ocorrenciaFilter, setOcorrenciaFilter] = useState<string>("TODOS")
+  const [ocorrenciaFilter, setOcorrenciaFilter] = useState<string>("COM_ABERTA")
 
   useEffect(() => {
     fetchRetiradas()
@@ -155,8 +155,8 @@ export default function RelatorioRetiradas() {
               onChange={(e) => setOcorrenciaFilter(e.target.value)}
               className="px-3 py-2 text-tiny border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent bg-white min-w-[160px]"
             >
+              <option value="COM_ABERTA">Ocorrências</option>
               <option value="TODOS">Todas</option>
-              <option value="COM_ABERTA">Com Ocorrência Aberta</option>
               <option value="SEM_OCORRENCIA">Sem Ocorrência</option>
             </select>
           </div>
@@ -243,13 +243,12 @@ export default function RelatorioRetiradas() {
                   <thead className="bg-zinc-50 border-b border-zinc-200">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-900">Ocorr.</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-900">Data</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-900">Pedido</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-900">Retirante</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-900">Operador</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-900">Vendedor</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-900">Operador</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-900">Transportadora</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-900">Rastreio</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-900">Data</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-900">Status</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-900">Ações</th>
                     </tr>
@@ -272,19 +271,18 @@ export default function RelatorioRetiradas() {
                           )}
                         </td>
                         <td className="px-4 py-3">
+                          <span className="text-[11px] text-zinc-600">
+                            {new Date(retirada.createdAt).toLocaleDateString('pt-BR')}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
                           <p className="font-medium text-tiny text-zinc-900">#{retirada.order.orderNumber}</p>
                         </td>
                         <td className="px-4 py-3">
-                          <div>
-                            <p className="font-medium text-tiny text-zinc-900">{retirada.retrieverName || 'N/A'}</p>
-                            <p className="text-xs text-zinc-600">CPF: {retirada.customerCpfCnpj || retirada.cpfLast4 || 'N/A'}</p>
-                          </div>
+                          <p className="text-tiny text-zinc-900">{retirada.vendedor || '-'}</p>
                         </td>
                         <td className="px-4 py-3">
                           <p className="text-tiny text-zinc-900">{retirada.operatorName || 'N/A'}</p>
-                        </td>
-                        <td className="px-4 py-3">
-                          <p className="text-tiny text-zinc-900">{retirada.vendedor || '-'}</p>
                         </td>
                         <td className="px-4 py-3">
                           <p className="text-tiny text-zinc-900">{retirada.transportadora || '-'}</p>
@@ -309,14 +307,6 @@ export default function RelatorioRetiradas() {
                           ) : (
                             <span className="text-tiny text-zinc-400">-</span>
                           )}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-1.5 text-zinc-600">
-                            <Calendar className="w-3.5 h-3.5" />
-                            <span className="text-tiny">
-                              {new Date(retirada.createdAt).toLocaleDateString('pt-BR')}
-                            </span>
-                          </div>
                         </td>
                         <td className="px-4 py-3">
                           {retirada.status === 'AGUARDANDO_RETIRADA' ? (
