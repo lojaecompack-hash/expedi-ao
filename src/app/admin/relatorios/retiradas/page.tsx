@@ -39,7 +39,7 @@ export default function RelatorioRetiradas() {
   const [statusFilter, setStatusFilter] = useState<string>("TODOS")
   const [vendedorFilter, setVendedorFilter] = useState<string>("TODOS")
   const [transportadoraFilter, setTransportadoraFilter] = useState<string>("TODOS")
-  const [ocorrenciaFilter, setOcorrenciaFilter] = useState<string>("COM_ABERTA")
+  const [ocorrenciaFilter, setOcorrenciaFilter] = useState<string>("TODOS")
 
   useEffect(() => {
     fetchRetiradas()
@@ -121,44 +121,56 @@ export default function RelatorioRetiradas() {
                 className="w-full pl-9 pr-3 py-2 text-tiny border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent"
               />
             </div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 text-tiny border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent bg-white min-w-[160px]"
-            >
-              <option value="TODOS">Todos os Status</option>
-              <option value="AGUARDANDO_RETIRADA">Aguardando Retirada</option>
-              <option value="RETIRADO">Retirado</option>
-            </select>
-            <select
-              value={vendedorFilter}
-              onChange={(e) => setVendedorFilter(e.target.value)}
-              className="px-3 py-2 text-tiny border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent bg-white min-w-[160px]"
-            >
-              <option value="TODOS">Todos os Vendedores</option>
-              {vendedores.map(vendedor => (
-                <option key={vendedor} value={vendedor}>{vendedor}</option>
-              ))}
-            </select>
-            <select
-              value={transportadoraFilter}
-              onChange={(e) => setTransportadoraFilter(e.target.value)}
-              className="px-3 py-2 text-tiny border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent bg-white min-w-[180px]"
-            >
-              <option value="TODOS">Todas as Transportadoras</option>
-              {transportadoras.map(transportadora => (
-                <option key={transportadora} value={transportadora}>{transportadora}</option>
-              ))}
-            </select>
-            <select
-              value={ocorrenciaFilter}
-              onChange={(e) => setOcorrenciaFilter(e.target.value)}
-              className="px-3 py-2 text-tiny border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent bg-white min-w-[160px]"
-            >
-              <option value="COM_ABERTA">Ocorrências</option>
-              <option value="TODOS">Todas</option>
-              <option value="SEM_OCORRENCIA">Sem Ocorrência</option>
-            </select>
+            <div className="flex flex-col">
+              <label className="text-xs font-medium text-zinc-700 mb-1">Status da Retirada</label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-3 py-2 text-tiny border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent bg-white min-w-[160px]"
+              >
+                <option value="TODOS">Todos os Status</option>
+                <option value="AGUARDANDO_RETIRADA">Aguardando Retirada</option>
+                <option value="RETIRADO">Retirado</option>
+              </select>
+            </div>
+            <div className="flex flex-col">
+              <label className="text-xs font-medium text-zinc-700 mb-1">Vendedores</label>
+              <select
+                value={vendedorFilter}
+                onChange={(e) => setVendedorFilter(e.target.value)}
+                className="px-3 py-2 text-tiny border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent bg-white min-w-[160px]"
+              >
+                <option value="TODOS">Todos os Vendedores</option>
+                {vendedores.map(vendedor => (
+                  <option key={vendedor} value={vendedor}>{vendedor}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col">
+              <label className="text-xs font-medium text-zinc-700 mb-1">Transportadora</label>
+              <select
+                value={transportadoraFilter}
+                onChange={(e) => setTransportadoraFilter(e.target.value)}
+                className="px-3 py-2 text-tiny border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent bg-white min-w-[180px]"
+              >
+                <option value="TODOS">Todas as Transportadoras</option>
+                {transportadoras.map(transportadora => (
+                  <option key={transportadora} value={transportadora}>{transportadora}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col">
+              <label className="text-xs font-medium text-zinc-700 mb-1">Ocorrência</label>
+              <select
+                value={ocorrenciaFilter}
+                onChange={(e) => setOcorrenciaFilter(e.target.value)}
+                className="px-3 py-2 text-tiny border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent bg-white min-w-[160px]"
+              >
+                <option value="TODOS">Todas</option>
+                <option value="COM_ABERTA">Com Ocorrência Aberta</option>
+                <option value="SEM_OCORRENCIA">Sem Ocorrência</option>
+              </select>
+            </div>
           </div>
 
           {/* Stats */}
