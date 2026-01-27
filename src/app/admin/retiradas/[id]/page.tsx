@@ -63,6 +63,7 @@ export default function DetalhesRetirada() {
   const [linhasDoTempo, setLinhasDoTempo] = useState<LinhaDoTempo[]>([])
   const [novaOcorrencia, setNovaOcorrencia] = useState("")
   const [salvandoOcorrencia, setSalvandoOcorrencia] = useState(false)
+  const [criandoLinhaTempo, setCriandoLinhaTempo] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [linhaTempoAtual, setLinhaTempoAtual] = useState<LinhaDoTempo | null>(null)
   const [expandedLinhas, setExpandedLinhas] = useState<Set<string>>(new Set())
@@ -146,6 +147,7 @@ export default function DetalhesRetirada() {
 
   // Criar nova linha do tempo
   const criarNovaLinhaTempo = async () => {
+    setCriandoLinhaTempo(true)
     try {
       const res = await fetch(`/api/retiradas/${id}/linhas-tempo`, {
         method: 'POST'
@@ -154,13 +156,15 @@ export default function DetalhesRetirada() {
       const data = await res.json()
       
       if (data.ok) {
-        fetchLinhasDoTempo()
+        await fetchLinhasDoTempo()
       } else {
         alert('Erro ao criar linha do tempo: ' + (data.error || 'Erro desconhecido'))
       }
     } catch (error) {
       console.error('Erro ao criar linha do tempo:', error)
       alert('Erro ao criar linha do tempo')
+    } finally {
+      setCriandoLinhaTempo(false)
     }
   }
 
@@ -239,11 +243,11 @@ export default function DetalhesRetirada() {
 
   // Buscar linhas do tempo quando carregar a página
   useEffect(() => {
-    if (id && retirada) {
+    if (id) {
       fetchLinhasDoTempo()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, retirada])
+  }, [id])
 
   if (loading) {
     return (
@@ -497,10 +501,15 @@ export default function DetalhesRetirada() {
               {!linhaAberta && linhasDoTempo.length > 0 && (
                 <button
                   onClick={criarNovaLinhaTempo}
-                  className="px-4 py-2 bg-[#FFD700] text-zinc-900 rounded-lg hover:bg-[#FFC700] text-sm font-medium flex items-center gap-2"
+                  disabled={criandoLinhaTempo}
+                  className="px-4 py-2 bg-[#FFD700] text-zinc-900 rounded-lg hover:bg-[#FFC700] text-sm font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
                 >
-                  <Plus className="w-4 h-4" />
-                  Nova Linha do Tempo
+                  {criandoLinhaTempo ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Plus className="w-4 h-4" />
+                  )}
+                  {criandoLinhaTempo ? 'Criando...' : 'Nova Linha do Tempo'}
                 </button>
               )}
             </div>
@@ -511,10 +520,15 @@ export default function DetalhesRetirada() {
                 <p className="text-zinc-500 mb-4">Nenhuma ocorrência registrada</p>
                 <button
                   onClick={criarNovaLinhaTempo}
-                  className="px-6 py-3 bg-[#FFD700] text-zinc-900 rounded-xl hover:bg-[#FFC700] font-medium flex items-center gap-2 mx-auto"
+                  disabled={criandoLinhaTempo}
+                  className="px-6 py-3 bg-[#FFD700] text-zinc-900 rounded-xl hover:bg-[#FFC700] font-medium flex items-center gap-2 mx-auto disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
                 >
-                  <Plus className="w-5 h-5" />
-                  Registrar Primeira Ocorrência
+                  {criandoLinhaTempo ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Plus className="w-5 h-5" />
+                  )}
+                  {criandoLinhaTempo ? 'Criando...' : 'Registrar Primeira Ocorrência'}
                 </button>
               </div>
             )}
