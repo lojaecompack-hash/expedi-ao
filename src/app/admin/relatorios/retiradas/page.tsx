@@ -40,6 +40,7 @@ export default function RelatorioRetiradas() {
   const [vendedorFilter, setVendedorFilter] = useState<string>("TODOS")
   const [transportadoraFilter, setTransportadoraFilter] = useState<string>("TODOS")
   const [ocorrenciaFilter, setOcorrenciaFilter] = useState<string>("TODOS")
+  const [setorFilter, setSetorFilter] = useState<string>("TODOS")
 
   useEffect(() => {
     fetchRetiradas()
@@ -169,6 +170,19 @@ export default function RelatorioRetiradas() {
                 <option value="TODOS">Todas</option>
                 <option value="COM_ABERTA">Com Ocorrência Aberta</option>
                 <option value="SEM_OCORRENCIA">Sem Ocorrência</option>
+              </select>
+            </div>
+            <div className="flex flex-col">
+              <label className="text-xs font-medium text-zinc-700 mb-1">Setor</label>
+              <select
+                value={setorFilter}
+                onChange={(e) => setSetorFilter(e.target.value)}
+                className="px-3 py-2 text-tiny border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent bg-white min-w-[160px]"
+              >
+                <option value="TODOS">Todos</option>
+                <option value="Expedição">Expedição</option>
+                <option value="Vendas">Vendas</option>
+                <option value="Financeiro">Financeiro</option>
               </select>
             </div>
           </div>

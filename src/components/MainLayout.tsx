@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { Package, Truck, Users, BarChart3, Wrench, Home, LogOut, Factory, Menu, X, ChevronLeft, ChevronRight } from "lucide-react"
+import NotificacaoOcorrencia from "./NotificacaoOcorrencia"
 
 type UserRole = 'ADMIN' | 'EXPEDICAO' | 'PRODUCAO' | null
 
@@ -235,6 +236,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
           </div>
         </main>
       </div>
+      {/* Notificação de Ocorrências */}
+      <NotificacaoOcorrencia />
     </div>
   )
 }
