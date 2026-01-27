@@ -44,12 +44,16 @@ export default function RelatorioRetiradas() {
 
   useEffect(() => {
     fetchRetiradas()
-  }, [])
+  }, [setorFilter])
 
   const fetchRetiradas = async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/retiradas?limit=100')
+      let url = '/api/retiradas?limit=100'
+      if (setorFilter && setorFilter !== 'TODOS') {
+        url += `&setorDestino=${encodeURIComponent(setorFilter)}`
+      }
+      const res = await fetch(url)
       const data = await res.json()
       
       if (data.ok) {

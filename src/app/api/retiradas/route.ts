@@ -6,11 +6,31 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url)
     const limit = parseInt(searchParams.get('limit') || '50')
     const offset = parseInt(searchParams.get('offset') || '0')
+    const setorDestino = searchParams.get('setorDestino')
     
-    console.log('[Retiradas API] Buscando retiradas, limit:', limit, 'offset:', offset)
+    console.log('[Retiradas API] Buscando retiradas, limit:', limit, 'offset:', offset, 'setorDestino:', setorDestino)
+    
+    // Se tiver filtro de setor, buscar apenas retiradas com ocorrências para esse setor
+    let whereClause = {}
+    if (setorDestino && setorDestino !== 'TODOS') {
+      whereClause = {
+        linhasDoTempo: {
+          some: {
+            status: 'ABERTA',
+            ocorrencias: {
+              some: {
+                setorDestino: setorDestino,
+                statusOcorrencia: 'PENDENTE'
+              }
+            }
+          }
+        }
+      }
+    }
     
     // Buscar retiradas com dados do pedido e linhas do tempo
     const retiradas = await prisma.pickup.findMany({
+      where: whereClause,
       take: limit,
       skip: offset,
       orderBy: { createdAt: 'desc' },
