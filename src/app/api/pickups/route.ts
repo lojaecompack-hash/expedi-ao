@@ -17,6 +17,7 @@ export async function POST(req: Request) {
       operatorId?: string
       retrieverName?: string
       trackingCode?: string
+      transportadora?: string
       photo?: string
       dryRun?: boolean
     }
