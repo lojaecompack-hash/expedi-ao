@@ -15,6 +15,7 @@ interface Retirada {
   customerCpfCnpj: string | null
   retrieverName: string | null
   trackingCode: string | null
+  transportadora: string | null
   vendedor: string | null
   status: string | null
   photo: string | null
@@ -35,6 +36,7 @@ export default function RelatorioRetiradas() {
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("TODOS")
   const [vendedorFilter, setVendedorFilter] = useState<string>("TODOS")
+  const [transportadoraFilter, setTransportadoraFilter] = useState<string>("TODOS")
 
   useEffect(() => {
     fetchRetiradas()
@@ -58,6 +60,9 @@ export default function RelatorioRetiradas() {
 
   // Lista única de vendedores para o filtro
   const vendedores = [...new Set(retiradas.map(r => r.vendedor).filter(Boolean))] as string[]
+  
+  // Lista única de transportadoras para o filtro
+  const transportadoras = [...new Set(retiradas.map(r => r.transportadora).filter(Boolean))] as string[]
 
   const filteredRetiradas = retiradas.filter(r => {
     // Filtro de busca
@@ -78,7 +83,12 @@ export default function RelatorioRetiradas() {
       vendedorFilter === "TODOS" || 
       r.vendedor === vendedorFilter
     
-    return matchesSearch && matchesStatus && matchesVendedor
+    // Filtro de transportadora
+    const matchesTransportadora = 
+      transportadoraFilter === "TODOS" || 
+      r.transportadora === transportadoraFilter
+    
+    return matchesSearch && matchesStatus && matchesVendedor && matchesTransportadora
   })
 
   return (
@@ -119,6 +129,16 @@ export default function RelatorioRetiradas() {
               <option value="TODOS">Todos os Vendedores</option>
               {vendedores.map(vendedor => (
                 <option key={vendedor} value={vendedor}>{vendedor}</option>
+              ))}
+            </select>
+            <select
+              value={transportadoraFilter}
+              onChange={(e) => setTransportadoraFilter(e.target.value)}
+              className="px-4 py-3 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent bg-white min-w-[200px]"
+            >
+              <option value="TODOS">Todas as Transportadoras</option>
+              {transportadoras.map(transportadora => (
+                <option key={transportadora} value={transportadora}>{transportadora}</option>
               ))}
             </select>
           </div>
@@ -208,6 +228,7 @@ export default function RelatorioRetiradas() {
                       <th className="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Retirante</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Operador</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Vendedor</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Transportadora</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Rastreio</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Data</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Status</th>
@@ -234,6 +255,9 @@ export default function RelatorioRetiradas() {
                         </td>
                         <td className="px-6 py-4">
                           <p className="text-zinc-900">{retirada.vendedor || '-'}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="text-zinc-900">{retirada.transportadora || '-'}</p>
                         </td>
                         <td className="px-6 py-4">
                           {retirada.trackingCode ? (
