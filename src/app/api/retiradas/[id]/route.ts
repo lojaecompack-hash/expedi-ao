@@ -144,11 +144,13 @@ export async function GET(
           )
           const tinyData = await tinyRes.json()
           
+          console.log('[Retirada Detalhes API] Resposta Tiny:', JSON.stringify(tinyData.retorno?.status), 'Itens:', tinyData.retorno?.pedido?.itens?.length)
+          
           if (tinyData.retorno?.status === 'OK' && tinyData.retorno?.pedido?.itens) {
-            const itensFormatados = tinyData.retorno.pedido.itens.map((item: { item: { id_produto: string, descricao: string, quantidade: number } }) => ({
-              id: item.item.id_produto,
-              descricao: item.item.descricao,
-              quantidade: item.item.quantidade
+            const itensFormatados = tinyData.retorno.pedido.itens.map((item: { item: { id?: string, id_produto?: string, codigo?: string, descricao?: string, quantidade?: string | number } }) => ({
+              id: item.item.id_produto || item.item.id || item.item.codigo || '',
+              descricao: item.item.descricao || 'Produto sem descrição',
+              quantidade: typeof item.item.quantidade === 'string' ? parseFloat(item.item.quantidade) : (item.item.quantidade || 1)
             }))
             
             // Adicionar itens ao objeto de retorno (sem salvar no banco)

@@ -14,6 +14,7 @@ interface User {
   name: string
   role: UserRole
   isActive: boolean
+  isManager: boolean
 }
 
 interface Operator {
@@ -256,13 +257,20 @@ export default function UserDetailPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-zinc-500 mb-1">Status</label>
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                user.isActive 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-red-100 text-red-800'
-              }`}>
-                {user.isActive ? 'Ativo' : 'Inativo'}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  user.isActive 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-red-100 text-red-800'
+                }`}>
+                  {user.isActive ? 'Ativo' : 'Inativo'}
+                </span>
+                {user.isManager && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                    ⭐ Gerente
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
