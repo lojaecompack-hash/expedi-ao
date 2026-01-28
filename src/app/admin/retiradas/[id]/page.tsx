@@ -992,8 +992,22 @@ export default function DetalhesRetirada() {
                       onChange={(e) => setOperadorSenha(e.target.value)}
                       placeholder="Digite sua senha..."
                       className="w-full px-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-[#FFD700] focus:border-transparent"
-                      onKeyDown={(e) => e.key === 'Enter' && validarEAdicionarOcorrencia()}
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-700 mb-1">
+                      Descrição da Ocorrência <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      value={novaOcorrencia}
+                      onChange={(e) => setNovaOcorrencia(e.target.value)}
+                      placeholder="Descreva a ocorrência..."
+                      rows={3}
+                      className="w-full px-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-[#FFD700] focus:border-transparent resize-none"
+                      onKeyDown={(e) => e.key === 'Enter' && e.ctrlKey && validarEAdicionarOcorrencia()}
+                    />
+                    <p className="text-xs text-zinc-500 mt-1">Pressione Ctrl+Enter para enviar</p>
                   </div>
 
                   {authError && (
@@ -1016,7 +1030,7 @@ export default function DetalhesRetirada() {
                   </button>
                   <button
                     onClick={validarEAdicionarOcorrencia}
-                    disabled={validandoOperador || !selectedOperadorId || !operadorSenha}
+                    disabled={validandoOperador || !selectedOperadorId || !operadorSenha || !novaOcorrencia.trim()}
                     className="flex-1 px-4 py-3 bg-[#FFD700] text-zinc-900 rounded-xl hover:bg-[#FFC700] font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {validandoOperador ? (
