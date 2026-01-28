@@ -63,7 +63,7 @@ export default function UsuariosPage() {
 
       if (res.ok && data.ok) {
         alert('Usuário criado com sucesso!')
-        setFormData({ email: '', name: '', password: '', role: 'EXPEDICAO' })
+        setFormData({ email: '', name: '', password: '', role: 'EXPEDICAO', isManager: false })
         await fetchUsers()
       } else {
         // Atualizar lista para verificar se usuário foi criado
@@ -380,6 +380,22 @@ export default function UsuariosPage() {
                       <span className="text-sm text-zinc-700">FINANCEIRO</span>
                     </label>
                   </div>
+                </div>
+
+                {/* Opção de Gerente */}
+                <div className="pt-4 border-t border-zinc-200">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.isManager}
+                      onChange={(e) => setFormData({ ...formData, isManager: e.target.checked })}
+                      className="w-5 h-5 text-[#FFD700] focus:ring-[#FFD700] rounded"
+                    />
+                    <div>
+                      <span className="text-sm font-medium text-zinc-700">Gerente</span>
+                      <p className="text-xs text-zinc-500">Permite acesso a funções de gerenciamento do setor</p>
+                    </div>
+                  </label>
                 </div>
 
                 <button

@@ -30,9 +30,9 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { email, name, password, role } = body
+    const { email, name, password, role, isManager } = body
     
-    console.log('[API /api/users/create] Dados recebidos:', { email, name, role })
+    console.log('[API /api/users/create] Dados recebidos:', { email, name, role, isManager })
 
     if (!email || !name || !password || !role) {
       console.log('[API /api/users/create] Dados incompletos:', { email: !!email, name: !!name, password: !!password, role: !!role })
@@ -87,7 +87,8 @@ export async function POST(request: NextRequest) {
         name,
         role,
         passwordHash,
-        isActive: true
+        isActive: true,
+        isManager: isManager === true
       }
     })
     
