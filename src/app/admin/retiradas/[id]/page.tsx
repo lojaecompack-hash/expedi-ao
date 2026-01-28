@@ -373,7 +373,7 @@ export default function DetalhesRetirada() {
           return
         }
         
-        linhaId = criarLinhaData.linhaDoTempo.id
+        linhaId = criarLinhaData.linhaTempo.id
         console.log('[validarEAdicionarOcorrencia] Linha do tempo criada:', linhaId)
       }
       

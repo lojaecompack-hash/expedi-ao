@@ -60,16 +60,17 @@ export default function UsuariosPage() {
       })
 
       const data = await res.json()
+      console.log('[handleCreateUser] Response:', { status: res.status, ok: res.ok, data })
 
-      if (res.ok && data.ok) {
+      if (data.ok) {
         alert('Usuário criado com sucesso!')
         setFormData({ email: '', name: '', password: '', role: 'EXPEDICAO', isManager: false })
         await fetchUsers()
       } else {
-        // Atualizar lista para verificar se usuário foi criado
-        await fetchUsers()
         const errorMsg = data.error || data.details || 'Erro ao criar usuário'
         alert(errorMsg)
+        // Atualizar lista para verificar se usuário foi criado mesmo com erro
+        await fetchUsers()
       }
     } catch (error) {
       console.error('Erro ao criar usuário:', error)

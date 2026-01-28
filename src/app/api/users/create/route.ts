@@ -80,16 +80,25 @@ export async function POST(request: NextRequest) {
 
     // Criar usuário no banco com o MESMO ID do Supabase Auth
     console.log('[API /api/users/create] Criando usuário no banco com ID:', newAuthUser.user.id)
+    
+    // Montar dados do usuário - isManager é opcional caso a coluna não exista ainda
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const userData: any = {
+      id: newAuthUser.user.id,
+      email,
+      name,
+      role,
+      passwordHash,
+      isActive: true
+    }
+    
+    // Adicionar isManager apenas se foi passado como true
+    if (isManager === true) {
+      userData.isManager = true
+    }
+    
     const newUser = await prisma.user.create({
-      data: {
-        id: newAuthUser.user.id, // Usar o mesmo ID do Supabase Auth
-        email,
-        name,
-        role,
-        passwordHash,
-        isActive: true,
-        isManager: isManager === true
-      }
+      data: userData
     })
     
     console.log('[API /api/users/create] Usuário criado no banco:', newUser.id)
@@ -121,16 +130,21 @@ export async function POST(request: NextRequest) {
       }
 
       console.log('[API /api/users/create] Criando membership com permissões:', permissions)
-      await prisma.membership.create({
-        data: {
-          workspaceId: workspace.id,
-          userId: newAuthUser.user.id,
-          email: email,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          permissions: permissions as any
-        }
-      })
-      console.log('[API /api/users/create] Membership criado com sucesso')
+      try {
+        await prisma.membership.create({
+          data: {
+            workspaceId: workspace.id,
+            userId: newAuthUser.user.id,
+            email: email,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            permissions: permissions as any
+          }
+        })
+        console.log('[API /api/users/create] Membership criado com sucesso')
+      } catch (membershipError) {
+        // Não falhar se membership já existe ou der erro - usuário já foi criado
+        console.warn('[API /api/users/create] Erro ao criar membership (não crítico):', membershipError)
+      }
     }
 
     console.log('[API /api/users/create] Usuário criado com sucesso!')
