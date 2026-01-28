@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { Package, TrendingUp, Users, Truck, BarChart3 } from "lucide-react"
+import { Package, TrendingUp, Users, Truck, BarChart3, RotateCcw } from "lucide-react"
 import Link from "next/link"
 import MainLayout from "@/components/MainLayout"
 import DateFilter, { DateFilterOption } from "@/components/DateFilter"
@@ -15,7 +15,9 @@ export default function Home() {
     retiradasHoje: 0,
     retiradasSemana: 0,
     totalPedidos: 0,
-    totalOperadores: 0
+    totalOperadores: 0,
+    retornos: 0,
+    reRetiradasPendentes: 0
   })
   const [loading, setLoading] = useState(true)
   const [dateFilter, setDateFilter] = useState<DateFilterOption>('hoje')
@@ -101,11 +103,22 @@ export default function Home() {
           new Date(r.createdAt) >= inicioSemana
         ).length
         
+        // Contar retornos e re-retiradas pendentes
+        const retornos = retiradas.filter((r: Record<string, any>) => 
+          r.status === 'RETORNADO'
+        ).length
+        
+        const reRetiradasPendentes = retiradas.filter((r: Record<string, any>) => 
+          r.status === 'RETORNADO'
+        ).length
+        
         setStats(prev => ({
           ...prev,
           retiradasHoje,
           retiradasSemana,
-          totalPedidos: retiradasFiltradas.length
+          totalPedidos: retiradasFiltradas.length,
+          retornos,
+          reRetiradasPendentes
         }))
       }
 
@@ -207,6 +220,17 @@ export default function Home() {
                 iconBgColor="bg-[#FFD700]/20"
                 iconColor="text-[#FFD700]"
                 delay={0.4}
+                loading={loading}
+              />
+
+              <StatsCard
+                title="Retornos"
+                value={stats.retornos}
+                subtitle="aguardando"
+                icon={RotateCcw}
+                iconBgColor="bg-amber-100"
+                iconColor="text-amber-600"
+                delay={0.5}
                 loading={loading}
               />
             </div>

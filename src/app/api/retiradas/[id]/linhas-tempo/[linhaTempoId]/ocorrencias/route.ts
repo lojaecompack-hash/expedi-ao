@@ -10,7 +10,7 @@ export async function POST(
     const { id, linhaTempoId } = await params
     const body = await req.json()
     
-    const { descricao, operadorNome, setorOrigem, setorDestino } = body
+    const { descricao, operadorNome, setorOrigem, setorDestino, tipoOcorrencia, motivoRetorno } = body
     
     if (!descricao || descricao.trim() === '') {
       return NextResponse.json(
@@ -18,6 +18,14 @@ export async function POST(
         { status: 400 }
       )
     }
+    
+    // Validar tipo de ocorrência
+    const tiposValidos = ['INFORMACAO', 'RETORNO_PRODUTO']
+    const tipoFinal = tiposValidos.includes(tipoOcorrencia) ? tipoOcorrencia : 'INFORMACAO'
+    
+    // Validar motivo de retorno (obrigatório se tipo = RETORNO_PRODUTO)
+    const motivosValidos = ['DESTINATARIO_AUSENTE', 'ENDERECO_INCORRETO', 'RECUSA_CLIENTE', 'AVARIADO', 'EXTRAVIO', 'OUTRO']
+    const motivoFinal = tipoFinal === 'RETORNO_PRODUTO' && motivosValidos.includes(motivoRetorno) ? motivoRetorno : null
     
     // Verificar se linha do tempo existe, pertence ao pickup e está aberta
     const linhaTempo = await prisma.linhaTempoOcorrencia.findFirst({
@@ -60,11 +68,22 @@ export async function POST(
         operadorNome: operadorNome || null,
         setorOrigem: setorOrigem || null,
         setorDestino: setorDestino || null,
-        statusOcorrencia: 'PENDENTE'
+        statusOcorrencia: 'PENDENTE',
+        tipoOcorrencia: tipoFinal,
+        motivoRetorno: motivoFinal
       }
     })
     
-    console.log('[Ocorrencias API] Ocorrência criada:', ocorrencia.id, 'na linha:', linhaTempoId)
+    console.log('[Ocorrencias API] Ocorrência criada:', ocorrencia.id, 'na linha:', linhaTempoId, 'tipo:', tipoFinal)
+    
+    // Se for RETORNO_PRODUTO, atualizar status do pickup para RETORNADO
+    if (tipoFinal === 'RETORNO_PRODUTO') {
+      await prisma.pickup.update({
+        where: { id },
+        data: { status: 'RETORNADO' }
+      })
+      console.log('[Ocorrencias API] Pickup', id, 'marcado como RETORNADO')
+    }
     
     return NextResponse.json({
       ok: true,

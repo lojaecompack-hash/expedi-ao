@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Package, Truck, User, Calendar, ArrowLeft, Image as ImageIcon, Edit2, Save, X, Loader2, AlertTriangle, CheckCircle, Plus, ChevronDown, ChevronUp } from "lucide-react"
+import { Package, Truck, User, Calendar, ArrowLeft, Image as ImageIcon, Edit2, Save, X, Loader2, AlertTriangle, CheckCircle, Plus, ChevronDown, ChevronUp, RotateCcw } from "lucide-react"
 import Link from "next/link"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 
 interface Operador {
   id: string
@@ -54,6 +54,7 @@ interface Retirada {
 
 export default function DetalhesRetirada() {
   const params = useParams()
+  const router = useRouter()
   const id = params.id as string
   
   const [retirada, setRetirada] = useState<Retirada | null>(null)
@@ -84,6 +85,10 @@ export default function DetalhesRetirada() {
   const [setores, setSetores] = useState<{id: string, nome: string}[]>([])
   const [setorAtual, setSetorAtual] = useState("")
   const [selectedSetorDestino, setSelectedSetorDestino] = useState("")
+  
+  // Estados para tipo de ocorrência e motivo de retorno
+  const [tipoOcorrencia, setTipoOcorrencia] = useState<'INFORMACAO' | 'RETORNO_PRODUTO'>('INFORMACAO')
+  const [motivoRetorno, setMotivoRetorno] = useState('')
 
   useEffect(() => {
     if (id) {
@@ -221,11 +226,17 @@ export default function DetalhesRetirada() {
     setSelectedOperadorId("")
     setOperadorSenha("")
     setAuthError("")
+    setTipoOcorrencia('INFORMACAO')
+    setMotivoRetorno('')
     setShowAuthModal(true)
   }
 
   // Validar operador e adicionar ocorrência
   const validarEAdicionarOcorrencia = async () => {
+    if (tipoOcorrencia === 'RETORNO_PRODUTO' && !motivoRetorno) {
+      setAuthError("Selecione o motivo do retorno")
+      return
+    }
     if (!selectedSetorDestino) {
       setAuthError("Selecione o setor de destino da ocorrência")
       return
@@ -265,7 +276,9 @@ export default function DetalhesRetirada() {
           descricao: novaOcorrencia.trim(),
           operadorNome: validarData.operador.name,
           setorOrigem: setorAtual,
-          setorDestino: selectedSetorDestino
+          setorDestino: selectedSetorDestino,
+          tipoOcorrencia,
+          motivoRetorno: tipoOcorrencia === 'RETORNO_PRODUTO' ? motivoRetorno : null
         })
       })
       
@@ -462,11 +475,39 @@ export default function DetalhesRetirada() {
             transition={{ delay: 0.1 }}
             className="bg-white rounded-2xl border border-zinc-200 p-8"
           >
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-green-500/20 rounded-xl flex items-center justify-center">
-                <Truck className="w-5 h-5 text-green-600" />
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-green-500/20 rounded-xl flex items-center justify-center">
+                  <Truck className="w-5 h-5 text-green-600" />
+                </div>
+                <h2 className="text-xl font-bold text-zinc-900">Dados da Retirada</h2>
               </div>
-              <h2 className="text-xl font-bold text-zinc-900">Dados da Retirada</h2>
+              
+              {/* Status da Retirada e Botão Nova Retirada */}
+              <div className="flex items-center gap-3">
+                {retirada.status === 'RETORNADO' ? (
+                  <>
+                    <span className="inline-flex items-center px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg text-sm font-medium">
+                      📦 Retornado
+                    </span>
+                    <button
+                      onClick={() => router.push(`/expedicao/retirada?pedido=${retirada.order.orderNumber}&retiradaAnteriorId=${retirada.id}`)}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      Nova Retirada
+                    </button>
+                  </>
+                ) : retirada.status === 'AGUARDANDO_RETIRADA' ? (
+                  <span className="inline-flex items-center px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg text-sm font-medium">
+                    ⏳ Aguardando
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-sm font-medium">
+                    ✓ Retirado
+                  </span>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-6">
@@ -748,6 +789,43 @@ export default function DetalhesRetirada() {
                 </div>
                 
                 <div className="space-y-4 mb-6">
+                  {/* Tipo de Ocorrência */}
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-700 mb-1">
+                      Tipo de Ocorrência <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={tipoOcorrencia}
+                      onChange={(e) => setTipoOcorrencia(e.target.value as 'INFORMACAO' | 'RETORNO_PRODUTO')}
+                      className="w-full px-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-[#FFD700] focus:border-transparent bg-white"
+                    >
+                      <option value="INFORMACAO">📝 Informação / Outros</option>
+                      <option value="RETORNO_PRODUTO">📦 Retorno de Produto</option>
+                    </select>
+                  </div>
+
+                  {/* Motivo do Retorno (aparece apenas se tipo = RETORNO_PRODUTO) */}
+                  {tipoOcorrencia === 'RETORNO_PRODUTO' && (
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-700 mb-1">
+                        Motivo do Retorno <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={motivoRetorno}
+                        onChange={(e) => setMotivoRetorno(e.target.value)}
+                        className="w-full px-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-[#FFD700] focus:border-transparent bg-white"
+                      >
+                        <option value="">Selecione o motivo...</option>
+                        <option value="DESTINATARIO_AUSENTE">Destinatário ausente</option>
+                        <option value="ENDERECO_INCORRETO">Endereço incorreto</option>
+                        <option value="RECUSA_CLIENTE">Recusa do cliente</option>
+                        <option value="AVARIADO">Avariado no transporte</option>
+                        <option value="EXTRAVIO">Extravio</option>
+                        <option value="OUTRO">Outro</option>
+                      </select>
+                    </div>
+                  )}
+
                   <div>
                     <label className="block text-sm font-medium text-zinc-700 mb-1">
                       Destino da Ocorrência <span className="text-red-500">*</span>

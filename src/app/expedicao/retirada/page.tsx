@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useRef } from "react"
 import { motion } from "framer-motion"
-import { CheckCircle, AlertCircle, User, Settings, Package, Truck, Camera, X } from "lucide-react"
+import { CheckCircle, AlertCircle, User, Settings, Package, Truck, Camera, X, RotateCcw } from "lucide-react"
 import MainLayout from "@/components/MainLayout"
 import PasswordValidationModal from "@/components/PasswordValidationModal"
 import { Html5Qrcode } from "html5-qrcode"
+import { useSearchParams } from "next/navigation"
 
 interface OrderDetails {
   id: string
@@ -42,12 +43,18 @@ interface Operator {
 }
 
 export default function RetiradaPage() {
+  const searchParams = useSearchParams()
+  
   const [orderNumber, setOrderNumber] = useState("")
   const [cpf, setCpf] = useState("")
   const [operatorId, setOperatorId] = useState("")
   const [retrieverName, setRetrieverName] = useState("")
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<string>("")
+  
+  // Estado para re-retirada
+  const [retiradaAnteriorId, setRetiradaAnteriorId] = useState<string | null>(null)
+  const [isReRetirada, setIsReRetirada] = useState(false)
   const [success, setSuccess] = useState(false)
   
   // Estados para busca automática
@@ -89,6 +96,21 @@ export default function RetiradaPage() {
   
   useEffect(() => {
     fetchOperators()
+    
+    // Verificar se veio de uma re-retirada
+    const pedidoParam = searchParams.get('pedido')
+    const retiradaAnteriorParam = searchParams.get('retiradaAnteriorId')
+    
+    if (pedidoParam) {
+      setOrderNumber(pedidoParam)
+      setIsReRetirada(true)
+      if (retiradaAnteriorParam) {
+        setRetiradaAnteriorId(retiradaAnteriorParam)
+      }
+      // Buscar detalhes do pedido automaticamente
+      searchOrder(pedidoParam)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   
   const fetchOperators = async () => {
@@ -529,6 +551,7 @@ export default function RetiradaPage() {
           retrieverName: retrieverName.trim(),
           transportadora: transportadoraSelecionada.trim(),
           photo: photo || null,
+          retiradaAnteriorId: retiradaAnteriorId || null,
         }),
       })
 

@@ -170,7 +170,8 @@ export default function RelatorioRetiradas() {
     const matchesStatus = 
       statusFilter === "TODOS" || 
       r.status === statusFilter ||
-      (statusFilter === "RETIRADO" && !r.status) // Registros antigos sem status são considerados RETIRADO
+      (statusFilter === "RETIRADO" && !r.status) || // Registros antigos sem status são considerados RETIRADO
+      (statusFilter === "RETORNADO" && r.status === "RETORNADO")
     
     // Filtro de vendedor
     const matchesVendedor = 
@@ -186,7 +187,9 @@ export default function RelatorioRetiradas() {
     const matchesOcorrencia = 
       ocorrenciaFilter === "TODOS" || 
       (ocorrenciaFilter === "COM_ABERTA" && r.ocorrenciasAbertas > 0) ||
-      (ocorrenciaFilter === "SEM_OCORRENCIA" && r.totalOcorrencias === 0)
+      (ocorrenciaFilter === "SEM_OCORRENCIA" && r.totalOcorrencias === 0) ||
+      (ocorrenciaFilter === "COM_RETORNO" && r.status === "RETORNADO") ||
+      (ocorrenciaFilter === "AGUARDANDO_RERETIRADA" && r.status === "RETORNADO")
     
     return matchesSearch && matchesStatus && matchesVendedor && matchesTransportadora && matchesOcorrencia
   })
@@ -213,6 +216,7 @@ export default function RelatorioRetiradas() {
                 <option value="TODOS">Todos os Status</option>
                 <option value="AGUARDANDO_RETIRADA">Aguardando Retirada</option>
                 <option value="RETIRADO">Retirado</option>
+                <option value="RETORNADO">📦 Retornado</option>
               </select>
             </div>
             <div className="flex flex-col">
@@ -251,6 +255,8 @@ export default function RelatorioRetiradas() {
                 <option value="TODOS">Todas</option>
                 <option value="COM_ABERTA">Com Ocorrência Aberta</option>
                 <option value="SEM_OCORRENCIA">Sem Ocorrência</option>
+                <option value="COM_RETORNO">📦 Com Retorno</option>
+                <option value="AGUARDANDO_RERETIRADA">🔄 Aguardando Re-Retirada</option>
               </select>
             </div>
             <div className="flex flex-col">

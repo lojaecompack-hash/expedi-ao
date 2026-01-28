@@ -193,9 +193,13 @@ model Pickup {
   trackingCode    String?
   transportadora  String?   // Nome da transportadora do pedido (vem do Tiny)
   vendedor        String?   // Nome do vendedor do pedido (vem do Tiny)
-  status          String    @default("RETIRADO") // AGUARDANDO_RETIRADA ou RETIRADO
+  status          String    @default("RETIRADO") // AGUARDANDO_RETIRADA, RETIRADO ou RETORNADO
   photo           String?   @db.Text
   createdAt       DateTime  @default(now())
+  
+  // Campos para re-retirada (quando produto retorna)
+  retiradaAnteriorId String?  // ID da retirada anterior (se for uma re-retirada)
+  numeroRetirada     Int      @default(1) // 1 = primeira, 2 = segunda, etc.
 
   order         Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
   operator      Operator?    @relation(fields: [operatorId], references: [id])
@@ -203,6 +207,8 @@ model Pickup {
 
   @@index([orderId])
   @@index([operatorId])
+  @@index([status])
+  @@index([retiradaAnteriorId])
 }
 
 // Linha do Tempo de Ocorrências (cada linha pode ter múltiplas ocorrências)
@@ -232,12 +238,17 @@ model Ocorrencia {
   setorDestino     String?
   statusOcorrencia String   @default("PENDENTE")
   createdAt        DateTime @default(now())
+  
+  // Campos para tipo de ocorrência e motivo de retorno
+  tipoOcorrencia   String   @default("INFORMACAO") // INFORMACAO ou RETORNO_PRODUTO
+  motivoRetorno    String?  // DESTINATARIO_AUSENTE, ENDERECO_INCORRETO, RECUSA_CLIENTE, AVARIADO, EXTRAVIO, OUTRO
 
   linhaTempo   LinhaTempoOcorrencia @relation(fields: [linhaTempoId], references: [id], onDelete: Cascade)
 
   @@index([linhaTempoId])
   @@index([setorDestino])
   @@index([statusOcorrencia])
+  @@index([tipoOcorrencia])
 }
 
 model SyncJob {

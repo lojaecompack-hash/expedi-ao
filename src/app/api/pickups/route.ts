@@ -20,6 +20,7 @@ export async function POST(req: Request) {
       transportadora?: string
       photo?: string
       dryRun?: boolean
+      retiradaAnteriorId?: string  // ID da retirada anterior (se for uma re-retirada)
     }
 
     const orderNumberRaw = String(body.orderNumber ?? '').trim()
@@ -189,6 +190,12 @@ export async function POST(req: Request) {
       })
       console.log('[Pickups] Pickup atualizado com status RETIRADO:', pickup.id)
     } else {
+      // Contar quantas retiradas já existem para este pedido
+      const retiradasExistentes = await prisma.pickup.count({
+        where: { orderId: order.id }
+      })
+      const numeroRetirada = retiradasExistentes + 1
+      
       // Criar novo pickup (status = RETIRADO pois é retirada completa)
       pickup = await prisma.pickup.create({
         data: {
@@ -204,10 +211,12 @@ export async function POST(req: Request) {
           vendedor: typeof vendedorNome === 'string' ? vendedorNome : null,
           status: 'RETIRADO',
           photo: body.photo || null,
+          retiradaAnteriorId: body.retiradaAnteriorId || null,
+          numeroRetirada,
         },
         select: { id: true, cpfLast4: true, operatorId: true, operatorName: true, customerName: true, customerCpfCnpj: true, retrieverName: true, trackingCode: true, transportadora: true, vendedor: true, status: true, photo: true, createdAt: true },
       })
-      console.log('[Pickups] Pickup criado com status RETIRADO:', pickup.id)
+      console.log('[Pickups] Pickup criado com status RETIRADO:', pickup.id, 'Retirada #' + numeroRetirada, body.retiradaAnteriorId ? '(re-retirada de ' + body.retiradaAnteriorId + ')' : '')
     }
 
     return NextResponse.json({
