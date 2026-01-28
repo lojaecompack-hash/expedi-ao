@@ -59,7 +59,7 @@ export async function GET(
     
     console.log('[Retirada Detalhes API] Buscando retirada ID:', id)
     
-    // Buscar retirada com todos os dados
+    // Buscar retirada atual com todos os dados
     const retirada = await prisma.pickup.findUnique({
       where: { id },
       include: {
@@ -73,6 +73,14 @@ export async function GET(
             createdAt: true,
             updatedAt: true,
           }
+        },
+        linhasDoTempo: {
+          include: {
+            ocorrencias: {
+              orderBy: { createdAt: 'asc' }
+            }
+          },
+          orderBy: { numero: 'asc' }
         }
       }
     })
@@ -84,11 +92,28 @@ export async function GET(
       )
     }
     
-    console.log('[Retirada Detalhes API] Retirada encontrada:', retirada.id)
+    // Buscar TODAS as retiradas do mesmo pedido (histórico completo)
+    const todasRetiradas = await prisma.pickup.findMany({
+      where: { orderId: retirada.orderId },
+      include: {
+        linhasDoTempo: {
+          include: {
+            ocorrencias: {
+              orderBy: { createdAt: 'asc' }
+            }
+          },
+          orderBy: { numero: 'asc' }
+        }
+      },
+      orderBy: { createdAt: 'desc' } // Mais recente primeiro
+    })
+    
+    console.log('[Retirada Detalhes API] Retirada encontrada:', retirada.id, '| Total retiradas do pedido:', todasRetiradas.length)
     
     return NextResponse.json({
       ok: true,
-      retirada
+      retirada,
+      historicoRetiradas: todasRetiradas // Array com todas as retiradas do pedido
     }, { status: 200 })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Erro desconhecido'

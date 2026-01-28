@@ -28,6 +28,24 @@ interface LinhaDoTempo {
   ocorrencias: Ocorrencia[]
 }
 
+interface RetiradaHistorico {
+  id: string
+  cpfLast4: string | null
+  operatorId: string | null
+  operatorName: string | null
+  customerName: string | null
+  customerCpfCnpj: string | null
+  retrieverName: string | null
+  trackingCode: string | null
+  transportadora: string | null
+  status: string | null
+  photo: string | null
+  createdAt: string
+  numeroRetirada: number
+  itens: string | null
+  linhasDoTempo: LinhaDoTempo[]
+}
+
 interface Retirada {
   id: string
   cpfLast4: string | null
@@ -43,6 +61,7 @@ interface Retirada {
   createdAt: string
   numeroRetirada: number
   itens: string | null  // JSON dos produtos do pedido
+  linhasDoTempo?: LinhaDoTempo[]
   order: {
     id: string
     tinyOrderId: string
@@ -60,6 +79,7 @@ export default function DetalhesRetirada() {
   const id = params.id as string
   
   const [retirada, setRetirada] = useState<Retirada | null>(null)
+  const [historicoRetiradas, setHistoricoRetiradas] = useState<RetiradaHistorico[]>([])
   const [loading, setLoading] = useState(true)
   
   // Estados para edição do rastreio
@@ -108,6 +128,10 @@ export default function DetalhesRetirada() {
       if (data.ok) {
         setRetirada(data.retirada)
         setTrackingCode(data.retirada.trackingCode || "")
+        // Carregar histórico de retiradas
+        if (data.historicoRetiradas) {
+          setHistoricoRetiradas(data.historicoRetiradas)
+        }
       }
     } catch (error) {
       console.error('Erro ao buscar retirada:', error)
@@ -501,7 +525,7 @@ export default function DetalhesRetirada() {
             })()}
           </motion.div>
 
-          {/* Dados da Retirada */}
+          {/* Histórico de Retiradas */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -511,140 +535,159 @@ export default function DetalhesRetirada() {
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-green-500/20 rounded-xl flex items-center justify-center">
-                  <Truck className="w-5 h-5 text-green-600" />
+                  <RotateCcw className="w-5 h-5 text-green-600" />
                 </div>
-                <h2 className="text-xl font-bold text-zinc-900">Dados da Retirada</h2>
+                <h2 className="text-xl font-bold text-zinc-900">Histórico de Retiradas ({historicoRetiradas.length})</h2>
               </div>
               
-              {/* Status da Retirada e Botão Nova Retirada */}
-              <div className="flex items-center gap-3">
-                {retirada.status === 'RETORNADO' ? (
-                  <>
-                    <span className="inline-flex items-center px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg text-sm font-medium">
-                      📦 Retornado
-                    </span>
-                    <button
-                      onClick={() => router.push(`/expedicao/retirada?pedido=${retirada.order.orderNumber}&retiradaAnteriorId=${retirada.id}`)}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                    >
-                      <RotateCcw className="w-4 h-4" />
-                      Nova Retirada
-                    </button>
-                  </>
-                ) : retirada.status === 'AGUARDANDO_RETIRADA' ? (
-                  <span className="inline-flex items-center px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg text-sm font-medium">
-                    ⏳ Aguardando
-                  </span>
-                ) : retirada.status === 'RETORNADO' ? (
-                  <span className="inline-flex items-center px-3 py-1.5 bg-orange-100 text-orange-700 rounded-lg text-sm font-medium">
-                    📦 Retornado
-                  </span>
-                ) : retirada.numeroRetirada > 1 ? (
-                  <span className="inline-flex items-center px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium">
-                    🔄 Re-Retirado
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-sm font-medium">
-                    ✓ Retirado
-                  </span>
-                )}
-              </div>
+              {/* Botão Nova Retirada se a última estiver retornada */}
+              {historicoRetiradas.length > 0 && historicoRetiradas[0].status === 'RETORNADO' && (
+                <button
+                  onClick={() => router.push(`/expedicao/retirada?pedido=${retirada.order.orderNumber}&retiradaAnteriorId=${historicoRetiradas[0].id}`)}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  Nova Retirada
+                </button>
+              )}
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <p className="text-sm text-zinc-600 mb-1">Nome do Retirante</p>
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4 text-zinc-400" />
-                  <p className="text-lg font-semibold text-zinc-900">{retirada.retrieverName || 'Não informado'}</p>
-                </div>
-              </div>
-              <div>
-                <p className="text-sm text-zinc-600 mb-1">CPF</p>
-                <p className="text-lg font-semibold text-zinc-900">{retirada.customerCpfCnpj || retirada.cpfLast4 || 'N/A'}</p>
-              </div>
-              <div>
-                <p className="text-sm text-zinc-600 mb-1">Operador</p>
-                <p className="text-lg font-semibold text-zinc-900">{retirada.operatorName || 'Não informado'}</p>
-              </div>
-              <div>
-                <p className="text-sm text-zinc-600 mb-1">Transportadora</p>
-                <div className="flex items-center gap-2">
-                  <Truck className="w-4 h-4 text-zinc-400" />
-                  <p className="text-lg font-semibold text-zinc-900">{retirada.transportadora || 'Não definida'}</p>
-                </div>
-              </div>
-              <div>
-                <p className="text-sm text-zinc-600 mb-1">Data da Retirada</p>
-                <div className="flex items-center gap-2 text-zinc-900">
-                  <Calendar className="w-4 h-4" />
-                  <span className="font-semibold">{new Date(retirada.createdAt).toLocaleString('pt-BR')}</span>
-                </div>
-              </div>
-              <div className="col-span-2">
-                <div className="flex items-center justify-between mb-1">
-                  <p className="text-sm text-zinc-600">Código de Rastreio</p>
-                  {/* Só permite editar se status for AGUARDANDO_RETIRADA (não RETIRADO) */}
-                  {!editingTracking && retirada.status === 'AGUARDANDO_RETIRADA' && (
-                    <button
-                      onClick={() => setEditingTracking(true)}
-                      className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                      Editar
-                    </button>
-                  )}
-                </div>
-                
-                {editingTracking ? (
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={trackingCode}
-                      onChange={(e) => setTrackingCode(e.target.value)}
-                      placeholder="Digite o código ou link de rastreio"
-                      className="flex-1 px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-[#FFD700] focus:border-transparent"
-                    />
-                    <button
-                      onClick={saveTrackingCode}
-                      disabled={savingTracking}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
-                    >
-                      {savingTracking ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Save className="w-4 h-4" />
+            {/* Timeline de Retiradas */}
+            <div className="space-y-4">
+              {historicoRetiradas.map((ret, index) => {
+                const isAtual = ret.id === retirada.id
+                const getBadge = () => {
+                  if (ret.status === 'RETORNADO') {
+                    return <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-lg text-sm font-medium">📦 Retornado</span>
+                  } else if (ret.status === 'AGUARDANDO_RETIRADA') {
+                    return <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-lg text-sm font-medium">⏳ Aguardando</span>
+                  } else if (ret.numeroRetirada > 1) {
+                    return <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium">🔄 Re-Retirado</span>
+                  } else {
+                    return <span className="px-3 py-1 bg-green-100 text-green-700 rounded-lg text-sm font-medium">✓ Retirado</span>
+                  }
+                }
+
+                return (
+                  <div key={ret.id} className="relative">
+                    {/* Linha conectora */}
+                    {index < historicoRetiradas.length - 1 && (
+                      <div className="absolute left-6 top-full w-0.5 h-4 bg-zinc-300" />
+                    )}
+                    
+                    <div className={`border rounded-xl p-5 ${isAtual ? 'border-blue-300 bg-blue-50/30' : 'border-zinc-200 bg-white'}`}>
+                      {/* Header do card */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                            ret.status === 'RETORNADO' ? 'bg-amber-100 text-amber-700' :
+                            ret.numeroRetirada > 1 ? 'bg-blue-100 text-blue-700' :
+                            'bg-green-100 text-green-700'
+                          }`}>
+                            #{ret.numeroRetirada}
+                          </div>
+                          <div>
+                            <span className="font-semibold text-zinc-900">Retirada #{ret.numeroRetirada}</span>
+                            {isAtual && <span className="ml-2 text-xs text-blue-600">(atual)</span>}
+                          </div>
+                        </div>
+                        {getBadge()}
+                      </div>
+
+                      {/* Dados da retirada */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <p className="text-zinc-500">Retirante</p>
+                          <p className="font-medium flex items-center gap-1">
+                            <User className="w-3 h-3" />
+                            {ret.retrieverName || 'N/A'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-zinc-500">Operador</p>
+                          <p className="font-medium">{ret.operatorName || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <p className="text-zinc-500">Transportadora</p>
+                          <p className="font-medium flex items-center gap-1">
+                            <Truck className="w-3 h-3" />
+                            {ret.transportadora || 'N/A'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-zinc-500">Data</p>
+                          <p className="font-medium flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {new Date(ret.createdAt).toLocaleString('pt-BR')}
+                          </p>
+                        </div>
+                        {ret.trackingCode && (
+                          <div className="col-span-2">
+                            <p className="text-zinc-500">Rastreio</p>
+                            {ret.trackingCode.startsWith('http') ? (
+                              <a href={ret.trackingCode} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">
+                                Abrir rastreio ↗
+                              </a>
+                            ) : (
+                              <p className="font-medium">{ret.trackingCode}</p>
+                            )}
+                          </div>
+                        )}
+                        {ret.photo && (
+                          <div>
+                            <p className="text-zinc-500">Foto</p>
+                            <button
+                              onClick={() => window.open(ret.photo!, '_blank')}
+                              className="text-blue-600 hover:underline font-medium flex items-center gap-1"
+                            >
+                              <ImageIcon className="w-3 h-3" />
+                              Ver foto
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Ocorrências desta retirada */}
+                      {ret.linhasDoTempo && ret.linhasDoTempo.length > 0 && (
+                        <div className="mt-4 pt-4 border-t border-zinc-200">
+                          <p className="text-sm font-medium text-zinc-700 mb-2">
+                            📋 Ocorrências ({ret.linhasDoTempo.reduce((acc, l) => acc + l.ocorrencias.length, 0)})
+                          </p>
+                          <div className="space-y-2">
+                            {ret.linhasDoTempo.map((linha) => (
+                              <div key={linha.id} className={`p-3 rounded-lg text-sm ${
+                                linha.status === 'ABERTA' ? 'bg-red-50 border border-red-200' : 'bg-zinc-50'
+                              }`}>
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                                    linha.status === 'ABERTA' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+                                  }`}>
+                                    Linha #{linha.numero} - {linha.status}
+                                  </span>
+                                  {linha.encerradoEm && (
+                                    <span className="text-xs text-zinc-500">
+                                      Encerrada em {new Date(linha.encerradoEm).toLocaleString('pt-BR')}
+                                    </span>
+                                  )}
+                                </div>
+                                {linha.ocorrencias.map((oc) => (
+                                  <div key={oc.id} className="pl-3 border-l-2 border-zinc-300 py-1">
+                                    <p className="text-zinc-700">{oc.descricao}</p>
+                                    <p className="text-xs text-zinc-500">
+                                      {new Date(oc.createdAt).toLocaleString('pt-BR')} 
+                                      {oc.operadorNome && ` - ${oc.operadorNome}`}
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       )}
-                      Salvar
-                    </button>
-                    <button
-                      onClick={cancelEditTracking}
-                      disabled={savingTracking}
-                      className="px-4 py-2 bg-zinc-200 text-zinc-700 rounded-lg hover:bg-zinc-300 disabled:opacity-50"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
+                    </div>
                   </div>
-                ) : (
-                  retirada.trackingCode ? (
-                    retirada.trackingCode.startsWith('http') ? (
-                      <a 
-                        href={retirada.trackingCode} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline text-lg font-semibold flex items-center gap-2"
-                      >
-                        <Truck className="w-5 h-5" />
-                        Abrir rastreio
-                      </a>
-                    ) : (
-                      <p className="text-lg font-semibold text-zinc-900">{retirada.trackingCode}</p>
-                    )
-                  ) : (
-                    <p className="text-lg font-semibold text-zinc-400">Não informado</p>
-                  )
-                )}
-              </div>
+                )
+              })}
             </div>
           </motion.div>
 
