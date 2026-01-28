@@ -42,6 +42,7 @@ interface Retirada {
   photo: string | null
   createdAt: string
   numeroRetirada: number
+  itens: string | null  // JSON dos produtos do pedido
   order: {
     id: string
     tinyOrderId: string
@@ -467,6 +468,37 @@ export default function DetalhesRetirada() {
                 </div>
               </div>
             </div>
+
+            {/* Produtos do Pedido */}
+            {retirada.itens && (() => {
+              try {
+                const produtos = JSON.parse(retirada.itens) as Array<{id: string, descricao: string, quantidade: number}>
+                if (produtos.length > 0) {
+                  return (
+                    <div className="mt-6 pt-6 border-t border-zinc-200">
+                      <p className="text-sm font-medium text-zinc-700 mb-3">📦 Produtos do Pedido</p>
+                      <div className="space-y-2">
+                        {produtos.map((produto, index) => (
+                          <div 
+                            key={produto.id || index}
+                            className="flex items-center gap-3 p-3 bg-zinc-50 rounded-lg border border-zinc-200"
+                          >
+                            <Package className="w-4 h-4 text-zinc-400 shrink-0" />
+                            <div className="flex-1">
+                              <span className="text-sm font-medium text-zinc-900">{produto.descricao}</span>
+                            </div>
+                            <span className="text-sm text-zinc-600 font-medium">Qtd: {produto.quantidade}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                }
+              } catch (e) {
+                console.error('Erro ao parsear itens:', e)
+              }
+              return null
+            })()}
           </motion.div>
 
           {/* Dados da Retirada */}
