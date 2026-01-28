@@ -215,6 +215,7 @@ export async function POST(req: Request) {
     let vendedorNome: string | null = null
     let customerName: string | null = body.retrieverName || null
     const customerCpfCnpj: string | null = cpfDigits || null
+    let itensJson: string | null = null  // JSON dos itens para salvar no banco
     
     if (!isReRetirada) {
       // Apenas buscar detalhes na Tiny se for primeira retirada
@@ -224,10 +225,20 @@ export async function POST(req: Request) {
           vendedorNome = detalhes.vendedor !== 'Não informado' ? detalhes.vendedor : null
           customerName = detalhes.clienteNome || body.retrieverName || null
           console.log('[Pickups] Vendedor:', vendedorNome)
+          
+          // Salvar itens como JSON para re-retiradas futuras
+          if (detalhes.itens && detalhes.itens.length > 0) {
+            itensJson = JSON.stringify(detalhes.itens)
+            console.log('[Pickups] Salvando', detalhes.itens.length, 'itens para re-retiradas futuras')
+          }
         }
       } catch (err) {
         console.log('[Pickups] Erro ao buscar detalhes:', err)
       }
+    } else if (existingPickupWithReturn?.itens) {
+      // Re-retirada: copiar itens do pickup anterior
+      itensJson = existingPickupWithReturn.itens
+      console.log('[Pickups] Re-retirada: copiando itens do pickup anterior')
     }
     
     // Usar transportadora enviada pelo frontend
@@ -251,8 +262,9 @@ export async function POST(req: Request) {
           vendedor: typeof vendedorNome === 'string' ? vendedorNome : existingPickup.vendedor || null,
           status: 'RETIRADO',
           photo: body.photo || null,
+          itens: itensJson || existingPickup.itens || null,  // Salvar itens do pedido
         },
-        select: { id: true, cpfLast4: true, operatorId: true, operatorName: true, customerName: true, customerCpfCnpj: true, retrieverName: true, trackingCode: true, transportadora: true, vendedor: true, status: true, photo: true, createdAt: true },
+        select: { id: true, cpfLast4: true, operatorId: true, operatorName: true, customerName: true, customerCpfCnpj: true, retrieverName: true, trackingCode: true, transportadora: true, vendedor: true, status: true, photo: true, createdAt: true, itens: true },
       })
       console.log('[Pickups] Pickup atualizado com status RETIRADO:', pickup.id)
     } else {
@@ -279,8 +291,9 @@ export async function POST(req: Request) {
           photo: body.photo || null,
           retiradaAnteriorId: body.retiradaAnteriorId || null,
           numeroRetirada,
+          itens: itensJson || null,  // Salvar itens do pedido
         },
-        select: { id: true, cpfLast4: true, operatorId: true, operatorName: true, customerName: true, customerCpfCnpj: true, retrieverName: true, trackingCode: true, transportadora: true, vendedor: true, status: true, photo: true, createdAt: true },
+        select: { id: true, cpfLast4: true, operatorId: true, operatorName: true, customerName: true, customerCpfCnpj: true, retrieverName: true, trackingCode: true, transportadora: true, vendedor: true, status: true, photo: true, createdAt: true, itens: true },
       })
       console.log('[Pickups] Pickup criado com status RETIRADO:', pickup.id, 'Retirada #' + numeroRetirada, body.retiradaAnteriorId ? '(re-retirada de ' + body.retiradaAnteriorId + ')' : '')
     }

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getTinyOrderDetails, getTinyOrderDetailsById } from '@/lib/tiny-api'
+import { getTinyOrderDetails } from '@/lib/tiny-api'
 import { prisma } from '@/lib/prisma'
 
 export async function GET(req: Request) {
@@ -43,42 +43,32 @@ export async function GET(req: Request) {
       status: existingPickup?.status
     })
 
-    // CASO 1: Existe pickup com status RETORNADO -> É re-retirada, buscar dados da Tiny pelo ID
+    // CASO 1: Existe pickup com status RETORNADO -> É re-retirada, buscar dados do BANCO
     if (existingPickup && existingPickup.status === 'RETORNADO') {
-      console.log('[Order Details API] Re-retirada detectada (status RETORNADO) - buscando produtos da Tiny pelo ID')
+      console.log('[Order Details API] Re-retirada detectada (status RETORNADO) - buscando produtos do BANCO')
       
-      // Buscar detalhes completos da Tiny usando o ID do pedido (não pesquisa por número)
-      // Isso funciona mesmo para pedidos já enviados
-      const tinyOrderId = existingPickup.order.tinyOrderId
+      // Buscar itens salvos no pickup anterior (não da Tiny)
+      let itensDoPickup: Array<{id: string, descricao: string, quantidade: number}> = []
       
-      try {
-        const details = await getTinyOrderDetailsById(tinyOrderId)
-        
-        if (details && details.itens && details.itens.length > 0) {
-          // Retornar dados da Tiny com flag de re-retirada para não bloquear
-          console.log('[Order Details API] Produtos encontrados na Tiny:', details.itens.length)
-          return NextResponse.json({
-            ...details,
-            situacao: 're-retirada', // Status especial para re-retirada (não bloqueia)
-            isReRetirada: true
-          }, { status: 200 })
-        } else {
-          console.log('[Order Details API] Tiny retornou sem itens, detalhes:', details)
+      if (existingPickup.itens) {
+        try {
+          itensDoPickup = JSON.parse(existingPickup.itens)
+          console.log('[Order Details API] Itens encontrados no banco:', itensDoPickup.length)
+        } catch (e) {
+          console.error('[Order Details API] Erro ao parsear itens do banco:', e)
         }
-      } catch (error) {
-        console.error('[Order Details API] Erro ao buscar na Tiny para re-retirada:', error)
+      } else {
+        console.log('[Order Details API] Pickup anterior não tem itens salvos')
       }
       
-      // Fallback: se não conseguir buscar na Tiny, retornar dados do banco sem itens
-      console.log('[Order Details API] Usando dados do banco (sem produtos)')
       return NextResponse.json({
         id: existingPickup.order.tinyOrderId,
         numero: existingPickup.order.orderNumber,
-        situacao: 're-retirada',
+        situacao: 're-retirada', // Status especial para re-retirada (não bloqueia)
         clienteNome: existingPickup.customerName || existingPickup.retrieverName || 'Cliente',
         vendedor: existingPickup.vendedor || 'Não informado',
         transportadora: existingPickup.transportadora || 'Não definida',
-        itens: [],
+        itens: itensDoPickup,
         isReRetirada: true
       }, { status: 200 })
     }

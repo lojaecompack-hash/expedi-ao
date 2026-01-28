@@ -197,6 +197,9 @@ model Pickup {
   photo           String?   @db.Text
   createdAt       DateTime  @default(now())
   
+  // Itens do pedido (JSON) - salvos da Tiny para re-retiradas
+  itens           String?   @db.Text // JSON array: [{id, descricao, quantidade}]
+  
   // Campos para re-retirada (quando produto retorna)
   retiradaAnteriorId String?  // ID da retirada anterior (se for uma re-retirada)
   numeroRetirada     Int      @default(1) // 1 = primeira, 2 = segunda, etc.
