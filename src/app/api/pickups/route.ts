@@ -49,10 +49,7 @@ export async function POST(req: Request) {
     const transportadora = String(body.transportadora ?? '').trim()
     const photo = body.photo || null
 
-    // Verificar se é uma re-retirada (reenvio após retorno) ANTES de buscar na Tiny
-    const isReRetirada = !!body.retiradaAnteriorId
-    console.log('[Pickups] É re-retirada?', isReRetirada)
-    console.log('[Pickups] Dados recebidos:', { orderNumber, cpf, retrieverName, trackingCode, transportadora, isReRetirada })
+    console.log('[Pickups] Dados recebidos:', { orderNumber, cpf, retrieverName, trackingCode, transportadora })
 
     // Buscar operador se fornecido
     let operatorName: string | null = null
@@ -64,30 +61,52 @@ export async function POST(req: Request) {
       operatorName = operator?.name || null
     }
 
+    // NOVA ABORDAGEM: Verificar se existe pickup anterior com status RETORNADO
+    // Isso determina se é uma re-retirada de forma confiável, independente de parâmetros de URL
+    const existingPickupWithReturn = await prisma.pickup.findFirst({
+      where: {
+        order: { orderNumber },
+        status: 'RETORNADO'  // Pickup que foi marcado como retornado
+      },
+      include: {
+        order: true,
+        linhasDoTempo: {
+          include: {
+            ocorrencias: {
+              where: { tipoOcorrencia: 'RETORNO_PRODUTO' }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    })
+
+    // Contar ocorrências de retorno em todas as linhas do tempo
+    const totalOcorrenciasRetorno = existingPickupWithReturn?.linhasDoTempo?.reduce(
+      (acc, linha) => acc + (linha.ocorrencias?.length || 0), 0
+    ) || 0
+
+    // É re-retirada se existe pickup com status RETORNADO ou com ocorrência de retorno
+    const isReRetirada = !!(existingPickupWithReturn && 
+      (existingPickupWithReturn.status === 'RETORNADO' || totalOcorrenciasRetorno > 0))
+    
+    console.log('[Pickups] Verificação de re-retirada:', {
+      existePickupAnterior: !!existingPickupWithReturn,
+      statusPickup: existingPickupWithReturn?.status,
+      temOcorrenciaRetorno: totalOcorrenciasRetorno,
+      isReRetirada
+    })
+
     // Se for re-retirada, buscar pedido no banco de dados ao invés da Tiny
     let tinyOrderId: string
     
-    if (isReRetirada) {
-      console.log('[Pickups] Re-retirada detectada - buscando pedido no banco de dados')
+    if (isReRetirada && existingPickupWithReturn) {
+      console.log('[Pickups] Re-retirada detectada - usando dados do banco de dados')
       
-      // Buscar pelo número do pedido no banco
-      const existingOrder = await prisma.order.findFirst({
-        where: { orderNumber },
-        select: { id: true, tinyOrderId: true, orderNumber: true }
-      })
-      
-      if (!existingOrder) {
-        console.error('[Pickups] Pedido não encontrado no banco de dados para re-retirada')
-        return NextResponse.json(
-          { ok: false, error: 'Pedido não encontrado no sistema para re-retirada' },
-          { status: 404 }
-        )
-      }
-      
-      tinyOrderId = existingOrder.tinyOrderId
+      tinyOrderId = existingPickupWithReturn.order.tinyOrderId
       console.log('[Pickups] Pedido encontrado no banco, ID Tiny:', tinyOrderId)
     } else {
-      // Primeira retirada - buscar na Tiny normalmente
+      // Primeira retirada - buscar na Tiny normalmente (com todas as validações)
       console.log('[Pickups] Primeira retirada - buscando pedido no Tiny:', orderNumber)
       let pedido
       try {

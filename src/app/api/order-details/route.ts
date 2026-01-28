@@ -6,7 +6,6 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url)
     const number = searchParams.get('number')
-    const isReRetirada = searchParams.get('reRetirada') === 'true'
     
     // Validação
     if (!number || number.trim().length === 0) {
@@ -16,40 +15,66 @@ export async function GET(req: Request) {
       )
     }
     
-    console.log('[Order Details API] Buscando pedido:', number, 'Re-retirada:', isReRetirada)
+    // Extrair apenas dígitos do número do pedido
+    const orderNumber = number.replace(/\D+/g, '')
     
-    // Para re-retiradas, buscar dados do banco primeiro
-    if (isReRetirada) {
-      console.log('[Order Details API] Re-retirada - buscando no banco de dados')
+    console.log('[Order Details API] Buscando pedido:', orderNumber)
+    
+    // NOVA ABORDAGEM: Verificar se existe pickup com status RETORNADO
+    // Isso determina se é uma re-retirada de forma confiável
+    const existingPickupWithReturn = await prisma.pickup.findFirst({
+      where: {
+        order: { orderNumber },
+        status: 'RETORNADO'
+      },
+      include: {
+        order: true,
+        linhasDoTempo: {
+          include: {
+            ocorrencias: {
+              where: { tipoOcorrencia: 'RETORNO_PRODUTO' }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    })
+
+    // Contar ocorrências de retorno em todas as linhas do tempo
+    const totalOcorrenciasRetorno = existingPickupWithReturn?.linhasDoTempo?.reduce(
+      (acc, linha) => acc + (linha.ocorrencias?.length || 0), 0
+    ) || 0
+
+    // É re-retirada se existe pickup com status RETORNADO ou com ocorrência de retorno
+    const isReRetirada = !!(existingPickupWithReturn && 
+      (existingPickupWithReturn.status === 'RETORNADO' || totalOcorrenciasRetorno > 0))
+    
+    console.log('[Order Details API] Verificação de re-retirada:', {
+      existePickupAnterior: !!existingPickupWithReturn,
+      statusPickup: existingPickupWithReturn?.status,
+      temOcorrenciaRetorno: totalOcorrenciasRetorno,
+      isReRetirada
+    })
+    
+    // Para re-retiradas, retornar dados do banco (não consulta Tiny)
+    if (isReRetirada && existingPickupWithReturn) {
+      console.log('[Order Details API] Re-retirada detectada - usando dados do banco')
       
-      const existingPickup = await prisma.pickup.findFirst({
-        where: {
-          order: { orderNumber: number }
-        },
-        include: {
-          order: true
-        },
-        orderBy: { createdAt: 'desc' }
-      })
-      
-      if (existingPickup) {
-        console.log('[Order Details API] Pickup encontrado no banco:', existingPickup.id)
-        
-        // Retornar dados do banco para re-retirada
-        return NextResponse.json({
-          id: existingPickup.order.tinyOrderId,
-          numero: existingPickup.order.orderNumber,
-          situacao: 'enviado', // Status esperado para re-retirada
-          clienteNome: existingPickup.customerName || existingPickup.retrieverName || 'Cliente',
-          vendedor: existingPickup.vendedor || 'Não informado',
-          transportadora: existingPickup.transportadora || 'Não definida',
-          itens: [] // Itens não são necessários para re-retirada
-        }, { status: 200 })
-      }
+      // Retornar dados do banco para re-retirada
+      return NextResponse.json({
+        id: existingPickupWithReturn.order.tinyOrderId,
+        numero: existingPickupWithReturn.order.orderNumber,
+        situacao: 're-retirada', // Status especial para re-retirada (não bloqueia)
+        clienteNome: existingPickupWithReturn.customerName || existingPickupWithReturn.retrieverName || 'Cliente',
+        vendedor: existingPickupWithReturn.vendedor || 'Não informado',
+        transportadora: existingPickupWithReturn.transportadora || 'Não definida',
+        itens: [], // Itens não são necessários para re-retirada
+        isReRetirada: true // Flag para o frontend saber que é re-retirada
+      }, { status: 200 })
     }
     
-    // Buscar detalhes do pedido na Tiny (primeira retirada ou fallback)
-    const details = await getTinyOrderDetails(number)
+    // Primeira retirada - buscar detalhes do pedido na Tiny (com todas as validações)
+    const details = await getTinyOrderDetails(orderNumber)
     
     if (!details) {
       return NextResponse.json(

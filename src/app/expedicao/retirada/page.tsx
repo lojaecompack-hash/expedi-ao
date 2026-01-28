@@ -171,26 +171,27 @@ function RetiradaPageContent() {
       
       // Verificar se o status está bloqueado (exceto para re-retiradas)
       const statusLower = (details.situacao || '').toLowerCase()
-      const isBlocked = BLOCKED_STATUS.some(blocked => statusLower.includes(blocked))
       
-      // Para re-retiradas, permitir status "enviado" pois é o estado esperado
-      // Usar isReRetiradaFinal pois o estado pode não estar atualizado ainda
-      const isEnviado = statusLower.includes('enviado')
-      const shouldBlock = isBlocked && !(isReRetiradaFinal && isEnviado)
+      // Se a API retornou isReRetirada=true ou status='re-retirada', é uma re-retirada confirmada
+      const isReRetiradaFromApi = details.isReRetirada === true || statusLower === 're-retirada'
       
-      if (shouldBlock) {
-        console.log('[Client] Pedido bloqueado por status:', statusLower)
-        const message = BLOCKED_STATUS_MESSAGES[statusLower] || 
-          `Este pedido está com status "${details.situacao}" e não pode ser processado para retirada.`
-        setBlockedStatus(details.situacao)
-        setBlockedMessage(message)
-        setShowBlockedModal(true)
-        setOrderDetails(null)
-        return
-      }
-      
-      if (isReRetiradaFinal && isEnviado) {
-        console.log('[Client] Re-retirada permitida para pedido com status enviado')
+      if (isReRetiradaFromApi) {
+        console.log('[Client] Re-retirada confirmada pela API - liberando pedido')
+        setIsReRetirada(true)
+      } else {
+        // Primeira retirada - aplicar bloqueios normais
+        const isBlocked = BLOCKED_STATUS.some(blocked => statusLower.includes(blocked))
+        
+        if (isBlocked) {
+          console.log('[Client] Pedido bloqueado por status:', statusLower)
+          const message = BLOCKED_STATUS_MESSAGES[statusLower] || 
+            `Este pedido está com status "${details.situacao}" e não pode ser processado para retirada.`
+          setBlockedStatus(details.situacao)
+          setBlockedMessage(message)
+          setShowBlockedModal(true)
+          setOrderDetails(null)
+          return
+        }
       }
       
       setOrderDetails(details)
