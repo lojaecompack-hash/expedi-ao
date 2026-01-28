@@ -371,7 +371,9 @@ export default function DetalhesRetirada() {
         setShowAuthModal(false)
         setLinhaTempoAtual(linhaAberta || null)
         setShowModal(true)
+        // Atualizar todos os dados para refletir a nova ocorrência
         fetchLinhasDoTempo()
+        fetchRetirada()
       } else {
         setAuthError('Erro ao adicionar ocorrência: ' + (data.error || 'Erro desconhecido'))
       }
@@ -398,7 +400,9 @@ export default function DetalhesRetirada() {
       const data = await res.json()
       
       if (data.ok) {
+        // Atualizar todos os dados
         fetchLinhasDoTempo()
+        fetchRetirada()
         setShowModal(false)
         setLinhaTempoAtual(null)
       } else {
@@ -1017,6 +1021,8 @@ export default function DetalhesRetirada() {
                     onClick={() => {
                       setShowModal(false)
                       setLinhaTempoAtual(null)
+                      // Garantir que os dados estejam atualizados
+                      fetchRetirada()
                     }}
                     className="flex-1 px-4 py-3 border border-zinc-200 text-zinc-700 rounded-xl hover:bg-zinc-50 font-medium"
                   >
