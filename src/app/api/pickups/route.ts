@@ -81,6 +81,10 @@ export async function POST(req: Request) {
     const tinyOrderId = String(pedido.id)
     console.log('[Pickups] Pedido encontrado, ID:', tinyOrderId)
 
+    // Verificar se é uma re-retirada (reenvio após retorno)
+    const isReRetirada = !!body.retiradaAnteriorId
+    console.log('[Pickups] É re-retirada?', isReRetirada)
+
     // Verificar se pedido já foi retirado (banco de dados)
     const existingOrder = await prisma.order.findUnique({
       where: { tinyOrderId },
@@ -101,7 +105,8 @@ export async function POST(req: Request) {
       }
     })
 
-    if (existingOrder && existingOrder.statusTiny === 'enviado') {
+    // Bloquear apenas se NÃO for re-retirada
+    if (!isReRetirada && existingOrder && existingOrder.statusTiny === 'enviado') {
       const primeiraRetirada = existingOrder.pickups[0]
       console.log('[Pickups] Pedido já foi retirado anteriormente')
       return NextResponse.json({
@@ -119,8 +124,9 @@ export async function POST(req: Request) {
     const dryRunEnv = process.env.TINY_DRY_RUN
     const dryRun = body.dryRun ?? (dryRunEnv ? dryRunEnv !== '0' : false)
 
-    if (!dryRun) {
-      console.log('[Pickups] Marcando pedido como enviado...')
+    // Não marcar na Tiny se for re-retirada (pedido já foi marcado como enviado anteriormente)
+    if (!dryRun && !isReRetirada) {
+      console.log('[Pickups] Marcando pedido como enviado na Tiny...')
       try {
         await markOrderAsShipped(orderNumber, tinyOrderId)
         console.log('[Pickups] Pedido marcado como enviado com sucesso')
@@ -129,6 +135,8 @@ export async function POST(req: Request) {
         console.error('[Pickups] Erro ao marcar como enviado:', msg)
         throw error
       }
+    } else if (isReRetirada) {
+      console.log('[Pickups] Re-retirada: pulando marcação na Tiny (pedido já foi enviado anteriormente)')
     }
 
     const order = await prisma.order.upsert({
