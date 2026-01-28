@@ -481,13 +481,7 @@ function RetiradaPageContent() {
       return
     }
 
-    // Validar transportadora
-    if (!transportadoraSelecionada.trim()) {
-      setSuccess(false)
-      setResult("❌ Selecione uma transportadora")
-      setTimeout(() => setResult(""), 10000)
-      return
-    }
+    // Transportadora é opcional - pode vir vazia da Tiny
 
     // Validar nome do retirante
     const nameValidation = validateRetrieverName(retrieverName)
