@@ -97,8 +97,8 @@ export async function POST(
       return NextResponse.json({ ok: false, error: 'Usuário não encontrado' }, { status: 404 })
     }
 
-    if (targetUser.role !== 'PRODUCAO') {
-      return NextResponse.json({ ok: false, error: 'Operadores de produção só podem ser vinculados a usuários PRODUCAO' }, { status: 400 })
+    if (targetUser.role !== 'CORTE_SOLDA') {
+      return NextResponse.json({ ok: false, error: 'Operadores de produção só podem ser vinculados a usuários CORTE_SOLDA' }, { status: 400 })
     }
 
     // Hash da senha
