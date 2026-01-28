@@ -206,9 +206,13 @@ export async function POST(req: Request) {
       select: { id: true, tinyOrderId: true, orderNumber: true },
     })
 
-    // Verificar se já existe um pickup para este pedido (pode ter sido criado com rastreio)
-    const existingPickup = await prisma.pickup.findFirst({
-      where: { orderId: order.id }
+    // Verificar se já existe um pickup AGUARDANDO_RETIRADA para este pedido (pode ter sido criado com rastreio)
+    // IMPORTANTE: Para re-retiradas, NÃO queremos atualizar um pickup existente, queremos criar um NOVO
+    const existingPickup = isReRetirada ? null : await prisma.pickup.findFirst({
+      where: { 
+        orderId: order.id,
+        status: 'AGUARDANDO_RETIRADA' // Só atualiza se estiver aguardando
+      }
     })
 
     // Buscar detalhes completos do pedido para obter vendedor e dados do cliente
