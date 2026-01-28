@@ -573,53 +573,6 @@ export default function DetalhesRetirada() {
               </div>
             </div>
 
-            {/* Rastreio - Editável até ser retirado */}
-            <div className="mt-6 pt-6 border-t border-zinc-200">
-              <p className="text-sm text-zinc-600 mb-2">📦 Informe um novo rastreio</p>
-              {retirada.status === 'AGUARDANDO_RETIRADA' ? (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="text"
-                      value={trackingCode}
-                      onChange={(e) => setTrackingCode(e.target.value)}
-                      placeholder="Digite o código de rastreio ou URL..."
-                      className="flex-1 px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-[#FFD700] focus:border-transparent"
-                    />
-                    <button
-                      onClick={saveTrackingCode}
-                      disabled={savingTracking || trackingCode === (retirada.trackingCode || '')}
-                      className="px-4 py-2 bg-[#FFD700] text-zinc-900 rounded-lg hover:bg-[#FFC700] font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                    >
-                      {savingTracking ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Save className="w-4 h-4" />
-                      )}
-                      Atualizar
-                    </button>
-                  </div>
-                  {trackingSaved && (
-                    <p className="text-green-600 text-sm font-medium">✅ Rastreio atualizado com sucesso!</p>
-                  )}
-                </div>
-              ) : (
-                <div>
-                  {retirada.trackingCode ? (
-                    retirada.trackingCode.startsWith('http') ? (
-                      <a href={retirada.trackingCode} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">
-                        {retirada.trackingCode} ↗
-                      </a>
-                    ) : (
-                      <p className="font-medium text-zinc-900">{retirada.trackingCode}</p>
-                    )
-                  ) : (
-                    <p className="text-zinc-400 italic">Sem rastreio</p>
-                  )}
-                </div>
-              )}
-            </div>
-
             {/* Produtos do Pedido */}
             {retirada.itens && (() => {
               try {
@@ -751,32 +704,66 @@ export default function DetalhesRetirada() {
                             {new Date(ret.createdAt).toLocaleString('pt-BR')}
                           </p>
                         </div>
-                        {(ret.trackingCode || ret.previousTrackingCode) && (
-                          <div className="col-span-2">
-                            <p className="text-zinc-500 mb-1">Rastreio</p>
-                            {ret.trackingCode && (
+                        {/* Rastreio - Seção completa */}
+                        <div className="col-span-2">
+                          <p className="text-zinc-500 mb-1">Rastreio</p>
+                          {/* Mostrar rastreio atual e anterior */}
+                          {ret.trackingCode && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-green-600 font-medium">Atual:</span>
+                              {ret.trackingCode.startsWith('http') ? (
+                                <a href={ret.trackingCode} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">
+                                  {ret.trackingCode} ↗
+                                </a>
+                              ) : (
+                                <span className="font-medium">{ret.trackingCode}</span>
+                              )}
+                            </div>
+                          )}
+                          {ret.previousTrackingCode && (
+                            <div className="flex items-center gap-2 mt-1 text-sm text-zinc-500">
+                              <span className="text-xs">Anterior:</span>
+                              <span className="line-through">{ret.previousTrackingCode}</span>
+                              {ret.trackingUpdatedAt && (
+                                <span className="text-xs">(substituído em {new Date(ret.trackingUpdatedAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })})</span>
+                              )}
+                            </div>
+                          )}
+                          {!ret.trackingCode && !ret.previousTrackingCode && (
+                            <p className="text-zinc-400 italic text-sm">Sem rastreio</p>
+                          )}
+                          
+                          {/* Campo editável - apenas para retirada atual com status AGUARDANDO_RETIRADA */}
+                          {isAtual && ret.status === 'AGUARDANDO_RETIRADA' && (
+                            <div className="mt-3 pt-3 border-t border-zinc-200">
+                              <p className="text-xs text-zinc-500 mb-2">📦 Atualizar rastreio:</p>
                               <div className="flex items-center gap-2">
-                                <span className="text-xs text-green-600 font-medium">Atual:</span>
-                                {ret.trackingCode.startsWith('http') ? (
-                                  <a href={ret.trackingCode} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">
-                                    {ret.trackingCode} ↗
-                                  </a>
-                                ) : (
-                                  <span className="font-medium">{ret.trackingCode}</span>
-                                )}
+                                <input
+                                  type="text"
+                                  value={trackingCode}
+                                  onChange={(e) => setTrackingCode(e.target.value)}
+                                  placeholder="Digite o código ou URL..."
+                                  className="flex-1 px-3 py-1.5 text-sm border border-zinc-300 rounded-lg focus:ring-2 focus:ring-[#FFD700] focus:border-transparent"
+                                />
+                                <button
+                                  onClick={saveTrackingCode}
+                                  disabled={savingTracking || trackingCode === (ret.trackingCode || '')}
+                                  className="px-3 py-1.5 text-sm bg-[#FFD700] text-zinc-900 rounded-lg hover:bg-[#FFC700] font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                                >
+                                  {savingTracking ? (
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                  ) : (
+                                    <Save className="w-3 h-3" />
+                                  )}
+                                  Atualizar
+                                </button>
                               </div>
-                            )}
-                            {ret.previousTrackingCode && (
-                              <div className="flex items-center gap-2 mt-1 text-sm text-zinc-500">
-                                <span className="text-xs">Anterior:</span>
-                                <span className="line-through">{ret.previousTrackingCode}</span>
-                                {ret.trackingUpdatedAt && (
-                                  <span className="text-xs">(substituído em {new Date(ret.trackingUpdatedAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })})</span>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        )}
+                              {trackingSaved && (
+                                <p className="text-green-600 text-xs font-medium mt-1">✅ Rastreio atualizado!</p>
+                              )}
+                            </div>
+                          )}
+                        </div>
                         {ret.photo && (
                           <div className="relative">
                             <p className="text-zinc-500">Foto</p>
