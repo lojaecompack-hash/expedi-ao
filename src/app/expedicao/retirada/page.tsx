@@ -103,12 +103,14 @@ function RetiradaPageContent() {
     
     if (pedidoParam) {
       setOrderNumber(pedidoParam)
-      setIsReRetirada(true)
+      const isRe = !!retiradaAnteriorParam
+      setIsReRetirada(isRe)
       if (retiradaAnteriorParam) {
         setRetiradaAnteriorId(retiradaAnteriorParam)
       }
       // Buscar detalhes do pedido automaticamente
-      searchOrder(pedidoParam)
+      // Passar isRe diretamente pois o estado ainda não foi atualizado
+      searchOrder(pedidoParam, isRe)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -127,7 +129,8 @@ function RetiradaPageContent() {
   }
 
   // Função para buscar detalhes do pedido via API
-  const searchOrder = async (number: string) => {
+  // forceReRetirada é usado quando chamado do useEffect (estado ainda não atualizado)
+  const searchOrder = async (number: string, forceReRetirada?: boolean) => {
     console.log('[Client] Iniciando busca para pedido:', number)
     
     if (!number || number.trim().length === 0) {
@@ -139,9 +142,11 @@ function RetiradaPageContent() {
     setLoadingOrder(true)
     try {
       // Adicionar parâmetro reRetirada se for uma re-retirada
-      const reRetiradaParam = isReRetirada ? '&reRetirada=true' : ''
+      // Usar forceReRetirada se fornecido (para chamadas do useEffect)
+      const isReRetiradaFinal = forceReRetirada !== undefined ? forceReRetirada : isReRetirada
+      const reRetiradaParam = isReRetiradaFinal ? '&reRetirada=true' : ''
       const url = `/api/order-details?number=${encodeURIComponent(number)}${reRetiradaParam}`
-      console.log('[Client] Chamando API:', url)
+      console.log('[Client] Chamando API:', url, 'isReRetirada:', isReRetiradaFinal)
       
       const res = await fetch(url)
       console.log('[Client] Resposta recebida, status:', res.status)
@@ -169,8 +174,9 @@ function RetiradaPageContent() {
       const isBlocked = BLOCKED_STATUS.some(blocked => statusLower.includes(blocked))
       
       // Para re-retiradas, permitir status "enviado" pois é o estado esperado
+      // Usar isReRetiradaFinal pois o estado pode não estar atualizado ainda
       const isEnviado = statusLower.includes('enviado')
-      const shouldBlock = isBlocked && !(isReRetirada && isEnviado)
+      const shouldBlock = isBlocked && !(isReRetiradaFinal && isEnviado)
       
       if (shouldBlock) {
         console.log('[Client] Pedido bloqueado por status:', statusLower)
@@ -183,7 +189,7 @@ function RetiradaPageContent() {
         return
       }
       
-      if (isReRetirada && isEnviado) {
+      if (isReRetiradaFinal && isEnviado) {
         console.log('[Client] Re-retirada permitida para pedido com status enviado')
       }
       
