@@ -167,7 +167,8 @@ export default function DetalhesRetirada() {
       
       if (data.ok) {
         setRetirada(data.retirada)
-        setTrackingCode(data.retirada.trackingCode || "")
+        // NÃO inicializar trackingCode com valor atual - campo deve começar vazio
+        setTrackingCode("")
         // Carregar histórico de retiradas
         if (data.historicoRetiradas) {
           setHistoricoRetiradas(data.historicoRetiradas)
