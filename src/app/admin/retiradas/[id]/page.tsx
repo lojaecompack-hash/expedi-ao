@@ -104,7 +104,7 @@ export default function DetalhesRetirada() {
   const [authError, setAuthError] = useState("")
   
   // Estados para seleção em cascata de destino
-  const [tiposUsuario] = useState<string[]>(['VENDAS', 'FINANCEIRO', 'EXPEDIÇÃO'])
+  const [tiposUsuario] = useState<string[]>(['VENDAS', 'FINANCEIRO', 'EXPEDICAO'])
   const [selectedTipoUsuario, setSelectedTipoUsuario] = useState("")
   const [usuariosPorTipo, setUsuariosPorTipo] = useState<{id: string, name: string, role: string}[]>([])
   const [selectedUsuarioId, setSelectedUsuarioId] = useState("")
@@ -242,19 +242,19 @@ export default function DetalhesRetirada() {
   const fetchUsuariosPorTipo = async (tipo: string) => {
     try {
       console.log('[fetchUsuariosPorTipo] Buscando usuários do tipo:', tipo)
-      const res = await fetch('/api/users')
+      const res = await fetch(`/api/users/by-type?tipo=${encodeURIComponent(tipo)}`)
       const data = await res.json()
       console.log('[fetchUsuariosPorTipo] Resposta da API:', data)
       if (data.ok) {
-        // Filtrar usuários pelo tipo (role)
-        const usuariosFiltrados = data.users.filter((u: {role: string, isActive: boolean}) => 
-          u.role === tipo && u.isActive
-        )
-        console.log('[fetchUsuariosPorTipo] Usuários filtrados:', usuariosFiltrados)
-        setUsuariosPorTipo(usuariosFiltrados)
+        console.log('[fetchUsuariosPorTipo] Usuários encontrados:', data.users)
+        setUsuariosPorTipo(data.users)
+      } else {
+        console.error('[fetchUsuariosPorTipo] Erro na API:', data.error)
+        setUsuariosPorTipo([])
       }
     } catch (error) {
       console.error('Erro ao buscar usuários:', error)
+      setUsuariosPorTipo([])
     }
   }
 
