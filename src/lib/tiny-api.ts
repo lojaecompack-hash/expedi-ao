@@ -382,6 +382,70 @@ export async function saidaEstoqueTiny(
 // GESTÃO DE PEDIDOS TINY
 // ==========================================
 
+// Buscar detalhes do pedido diretamente pelo ID (para re-retiradas)
+export async function getTinyOrderDetailsById(tinyOrderId: string): Promise<TinyOrderDetails | null> {
+  try {
+    const token = await getTinyApiToken()
+    
+    const url = 'https://api.tiny.com.br/api2/pedido.obter.php'
+    const params = new URLSearchParams({
+      token,
+      id: tinyOrderId,
+      formato: 'JSON'
+    })
+    
+    console.log('[Tiny API] Buscando detalhes do pedido por ID:', tinyOrderId)
+    
+    const response = await fetch(`${url}?${params.toString()}`)
+    
+    if (!response.ok) {
+      throw new Error(`Erro ao buscar detalhes: ${response.status}`)
+    }
+    
+    const data = await response.json() as TinyApiResponse<TinyPedido>
+    
+    if (data.retorno.status === 'Erro') {
+      const erro = data.retorno.erros?.[0]?.erro || 'Erro desconhecido'
+      throw new Error(`Erro Tiny: ${erro}`)
+    }
+    
+    const pedido = data.retorno.pedido
+    if (!pedido) {
+      return null
+    }
+    
+    // Extrair dados necessários
+    const pedidoAny = pedido as Record<string, unknown>
+    const situacao = typeof pedido.situacao === 'string' ? pedido.situacao : 'desconhecido'
+    
+    const vendedor = typeof pedidoAny.nome_vendedor === 'string' ? pedidoAny.nome_vendedor : null
+    const formaFrete = typeof pedidoAny.forma_frete === 'string' && pedidoAny.forma_frete.trim() !== '' ? pedidoAny.forma_frete.trim() : null
+    const nomeTransportador = typeof pedidoAny.nome_transportador === 'string' && pedidoAny.nome_transportador.trim() !== '' ? pedidoAny.nome_transportador.trim() : null
+    const transportadora = formaFrete || nomeTransportador || null
+    
+    const detalhes: TinyOrderDetails = {
+      id: String(pedido.id),
+      numero: String(pedido.numero),
+      situacao,
+      clienteNome: pedido.cliente?.nome || 'Cliente não informado',
+      vendedor: vendedor || 'Não informado',
+      transportadora: transportadora || 'Não definida',
+      itens: (pedido.itens || []).map((item, index) => ({
+        id: item.item?.id || String(index),
+        descricao: item.item?.descricao || 'Produto sem descrição',
+        quantidade: parseFloat(item.item?.quantidade || '1')
+      }))
+    }
+    
+    console.log('[Tiny API] Detalhes do pedido por ID:', detalhes)
+    
+    return detalhes
+  } catch (error) {
+    console.error('[Tiny API] Erro ao buscar detalhes por ID:', error)
+    return null
+  }
+}
+
 export async function getTinyOrderDetails(orderNumber: string): Promise<TinyOrderDetails | null> {
   try {
     const token = await getTinyApiToken()

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getTinyOrderDetails } from '@/lib/tiny-api'
+import { getTinyOrderDetails, getTinyOrderDetailsById } from '@/lib/tiny-api'
 import { prisma } from '@/lib/prisma'
 
 export async function GET(req: Request) {
@@ -43,13 +43,16 @@ export async function GET(req: Request) {
       status: existingPickup?.status
     })
 
-    // CASO 1: Existe pickup com status RETORNADO -> É re-retirada, buscar dados da Tiny mas liberar
+    // CASO 1: Existe pickup com status RETORNADO -> É re-retirada, buscar dados da Tiny pelo ID
     if (existingPickup && existingPickup.status === 'RETORNADO') {
-      console.log('[Order Details API] Re-retirada detectada (status RETORNADO) - buscando produtos da Tiny')
+      console.log('[Order Details API] Re-retirada detectada (status RETORNADO) - buscando produtos da Tiny pelo ID')
       
-      // Buscar detalhes completos da Tiny para obter os produtos
+      // Buscar detalhes completos da Tiny usando o ID do pedido (não pesquisa por número)
+      // Isso funciona mesmo para pedidos já enviados
+      const tinyOrderId = existingPickup.order.tinyOrderId
+      
       try {
-        const details = await getTinyOrderDetails(orderNumber)
+        const details = await getTinyOrderDetailsById(tinyOrderId)
         
         if (details && details.itens && details.itens.length > 0) {
           // Retornar dados da Tiny com flag de re-retirada para não bloquear
@@ -59,6 +62,8 @@ export async function GET(req: Request) {
             situacao: 're-retirada', // Status especial para re-retirada (não bloqueia)
             isReRetirada: true
           }, { status: 200 })
+        } else {
+          console.log('[Order Details API] Tiny retornou sem itens, detalhes:', details)
         }
       } catch (error) {
         console.error('[Order Details API] Erro ao buscar na Tiny para re-retirada:', error)
