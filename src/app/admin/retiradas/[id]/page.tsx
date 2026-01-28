@@ -97,11 +97,8 @@ export default function DetalhesRetirada() {
   const [linhaTempoAtual, setLinhaTempoAtual] = useState<LinhaDoTempo | null>(null)
   const [expandedLinhas, setExpandedLinhas] = useState<Set<string>>(new Set())
   
-  // Estados para modal de autenticação do operador
+  // Estados para modal de registro de ocorrência
   const [showAuthModal, setShowAuthModal] = useState(false)
-  const [operadores, setOperadores] = useState<Operador[]>([])
-  const [selectedOperadorId, setSelectedOperadorId] = useState("")
-  const [operadorSenha, setOperadorSenha] = useState("")
   const [validandoOperador, setValidandoOperador] = useState(false)
   const [authError, setAuthError] = useState("")
   
@@ -229,18 +226,6 @@ export default function DetalhesRetirada() {
     }
   }
 
-  // Buscar operadores do usuário logado
-  const fetchOperadores = async () => {
-    try {
-      const res = await fetch('/api/operadores')
-      const data = await res.json()
-      if (data.ok) {
-        setOperadores(data.operadores)
-      }
-    } catch (error) {
-      console.error('Erro ao buscar operadores:', error)
-    }
-  }
 
   // Buscar usuários de um tipo específico
   const fetchUsuariosPorTipo = async (tipo: string) => {
@@ -308,13 +293,12 @@ export default function DetalhesRetirada() {
     }
   }
 
-  // Abrir modal de autenticação do operador
+  // Abrir modal de registro de ocorrência
   const handleAdicionarClick = () => {
-    fetchOperadores()
     setShowAuthModal(true)
   }
 
-  // Validar operador e adicionar ocorrência
+  // Adicionar ocorrência usando o usuário selecionado como responsável
   const validarEAdicionarOcorrencia = async () => {
     if (tipoOcorrencia === 'RETORNO_PRODUTO' && !motivoRetorno) {
       setAuthError("Selecione o motivo do retorno")
@@ -324,8 +308,15 @@ export default function DetalhesRetirada() {
       setAuthError("Selecione o tipo de usuário e o usuário de destino")
       return
     }
-    if (!selectedOperadorId || !operadorSenha) {
-      setAuthError("Selecione o operador e digite a senha")
+    if (!novaOcorrencia.trim()) {
+      setAuthError("Digite a descrição da ocorrência")
+      return
+    }
+
+    // Obter o nome do usuário selecionado
+    const usuarioSelecionado = usuariosPorTipo.find(u => u.id === selectedUsuarioId)
+    if (!usuarioSelecionado) {
+      setAuthError("Usuário não encontrado")
       return
     }
 
@@ -333,25 +324,7 @@ export default function DetalhesRetirada() {
     setAuthError("")
 
     try {
-      // Validar senha do operador
-      const validarRes = await fetch('/api/operadores/validar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          operadorId: selectedOperadorId, 
-          senha: operadorSenha 
-        })
-      })
-
-      const validarData = await validarRes.json()
-
-      if (!validarData.ok) {
-        setAuthError(validarData.error || 'Erro ao validar operador')
-        setValidandoOperador(false)
-        return
-      }
-
-      // Operador validado - verificar se precisa criar linha do tempo primeiro
+      // Verificar se precisa criar linha do tempo primeiro
       let linhaId = linhaAberta?.id
       
       if (!linhaId) {
@@ -377,13 +350,13 @@ export default function DetalhesRetirada() {
         console.log('[validarEAdicionarOcorrencia] Linha do tempo criada:', linhaId)
       }
       
-      // Adicionar ocorrência com setor
+      // Adicionar ocorrência com o nome do usuário selecionado como responsável
       const res = await fetch(`/api/retiradas/${id}/linhas-tempo/${linhaId}/ocorrencias`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           descricao: novaOcorrencia.trim(),
-          operadorNome: validarData.operador.name,
+          operadorNome: usuarioSelecionado.name, // Usar nome do usuário selecionado
           setorOrigem: retirada?.operatorName || 'Expedição', // Setor de origem é o operador da retirada
           setorDestino: selectedSetorDestino,
           tipoOcorrencia,
@@ -874,7 +847,7 @@ export default function DetalhesRetirada() {
                   <div className="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center">
                     <User className="w-6 h-6 text-amber-600" />
                   </div>
-                  <h3 className="text-xl font-bold text-zinc-900">Identificação do Operador</h3>
+                  <h3 className="text-xl font-bold text-zinc-900">Registrar Ocorrência</h3>
                 </div>
                 
                 <div className="space-y-4 mb-6">
@@ -971,31 +944,6 @@ export default function DetalhesRetirada() {
                   )}
 
                   <div>
-                    <label className="block text-sm font-medium text-zinc-700 mb-1">Operador Responsável <span className="text-red-500">*</span></label>
-                    <select
-                      value={selectedOperadorId}
-                      onChange={(e) => setSelectedOperadorId(e.target.value)}
-                      className="w-full px-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-[#FFD700] focus:border-transparent bg-white"
-                    >
-                      <option value="">Selecione o operador...</option>
-                      {operadores.map((op) => (
-                        <option key={op.id} value={op.id}>{op.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-700 mb-1">Senha</label>
-                    <input
-                      type="password"
-                      value={operadorSenha}
-                      onChange={(e) => setOperadorSenha(e.target.value)}
-                      placeholder="Digite sua senha..."
-                      className="w-full px-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-[#FFD700] focus:border-transparent"
-                    />
-                  </div>
-
-                  <div>
                     <label className="block text-sm font-medium text-zinc-700 mb-1">
                       Descrição da Ocorrência <span className="text-red-500">*</span>
                     </label>
@@ -1030,7 +978,7 @@ export default function DetalhesRetirada() {
                   </button>
                   <button
                     onClick={validarEAdicionarOcorrencia}
-                    disabled={validandoOperador || !selectedOperadorId || !operadorSenha || !novaOcorrencia.trim()}
+                    disabled={validandoOperador || !selectedUsuarioId || !novaOcorrencia.trim()}
                     className="flex-1 px-4 py-3 bg-[#FFD700] text-zinc-900 rounded-xl hover:bg-[#FFC700] font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {validandoOperador ? (
