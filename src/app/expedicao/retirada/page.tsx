@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, Suspense } from "react"
 import { motion } from "framer-motion"
 import { CheckCircle, AlertCircle, User, Settings, Package, Truck, Camera, X, RotateCcw } from "lucide-react"
 import MainLayout from "@/components/MainLayout"
@@ -42,7 +42,7 @@ interface Operator {
   isActive: boolean
 }
 
-export default function RetiradaPage() {
+function RetiradaPageContent() {
   const searchParams = useSearchParams()
   
   const [orderNumber, setOrderNumber] = useState("")
@@ -1030,3 +1030,16 @@ export default function RetiradaPage() {
         </MainLayout>
       )
     }
+
+// Wrapper com Suspense para useSearchParams
+export default function RetiradaPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-zinc-50 flex items-center justify-center">
+        <div className="text-zinc-600">Carregando...</div>
+      </div>
+    }>
+      <RetiradaPageContent />
+    </Suspense>
+  )
+}
