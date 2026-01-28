@@ -1,10 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { motion } from "framer-motion"
-import { Package, Truck, User, Search, Eye, AlertTriangle } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
+import { Package, Truck, User, Search, Eye, AlertTriangle, Trash2, X } from "lucide-react"
 import Link from "next/link"
 import MainLayout from "@/components/MainLayout"
+import { useRouter } from "next/navigation"
 
 interface Retirada {
   id: string
@@ -35,6 +36,7 @@ interface Retirada {
 }
 
 export default function RelatorioRetiradas() {
+  const router = useRouter()
   const [retiradas, setRetiradas] = useState<Retirada[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
@@ -43,10 +45,29 @@ export default function RelatorioRetiradas() {
   const [transportadoraFilter, setTransportadoraFilter] = useState<string>("TODOS")
   const [ocorrenciaFilter, setOcorrenciaFilter] = useState<string>("TODOS")
   const [setorFilter, setSetorFilter] = useState<string>("TODOS")
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [userRole, setUserRole] = useState<string | null>(null)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteType, setDeleteType] = useState<'single' | 'bulk'>('single')
+  const [deleteTarget, setDeleteTarget] = useState<Retirada | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     fetchRetiradas()
+    fetchUserRole()
   }, [setorFilter])
+
+  const fetchUserRole = async () => {
+    try {
+      const res = await fetch('/api/user-role')
+      const data = await res.json()
+      if (data.ok) {
+        setUserRole(data.role)
+      }
+    } catch (error) {
+      console.error('Erro ao buscar role:', error)
+    }
+  }
 
   const fetchRetiradas = async () => {
     setLoading(true)
@@ -73,6 +94,69 @@ export default function RelatorioRetiradas() {
   
   // Lista única de transportadoras para o filtro
   const transportadoras = [...new Set(retiradas.map(r => r.transportadora).filter(Boolean))] as string[]
+
+  const handleSelectOne = (id: string) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    )
+  }
+
+  const handleSelectAll = () => {
+    if (selectedIds.length === filteredRetiradas.length) {
+      setSelectedIds([])
+    } else {
+      setSelectedIds(filteredRetiradas.map(r => r.id))
+    }
+  }
+
+  const handleDeleteOne = (retirada: Retirada) => {
+    setDeleteType('single')
+    setDeleteTarget(retirada)
+    setShowDeleteModal(true)
+  }
+
+  const handleDeleteSelected = () => {
+    setDeleteType('bulk')
+    setDeleteTarget(null)
+    setShowDeleteModal(true)
+  }
+
+  const confirmDelete = async () => {
+    setDeleting(true)
+    try {
+      if (deleteType === 'single' && deleteTarget) {
+        const res = await fetch(`/api/retiradas/${deleteTarget.id}`, {
+          method: 'DELETE'
+        })
+        const data = await res.json()
+        if (data.ok) {
+          setRetiradas(prev => prev.filter(r => r.id !== deleteTarget.id))
+          setShowDeleteModal(false)
+        } else {
+          alert(data.error || 'Erro ao excluir retirada')
+        }
+      } else if (deleteType === 'bulk') {
+        const res = await fetch('/api/retiradas/bulk', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids: selectedIds })
+        })
+        const data = await res.json()
+        if (data.ok) {
+          setRetiradas(prev => prev.filter(r => !selectedIds.includes(r.id)))
+          setSelectedIds([])
+          setShowDeleteModal(false)
+        } else {
+          alert(data.error || 'Erro ao excluir retiradas')
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao excluir:', error)
+      alert('Erro ao excluir retirada(s)')
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   const filteredRetiradas = retiradas.filter(r => {
     // Filtro de busca
@@ -278,6 +362,16 @@ export default function RelatorioRetiradas() {
                 <table className="w-full">
                   <thead className="bg-zinc-50 border-b border-zinc-200">
                     <tr>
+                      {userRole === 'ADMIN' && (
+                        <th className="px-4 py-3 text-left">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.length === filteredRetiradas.length && filteredRetiradas.length > 0}
+                            onChange={handleSelectAll}
+                            className="w-4 h-4 rounded border-zinc-300 text-[#FFD700] focus:ring-[#FFD700]"
+                          />
+                        </th>
+                      )}
                       <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-900">Ocorr.</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-900">Data</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-900">Pedido</th>
@@ -292,6 +386,16 @@ export default function RelatorioRetiradas() {
                   <tbody className="divide-y divide-zinc-200">
                     {filteredRetiradas.map((retirada) => (
                       <tr key={retirada.id} className="hover:bg-zinc-50 transition-colors">
+                        {userRole === 'ADMIN' && (
+                          <td className="px-4 py-3">
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.includes(retirada.id)}
+                              onChange={() => handleSelectOne(retirada.id)}
+                              className="w-4 h-4 rounded border-zinc-300 text-[#FFD700] focus:ring-[#FFD700]"
+                            />
+                          </td>
+                        )}
                         <td className="px-4 py-3">
                           {retirada.statusUltimaOcorrencia === 'PENDENTE' ? (
                             <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-lg text-xs font-medium">
@@ -360,13 +464,24 @@ export default function RelatorioRetiradas() {
                           )}
                         </td>
                         <td className="px-4 py-3">
-                          <Link
-                            href={`/admin/retiradas/${retirada.id}`}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#FFD700] text-zinc-900 rounded-lg hover:bg-[#FFC700] transition-colors text-tiny font-medium"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                            Ver Detalhes
-                          </Link>
+                          <div className="flex items-center gap-2">
+                            <Link
+                              href={`/admin/retiradas/${retirada.id}`}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#FFD700] text-zinc-900 rounded-lg hover:bg-[#FFC700] transition-colors text-tiny font-medium"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              Ver Detalhes
+                            </Link>
+                            {userRole === 'ADMIN' && (
+                              <button
+                                onClick={() => handleDeleteOne(retirada)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-tiny font-medium"
+                                title="Excluir retirada"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -375,6 +490,103 @@ export default function RelatorioRetiradas() {
               </div>
             )}
           </motion.div>
+
+          {/* Botão flutuante de exclusão em massa */}
+          <AnimatePresence>
+            {userRole === 'ADMIN' && selectedIds.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 100 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 100 }}
+                className="fixed bottom-8 right-8 z-50"
+              >
+                <button
+                  onClick={handleDeleteSelected}
+                  className="flex items-center gap-3 px-6 py-4 bg-red-500 text-white rounded-xl shadow-lg hover:bg-red-600 transition-colors font-medium"
+                >
+                  <Trash2 className="w-5 h-5" />
+                  {selectedIds.length} selecionado(s) - Excluir
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Modal de confirmação */}
+          <AnimatePresence>
+            {showDeleteModal && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+                onClick={() => !deleting && setShowDeleteModal(false)}
+              >
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.9, opacity: 0 }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-bold text-zinc-900">Confirmar Exclusão</h3>
+                    <button
+                      onClick={() => !deleting && setShowDeleteModal(false)}
+                      className="p-2 hover:bg-zinc-100 rounded-lg transition-colors"
+                      disabled={deleting}
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  {deleteType === 'single' && deleteTarget ? (
+                    <div className="mb-6">
+                      <p className="text-zinc-700 mb-4">Tem certeza que deseja excluir esta retirada?</p>
+                      <div className="bg-zinc-50 rounded-lg p-4 space-y-2">
+                        <p className="text-sm"><span className="font-semibold">Pedido:</span> #{deleteTarget.order.orderNumber}</p>
+                        <p className="text-sm"><span className="font-semibold">Data:</span> {new Date(deleteTarget.createdAt).toLocaleDateString('pt-BR')}</p>
+                        <p className="text-sm"><span className="font-semibold">Vendedor:</span> {deleteTarget.vendedor || '-'}</p>
+                        <p className="text-sm"><span className="font-semibold">Operador:</span> {deleteTarget.operatorName || 'N/A'}</p>
+                      </div>
+                      <p className="text-red-600 text-sm mt-4 font-medium">⚠️ Esta ação não pode ser desfeita. Todas as ocorrências vinculadas também serão excluídas.</p>
+                    </div>
+                  ) : (
+                    <div className="mb-6">
+                      <p className="text-zinc-700 mb-4">Tem certeza que deseja excluir <span className="font-bold">{selectedIds.length}</span> retirada(s)?</p>
+                      <p className="text-red-600 text-sm font-medium">⚠️ Esta ação não pode ser desfeita. Todas as ocorrências vinculadas também serão excluídas.</p>
+                    </div>
+                  )}
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setShowDeleteModal(false)}
+                      disabled={deleting}
+                      className="flex-1 px-4 py-2 border border-zinc-300 text-zinc-700 rounded-lg hover:bg-zinc-50 transition-colors font-medium disabled:opacity-50"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={confirmDelete}
+                      disabled={deleting}
+                      className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {deleting ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          Excluindo...
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="w-4 h-4" />
+                          Excluir
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </MainLayout>
     )
