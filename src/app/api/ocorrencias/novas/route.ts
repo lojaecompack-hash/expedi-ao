@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 
-// GET - Verificar novas ocorrências para o setor do usuário logado
+// GET - Verificar novas ocorrências para o usuário logado
+// Lógica:
+// - Usuário comum: vê apenas mensagens onde destinatarioId = seu ID
+// - Gerente (isManager=true): vê TODAS mensagens onde destinatarioTipo = seu role (setor)
 export async function GET(request: Request) {
   try {
     const supabase = await createSupabaseServerClient()
@@ -12,7 +15,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ ok: false, error: 'Não autenticado' }, { status: 401 })
     }
 
-    // Buscar usuário no banco para obter o nome do setor
+    // Buscar usuário no banco com todas as informações necessárias
     const dbUser = await prisma.user.findUnique({
       where: { email: authUser.email! }
     })
@@ -21,27 +24,50 @@ export async function GET(request: Request) {
       return NextResponse.json({ ok: false, error: 'Usuário não encontrado' }, { status: 404 })
     }
 
-    const setorUsuario = dbUser.name // Nome do usuário é o setor (Expedição, Vendas, Financeiro)
-
     // Buscar parâmetro de última verificação
     const { searchParams } = new URL(request.url)
     const ultimaVerificacao = searchParams.get('desde')
 
-    // Buscar ocorrências pendentes para este setor
-    const whereClause: Record<string, unknown> = {
-      setorDestino: setorUsuario,
-      statusOcorrencia: 'PENDENTE'
+    // Construir condição de filtro baseado no tipo de usuário
+    // Se gerente: vê todas do setor (destinatarioTipo = seu role)
+    // Se usuário comum: vê apenas as direcionadas a ele (destinatarioId = seu id)
+    const isManager = (dbUser as { isManager?: boolean }).isManager === true
+    const userRole = dbUser.role // VENDAS, FINANCEIRO, EXPEDICAO, etc.
+
+    let whereCondition: Record<string, unknown>
+
+    if (isManager) {
+      // Gerente vê todas do seu setor OU direcionadas especificamente a ele
+      whereCondition = {
+        OR: [
+          { destinatarioTipo: userRole },
+          { destinatarioId: dbUser.id },
+          { setorDestino: dbUser.name } // Compatibilidade com mensagens antigas
+        ],
+        statusOcorrencia: 'PENDENTE',
+        remetenteId: { not: dbUser.id } // Não mostrar mensagens que ele mesmo enviou
+      }
+    } else {
+      // Usuário comum vê apenas mensagens direcionadas a ele
+      whereCondition = {
+        OR: [
+          { destinatarioId: dbUser.id },
+          { setorDestino: dbUser.name } // Compatibilidade com mensagens antigas
+        ],
+        statusOcorrencia: 'PENDENTE',
+        remetenteId: { not: dbUser.id } // Não mostrar mensagens que ele mesmo enviou
+      }
     }
 
     // Se tiver data de última verificação, buscar apenas as mais recentes
     if (ultimaVerificacao) {
-      whereClause.createdAt = {
+      whereCondition.createdAt = {
         gt: new Date(ultimaVerificacao)
       }
     }
 
     const novasOcorrencias = await prisma.ocorrencia.findMany({
-      where: whereClause,
+      where: whereCondition,
       orderBy: { createdAt: 'desc' },
       take: 10,
       include: {
@@ -75,7 +101,9 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       ok: true,
-      setor: setorUsuario,
+      usuario: dbUser.name,
+      isManager,
+      role: userRole,
       ocorrencias: ocorrenciasFormatadas,
       total: ocorrenciasFormatadas.length
     })

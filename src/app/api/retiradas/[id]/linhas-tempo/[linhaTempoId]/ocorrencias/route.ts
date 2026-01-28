@@ -10,7 +10,7 @@ export async function POST(
     const { id, linhaTempoId } = await params
     const body = await req.json()
     
-    const { descricao, operadorNome, setorOrigem, setorDestino, tipoOcorrencia, motivoRetorno } = body
+    const { descricao, operadorNome, setorOrigem, setorDestino, tipoOcorrencia, motivoRetorno, remetenteId, destinatarioId, destinatarioTipo } = body
     
     if (!descricao || descricao.trim() === '') {
       return NextResponse.json(
@@ -70,7 +70,10 @@ export async function POST(
         setorDestino: setorDestino || null,
         statusOcorrencia: 'PENDENTE',
         tipoOcorrencia: tipoFinal,
-        motivoRetorno: motivoFinal
+        motivoRetorno: motivoFinal,
+        remetenteId: remetenteId || null,
+        destinatarioId: destinatarioId || null,
+        destinatarioTipo: destinatarioTipo || null
       }
     })
     

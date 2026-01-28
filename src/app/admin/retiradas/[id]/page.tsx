@@ -109,7 +109,6 @@ export default function DetalhesRetirada() {
   const [selectedUsuarioId, setSelectedUsuarioId] = useState("")
   const [operadoresDoUsuario, setOperadoresDoUsuario] = useState<Operador[]>([])
   const [selectedOperadorDestinoId, setSelectedOperadorDestinoId] = useState("") // Operador do usuário de destino (opcional)
-  const [selectedSetorDestino, setSelectedSetorDestino] = useState("") // Mantido para compatibilidade
   
   // Estado para foto expandida no histórico
   const [fotoExpandida, setFotoExpandida] = useState<string | null>(null)
@@ -117,13 +116,9 @@ export default function DetalhesRetirada() {
   // Estados para tipo de ocorrência e motivo de retorno
   const [tipoOcorrencia, setTipoOcorrencia] = useState<'INFORMACAO' | 'RETORNO_PRODUTO'>('INFORMACAO')
   const [motivoRetorno, setMotivoRetorno] = useState('')
-
-  useEffect(() => {
-    if (id) {
-      fetchRetirada()
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id])
+  
+  // Estado para usuário logado (remetente automático)
+  const [usuarioLogado, setUsuarioLogado] = useState<{id: string, name: string, role: string} | null>(null)
 
   // Quando seleciona tipo de usuário, buscar usuários daquele tipo
   useEffect(() => {
@@ -145,16 +140,11 @@ export default function DetalhesRetirada() {
     if (selectedUsuarioId) {
       fetchOperadoresDoUsuario(selectedUsuarioId)
       setSelectedOperadorDestinoId("")
-      // Definir o destino como o nome do usuário selecionado
-      const usuario = usuariosPorTipo.find(u => u.id === selectedUsuarioId)
-      if (usuario) {
-        setSelectedSetorDestino(usuario.name)
-      }
     } else {
       setOperadoresDoUsuario([])
       setSelectedOperadorDestinoId("")
     }
-  }, [selectedUsuarioId, usuariosPorTipo])
+  }, [selectedUsuarioId])
 
   const fetchRetirada = async () => {
     setLoading(true)
@@ -226,6 +216,31 @@ export default function DetalhesRetirada() {
     }
   }
 
+  // Buscar usuário logado (remetente automático das mensagens)
+  const fetchUsuarioLogado = async () => {
+    try {
+      const res = await fetch('/api/user/me')
+      const data = await res.json()
+      if (data.ok && data.user) {
+        setUsuarioLogado({
+          id: data.user.id,
+          name: data.user.name,
+          role: data.user.role
+        })
+      }
+    } catch (error) {
+      console.error('Erro ao buscar usuário logado:', error)
+    }
+  }
+
+  // useEffect principal - carrega dados quando a página é montada
+  useEffect(() => {
+    if (id) {
+      fetchRetirada()
+      fetchUsuarioLogado()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id])
 
   // Buscar usuários de um tipo específico
   const fetchUsuariosPorTipo = async (tipo: string) => {
@@ -350,17 +365,21 @@ export default function DetalhesRetirada() {
         console.log('[validarEAdicionarOcorrencia] Linha do tempo criada:', linhaId)
       }
       
-      // Adicionar ocorrência com o nome do usuário selecionado como responsável
+      // Adicionar ocorrência com remetente (usuário logado) e destinatário (usuário selecionado)
       const res = await fetch(`/api/retiradas/${id}/linhas-tempo/${linhaId}/ocorrencias`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           descricao: novaOcorrencia.trim(),
-          operadorNome: usuarioSelecionado.name, // Usar nome do usuário selecionado
-          setorOrigem: retirada?.operatorName || 'Expedição', // Setor de origem é o operador da retirada
-          setorDestino: selectedSetorDestino,
+          operadorNome: usuarioLogado?.name || 'Sistema', // Quem está enviando a mensagem
+          setorOrigem: usuarioLogado?.name || 'Sistema', // Remetente
+          setorDestino: usuarioSelecionado.name, // Destinatário
           tipoOcorrencia,
-          motivoRetorno: tipoOcorrencia === 'RETORNO_PRODUTO' ? motivoRetorno : null
+          motivoRetorno: tipoOcorrencia === 'RETORNO_PRODUTO' ? motivoRetorno : null,
+          // Novos campos para lógica de gerentes
+          remetenteId: usuarioLogado?.id || null,
+          destinatarioId: selectedUsuarioId, // ID do usuário selecionado
+          destinatarioTipo: selectedTipoUsuario // Tipo/Setor: VENDAS, FINANCEIRO, EXPEDICAO
         })
       })
       

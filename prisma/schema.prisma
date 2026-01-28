@@ -250,6 +250,11 @@ model Ocorrencia {
   // Campos para tipo de ocorrência e motivo de retorno
   tipoOcorrencia   String   @default("INFORMACAO") // INFORMACAO ou RETORNO_PRODUTO
   motivoRetorno    String?  // DESTINATARIO_AUSENTE, ENDERECO_INCORRETO, RECUSA_CLIENTE, AVARIADO, EXTRAVIO, OUTRO
+  
+  // Campos para destinatário específico (permite gerentes verem todas do setor)
+  remetenteId      String?  // ID do usuário que enviou
+  destinatarioId   String?  // ID do usuário destinatário específico
+  destinatarioTipo String?  // Tipo/Setor: VENDAS, FINANCEIRO, EXPEDICAO, etc.
 
   linhaTempo   LinhaTempoOcorrencia @relation(fields: [linhaTempoId], references: [id], onDelete: Cascade)
 
@@ -257,6 +262,9 @@ model Ocorrencia {
   @@index([setorDestino])
   @@index([statusOcorrencia])
   @@index([tipoOcorrencia])
+  @@index([destinatarioId])
+  @@index([destinatarioTipo])
+  @@index([remetenteId])
 }
 
 model SyncJob {
