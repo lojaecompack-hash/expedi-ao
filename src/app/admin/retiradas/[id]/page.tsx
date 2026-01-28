@@ -41,6 +41,7 @@ interface Retirada {
   status: string | null
   photo: string | null
   createdAt: string
+  numeroRetirada: number
   order: {
     id: string
     tinyOrderId: string
@@ -501,6 +502,14 @@ export default function DetalhesRetirada() {
                 ) : retirada.status === 'AGUARDANDO_RETIRADA' ? (
                   <span className="inline-flex items-center px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg text-sm font-medium">
                     ⏳ Aguardando
+                  </span>
+                ) : retirada.status === 'RETORNADO' ? (
+                  <span className="inline-flex items-center px-3 py-1.5 bg-orange-100 text-orange-700 rounded-lg text-sm font-medium">
+                    📦 Retornado
+                  </span>
+                ) : retirada.numeroRetirada > 1 ? (
+                  <span className="inline-flex items-center px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium">
+                    🔄 Re-Retirado
                   </span>
                 ) : (
                   <span className="inline-flex items-center px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-sm font-medium">
