@@ -411,8 +411,12 @@ export async function getTinyOrderDetailsById(tinyOrderId: string): Promise<Tiny
     
     const pedido = data.retorno.pedido
     if (!pedido) {
+      console.log('[Tiny API] Pedido não encontrado no retorno')
       return null
     }
+    
+    // Log completo do pedido para debug
+    console.log('[Tiny API] Pedido raw itens:', JSON.stringify(pedido.itens, null, 2))
     
     // Extrair dados necessários
     const pedidoAny = pedido as Record<string, unknown>
@@ -423,6 +427,21 @@ export async function getTinyOrderDetailsById(tinyOrderId: string): Promise<Tiny
     const nomeTransportador = typeof pedidoAny.nome_transportador === 'string' && pedidoAny.nome_transportador.trim() !== '' ? pedidoAny.nome_transportador.trim() : null
     const transportadora = formaFrete || nomeTransportador || null
     
+    // Processar itens com fallback mais robusto
+    const itensRaw = pedido.itens || []
+    console.log('[Tiny API] Total de itens raw:', itensRaw.length)
+    
+    const itensProcessados = itensRaw.map((item, index) => {
+      // A Tiny pode retornar item.item ou diretamente os campos
+      const itemData = (item.item || item) as Record<string, unknown>
+      console.log('[Tiny API] Item processando:', JSON.stringify(itemData, null, 2))
+      return {
+        id: String(itemData?.id || itemData?.codigo || index),
+        descricao: String(itemData?.descricao || itemData?.nome || 'Produto sem descrição'),
+        quantidade: parseFloat(String(itemData?.quantidade || '1'))
+      }
+    })
+    
     const detalhes: TinyOrderDetails = {
       id: String(pedido.id),
       numero: String(pedido.numero),
@@ -430,14 +449,11 @@ export async function getTinyOrderDetailsById(tinyOrderId: string): Promise<Tiny
       clienteNome: pedido.cliente?.nome || 'Cliente não informado',
       vendedor: vendedor || 'Não informado',
       transportadora: transportadora || 'Não definida',
-      itens: (pedido.itens || []).map((item, index) => ({
-        id: item.item?.id || String(index),
-        descricao: item.item?.descricao || 'Produto sem descrição',
-        quantidade: parseFloat(item.item?.quantidade || '1')
-      }))
+      itens: itensProcessados
     }
     
     console.log('[Tiny API] Detalhes do pedido por ID:', detalhes)
+    console.log('[Tiny API] Total de itens processados:', detalhes.itens.length)
     
     return detalhes
   } catch (error) {

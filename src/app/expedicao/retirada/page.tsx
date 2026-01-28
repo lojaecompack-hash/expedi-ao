@@ -210,22 +210,33 @@ function RetiradaPageContent() {
         setTransportadoraSelecionada("")
       }
       
-      // Buscar rastreio existente para este pedido
-      try {
-        const trackingRes = await fetch(`/api/pickups/tracking?orderNumber=${encodeURIComponent(number)}`)
-        const trackingData = await trackingRes.json()
-        if (trackingData.ok && trackingData.trackingCode) {
-          console.log('[Client] Rastreio encontrado:', trackingData.trackingCode)
-          setTrackingCode(trackingData.trackingCode)
-          setSavedTrackingCode(trackingData.trackingCode)
-        } else {
+      // Para RE-RETIRADAS: código de rastreio deve começar LIMPO (nova entrega)
+      // Para PRIMEIRA retirada: buscar rastreio existente se houver
+      const isReRetiradaFromApiCheck = details.isReRetirada === true || (details.situacao || '').toLowerCase() === 're-retirada'
+      
+      if (isReRetiradaFromApiCheck) {
+        // Re-retirada: limpar código de rastreio para nova entrega
+        console.log('[Client] Re-retirada - limpando código de rastreio')
+        setTrackingCode("")
+        setSavedTrackingCode(null)
+      } else {
+        // Primeira retirada: buscar rastreio existente para este pedido
+        try {
+          const trackingRes = await fetch(`/api/pickups/tracking?orderNumber=${encodeURIComponent(number)}`)
+          const trackingData = await trackingRes.json()
+          if (trackingData.ok && trackingData.trackingCode) {
+            console.log('[Client] Rastreio encontrado:', trackingData.trackingCode)
+            setTrackingCode(trackingData.trackingCode)
+            setSavedTrackingCode(trackingData.trackingCode)
+          } else {
+            setTrackingCode("")
+            setSavedTrackingCode(null)
+          }
+        } catch (trackingError) {
+          console.error('[Client] Erro ao buscar rastreio:', trackingError)
           setTrackingCode("")
           setSavedTrackingCode(null)
         }
-      } catch (trackingError) {
-        console.error('[Client] Erro ao buscar rastreio:', trackingError)
-        setTrackingCode("")
-        setSavedTrackingCode(null)
       }
     } catch (error) {
       console.error('[Client] Erro ao buscar pedido:', error)
