@@ -97,8 +97,10 @@ export async function POST(
       return NextResponse.json({ ok: false, error: 'Usuário não encontrado' }, { status: 404 })
     }
 
-    if (targetUser.role !== 'CORTE_SOLDA') {
-      return NextResponse.json({ ok: false, error: 'Operadores de produção só podem ser vinculados a usuários CORTE_SOLDA' }, { status: 400 })
+    // Aceitar tanto PRODUCAO (legado) quanto CORTE_SOLDA (novo)
+    const userRole = targetUser.role as string
+    if (userRole !== 'CORTE_SOLDA' && userRole !== 'PRODUCAO') {
+      return NextResponse.json({ ok: false, error: 'Operadores de produção só podem ser vinculados a usuários de Corte e Solda' }, { status: 400 })
     }
 
     // Hash da senha

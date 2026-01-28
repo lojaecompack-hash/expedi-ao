@@ -51,7 +51,7 @@ export default function LoginPage() {
           window.location.href = '/dashboard'
         } else if (userData.role === 'EXPEDICAO' || userData.role === 'OPERATOR') {
           window.location.href = '/expedicao/retirada'
-        } else if (userData.role === 'PRODUCAO') {
+        } else if (userData.role === 'CORTE_SOLDA') {
           window.location.href = '/producao'
         } else {
           window.location.href = nextPath

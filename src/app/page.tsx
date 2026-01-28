@@ -32,7 +32,7 @@ export default function Home() {
           const userData = await response.json()
           
           // Se for OPERATOR, redirecionar para expedição
-          if (userData.role === 'OPERATOR' || userData.role === 'EXPEDICAO' || userData.role === 'PRODUCAO') {
+          if (userData.role === 'OPERATOR' || userData.role === 'EXPEDICAO' || userData.role === 'CORTE_SOLDA') {
             router.replace('/expedicao/retirada')
             return
           }

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { prisma } from '@/lib/prisma'
-import { ModulePermission } from '@prisma/client'
+// ModulePermission removido - usando any temporariamente
 import bcrypt from 'bcryptjs'
 
 export async function POST(request: NextRequest) {
@@ -100,8 +100,8 @@ export async function POST(request: NextRequest) {
 
     if (workspace) {
       // Criar membership com permissões baseadas no role
-      // Usando strings diretamente pois o Prisma Client será regenerado após migração
-      let permissions: string[] = []
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let permissions: any[] = []
       
       if (role === 'ADMIN') {
         permissions = ['ADMIN', 'SETTINGS', 'EXPEDICAO', 'CORTE_SOLDA']
@@ -125,7 +125,8 @@ export async function POST(request: NextRequest) {
           workspaceId: workspace.id,
           userId: newAuthUser.user.id,
           email: email,
-          permissions: permissions
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          permissions: permissions as any
         }
       })
       console.log('[API /api/users/create] Membership criado com sucesso')
