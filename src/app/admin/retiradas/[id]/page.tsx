@@ -347,8 +347,34 @@ export default function DetalhesRetirada() {
         return
       }
 
-      // Operador validado - adicionar ocorrência com setor
-      const res = await fetch(`/api/retiradas/${id}/linhas-tempo/${linhaAberta!.id}/ocorrencias`, {
+      // Operador validado - verificar se precisa criar linha do tempo primeiro
+      let linhaId = linhaAberta?.id
+      
+      if (!linhaId) {
+        // Criar nova linha do tempo primeiro
+        const criarLinhaRes = await fetch(`/api/retiradas/${id}/linhas-tempo`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            tipoOcorrencia,
+            motivoRetorno: tipoOcorrencia === 'RETORNO_PRODUTO' ? motivoRetorno : null
+          })
+        })
+        
+        const criarLinhaData = await criarLinhaRes.json()
+        
+        if (!criarLinhaData.ok) {
+          setAuthError('Erro ao criar linha do tempo: ' + (criarLinhaData.error || 'Erro desconhecido'))
+          setValidandoOperador(false)
+          return
+        }
+        
+        linhaId = criarLinhaData.linhaDoTempo.id
+        console.log('[validarEAdicionarOcorrencia] Linha do tempo criada:', linhaId)
+      }
+      
+      // Adicionar ocorrência com setor
+      const res = await fetch(`/api/retiradas/${id}/linhas-tempo/${linhaId}/ocorrencias`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -774,16 +800,11 @@ export default function DetalhesRetirada() {
                 </button>
               ) : (
                 <button
-                  onClick={criarNovaLinhaTempo}
-                  disabled={criandoLinhaTempo}
-                  className="px-6 py-3 bg-[#FFD700] text-zinc-900 rounded-xl hover:bg-[#FFC700] font-medium flex items-center gap-2 shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleAdicionarClick}
+                  className="px-6 py-3 bg-[#FFD700] text-zinc-900 rounded-xl hover:bg-[#FFC700] font-medium flex items-center gap-2 shadow-md"
                 >
-                  {criandoLinhaTempo ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <Plus className="w-5 h-5" />
-                  )}
-                  {criandoLinhaTempo ? 'Criando...' : 'Registrar Primeira Ocorrência'}
+                  <Plus className="w-5 h-5" />
+                  Registrar Primeira Ocorrência
                 </button>
               )}
             </div>
