@@ -26,7 +26,8 @@ export default function UsuariosPage() {
     email: '',
     name: '',
     password: '',
-    role: 'EXPEDICAO' as UserRole
+    role: 'EXPEDICAO' as UserRole,
+    isManager: false
   })
 
   useEffect(() => {

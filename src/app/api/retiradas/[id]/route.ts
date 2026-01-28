@@ -127,9 +127,48 @@ export async function GET(
     
     console.log('[Retirada Detalhes API] Retirada encontrada:', retirada.id, '| Total retiradas do pedido:', todasRetiradas.length)
     
+    // Se não tiver itens salvos, buscar da API Tiny
+    let retiradaComItens = retirada
+    if (!retirada.itens && retirada.order.tinyOrderId) {
+      try {
+        console.log('[Retirada Detalhes API] Buscando itens da Tiny para pedido:', retirada.order.tinyOrderId)
+        
+        // Buscar token da Tiny
+        const tinySettings = await prisma.tinySettings.findFirst({
+          where: { isActive: true }
+        })
+        
+        if (tinySettings) {
+          const tinyRes = await fetch(
+            `https://api.tiny.com.br/api2/pedido.obter.php?token=${tinySettings.apiTokenEncrypted}&id=${retirada.order.tinyOrderId}&formato=json`
+          )
+          const tinyData = await tinyRes.json()
+          
+          if (tinyData.retorno?.status === 'OK' && tinyData.retorno?.pedido?.itens) {
+            const itensFormatados = tinyData.retorno.pedido.itens.map((item: { item: { id_produto: string, descricao: string, quantidade: number } }) => ({
+              id: item.item.id_produto,
+              descricao: item.item.descricao,
+              quantidade: item.item.quantidade
+            }))
+            
+            // Adicionar itens ao objeto de retorno (sem salvar no banco)
+            retiradaComItens = {
+              ...retirada,
+              itens: JSON.stringify(itensFormatados)
+            }
+            
+            console.log('[Retirada Detalhes API] Itens obtidos da Tiny:', itensFormatados.length)
+          }
+        }
+      } catch (tinyError) {
+        console.error('[Retirada Detalhes API] Erro ao buscar itens da Tiny:', tinyError)
+        // Continua sem itens se falhar
+      }
+    }
+    
     return NextResponse.json({
       ok: true,
-      retirada,
+      retirada: retiradaComItens,
       historicoRetiradas: todasRetiradas // Array com todas as retiradas do pedido
     }, { status: 200 })
   } catch (error) {
