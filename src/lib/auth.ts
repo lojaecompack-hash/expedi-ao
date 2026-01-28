@@ -6,7 +6,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key'
 export interface JWTPayload {
   userId: string
   email: string
-  role: 'ADMIN' | 'EXPEDICAO' | 'PRODUCAO'
+  role: 'ADMIN' | 'EXPEDICAO' | 'CORTE_SOLDA' | 'EXTRUSORA' | 'ESTOQUE' | 'VENDAS' | 'FINANCEIRO'
 }
 
 export function generateToken(payload: JWTPayload): string {
