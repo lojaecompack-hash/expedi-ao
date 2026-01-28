@@ -6,7 +6,7 @@ import { Trash2 } from 'lucide-react'
 interface ProductionOperator {
   id: string
   name: string
-  type: 'CORTE_SOLDA' | 'EXTRUSORA'
+  type: 'CORTE_SOLDA'
   email: string | null
   phone: string | null
   isActive: boolean
@@ -26,7 +26,7 @@ export default function ProductionOperatorsSection({
   const [creating, setCreating] = useState(false)
   const [form, setForm] = useState({
     name: '',
-    type: 'CORTE_SOLDA' as 'CORTE_SOLDA' | 'EXTRUSORA',
+    type: 'CORTE_SOLDA' as 'CORTE_SOLDA',
     email: '',
     phone: '',
     password: ''
@@ -80,9 +80,8 @@ export default function ProductionOperatorsSection({
     }
   }
 
-  // Agrupar operadores por tipo
+  // Operadores de Corte e Solda
   const corteSoldaOps = operators.filter(op => op.type === 'CORTE_SOLDA')
-  const extrusoraOps = operators.filter(op => op.type === 'EXTRUSORA')
 
   return (
     <div className="space-y-6">
@@ -118,29 +117,6 @@ export default function ProductionOperatorsSection({
               </div>
             )}
 
-            {/* Extrusora */}
-            {extrusoraOps.length > 0 && (
-              <div>
-                <h3 className="text-sm font-medium text-zinc-700 mb-3">🏭 Extrusora ({extrusoraOps.length})</h3>
-                <div className="space-y-2">
-                  {extrusoraOps.map((op) => (
-                    <div key={op.id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
-                      <div>
-                        <p className="font-medium text-zinc-900">{op.name}</p>
-                        {op.email && <p className="text-sm text-zinc-600">{op.email}</p>}
-                        {op.phone && <p className="text-sm text-zinc-600">{op.phone}</p>}
-                      </div>
-                      <button
-                        onClick={() => handleDelete(op.id)}
-                        className="text-red-600 hover:text-red-700 p-2"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         )}
       </div>
@@ -164,33 +140,6 @@ export default function ProductionOperatorsSection({
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-zinc-700 mb-2">
-              Tipo *
-            </label>
-            <div className="space-y-2">
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  value="CORTE_SOLDA"
-                  checked={form.type === 'CORTE_SOLDA'}
-                  onChange={(e) => setForm({ ...form, type: e.target.value as 'CORTE_SOLDA' | 'EXTRUSORA' })}
-                  className="mr-2"
-                />
-                <span>🔧 Corte e Solda</span>
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  value="EXTRUSORA"
-                  checked={form.type === 'EXTRUSORA'}
-                  onChange={(e) => setForm({ ...form, type: e.target.value as 'CORTE_SOLDA' | 'EXTRUSORA' })}
-                  className="mr-2"
-                />
-                <span>🏭 Extrusora</span>
-              </label>
-            </div>
-          </div>
 
           <div>
             <label className="block text-sm font-medium text-zinc-700 mb-2">

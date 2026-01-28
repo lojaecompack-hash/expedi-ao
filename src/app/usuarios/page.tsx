@@ -5,11 +5,13 @@ import MainLayout from '@/components/MainLayout'
 import { useRouter } from 'next/navigation'
 import { Eye, Trash2 } from 'lucide-react'
 
+type UserRole = 'ADMIN' | 'EXPEDICAO' | 'CORTE_SOLDA' | 'EXTRUSORA' | 'ESTOQUE' | 'VENDAS' | 'FINANCEIRO'
+
 interface User {
   id: string
   email: string
   name: string
-  role: 'ADMIN' | 'EXPEDICAO' | 'PRODUCAO'
+  role: UserRole
   isActive: boolean
 }
 
@@ -24,7 +26,7 @@ export default function UsuariosPage() {
     email: '',
     name: '',
     password: '',
-    role: 'EXPEDICAO' as 'ADMIN' | 'EXPEDICAO' | 'PRODUCAO'
+    role: 'EXPEDICAO' as UserRole
   })
 
   useEffect(() => {
@@ -178,11 +180,25 @@ export default function UsuariosPage() {
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             user.role === 'ADMIN' 
                               ? 'bg-purple-100 text-purple-800' 
-                              : user.role === 'PRODUCAO'
+                              : user.role === 'CORTE_SOLDA'
                               ? 'bg-orange-100 text-orange-800'
+                              : user.role === 'EXTRUSORA'
+                              ? 'bg-amber-100 text-amber-800'
+                              : user.role === 'ESTOQUE'
+                              ? 'bg-teal-100 text-teal-800'
+                              : user.role === 'VENDAS'
+                              ? 'bg-green-100 text-green-800'
+                              : user.role === 'FINANCEIRO'
+                              ? 'bg-pink-100 text-pink-800'
                               : 'bg-blue-100 text-blue-800'
                           }`}>
-                            {user.role === 'ADMIN' ? 'Administrador' : user.role === 'PRODUCAO' ? 'Produção' : 'Expedição'}
+                            {user.role === 'ADMIN' ? 'Administrador' 
+                              : user.role === 'CORTE_SOLDA' ? 'Corte e Solda' 
+                              : user.role === 'EXTRUSORA' ? 'Extrusora'
+                              : user.role === 'ESTOQUE' ? 'Estoque'
+                              : user.role === 'VENDAS' ? 'Vendas'
+                              : user.role === 'FINANCEIRO' ? 'Financeiro'
+                              : 'Expedição'}
                           </span>
                         </td>
                         <td className="px-6 py-4">
@@ -291,7 +307,7 @@ export default function UsuariosPage() {
                         name="role"
                         value="ADMIN"
                         checked={formData.role === 'ADMIN'}
-                        onChange={(e) => setFormData({ ...formData, role: e.target.value as 'ADMIN' | 'EXPEDICAO' | 'PRODUCAO' })}
+                        onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
                         className="w-4 h-4 text-[#FFD700] focus:ring-[#FFD700]"
                       />
                       <span className="text-sm text-zinc-700">ADMIN</span>
@@ -302,7 +318,7 @@ export default function UsuariosPage() {
                         name="role"
                         value="EXPEDICAO"
                         checked={formData.role === 'EXPEDICAO'}
-                        onChange={(e) => setFormData({ ...formData, role: e.target.value as 'ADMIN' | 'EXPEDICAO' | 'PRODUCAO' })}
+                        onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
                         className="w-4 h-4 text-[#FFD700] focus:ring-[#FFD700]"
                       />
                       <span className="text-sm text-zinc-700">EXPEDIÇÃO</span>
@@ -311,12 +327,56 @@ export default function UsuariosPage() {
                       <input
                         type="radio"
                         name="role"
-                        value="PRODUCAO"
-                        checked={formData.role === 'PRODUCAO'}
-                        onChange={(e) => setFormData({ ...formData, role: e.target.value as 'ADMIN' | 'EXPEDICAO' | 'PRODUCAO' })}
+                        value="CORTE_SOLDA"
+                        checked={formData.role === 'CORTE_SOLDA'}
+                        onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
                         className="w-4 h-4 text-[#FFD700] focus:ring-[#FFD700]"
                       />
-                      <span className="text-sm text-zinc-700">PRODUÇÃO</span>
+                      <span className="text-sm text-zinc-700">CORTE E SOLDA</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="role"
+                        value="EXTRUSORA"
+                        checked={formData.role === 'EXTRUSORA'}
+                        onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
+                        className="w-4 h-4 text-[#FFD700] focus:ring-[#FFD700]"
+                      />
+                      <span className="text-sm text-zinc-700">EXTRUSORA</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="role"
+                        value="ESTOQUE"
+                        checked={formData.role === 'ESTOQUE'}
+                        onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
+                        className="w-4 h-4 text-[#FFD700] focus:ring-[#FFD700]"
+                      />
+                      <span className="text-sm text-zinc-700">ESTOQUE</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="role"
+                        value="VENDAS"
+                        checked={formData.role === 'VENDAS'}
+                        onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
+                        className="w-4 h-4 text-[#FFD700] focus:ring-[#FFD700]"
+                      />
+                      <span className="text-sm text-zinc-700">VENDAS</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="role"
+                        value="FINANCEIRO"
+                        checked={formData.role === 'FINANCEIRO'}
+                        onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
+                        className="w-4 h-4 text-[#FFD700] focus:ring-[#FFD700]"
+                      />
+                      <span className="text-sm text-zinc-700">FINANCEIRO</span>
                     </label>
                   </div>
                 </div>

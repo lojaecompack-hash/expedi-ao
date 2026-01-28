@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Dados incompletos' }, { status: 400 })
     }
 
-    if (!['ADMIN', 'EXPEDICAO', 'PRODUCAO'].includes(role)) {
+    if (!['ADMIN', 'EXPEDICAO', 'CORTE_SOLDA', 'EXTRUSORA', 'ESTOQUE', 'VENDAS', 'FINANCEIRO'].includes(role)) {
       return NextResponse.json({ ok: false, error: 'Role inválido' }, { status: 400 })
     }
 
@@ -99,10 +99,25 @@ export async function POST(request: NextRequest) {
     })
 
     if (workspace) {
-      // Criar membership
-      const permissions: ModulePermission[] = role === 'ADMIN' 
-        ? [ModulePermission.ADMIN, ModulePermission.SETTINGS, ModulePermission.EXPEDICAO] 
-        : [ModulePermission.EXPEDICAO]
+      // Criar membership com permissões baseadas no role
+      // Usando strings diretamente pois o Prisma Client será regenerado após migração
+      let permissions: string[] = []
+      
+      if (role === 'ADMIN') {
+        permissions = ['ADMIN', 'SETTINGS', 'EXPEDICAO', 'CORTE_SOLDA']
+      } else if (role === 'EXPEDICAO') {
+        permissions = ['EXPEDICAO']
+      } else if (role === 'CORTE_SOLDA') {
+        permissions = ['CORTE_SOLDA']
+      } else if (role === 'EXTRUSORA') {
+        permissions = ['EXTRUSORA']
+      } else if (role === 'ESTOQUE') {
+        permissions = ['ESTOQUE']
+      } else if (role === 'VENDAS') {
+        permissions = ['VENDAS']
+      } else if (role === 'FINANCEIRO') {
+        permissions = ['FINANCEIRO']
+      }
 
       console.log('[API /api/users/create] Criando membership com permissões:', permissions)
       await prisma.membership.create({

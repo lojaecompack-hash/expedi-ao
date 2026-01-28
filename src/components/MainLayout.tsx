@@ -6,7 +6,7 @@ import { useState, useEffect } from "react"
 import { Package, Truck, Users, BarChart3, Wrench, Home, LogOut, Factory, Menu, X, ChevronLeft, ChevronRight } from "lucide-react"
 import NotificacaoOcorrencia from "./NotificacaoOcorrencia"
 
-type UserRole = 'ADMIN' | 'EXPEDICAO' | 'PRODUCAO' | null
+type UserRole = 'ADMIN' | 'EXPEDICAO' | 'CORTE_SOLDA' | 'EXTRUSORA' | 'ESTOQUE' | 'VENDAS' | 'FINANCEIRO' | null
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -82,23 +82,45 @@ export default function MainLayout({ children }: MainLayoutProps) {
     )
   }
 
-  // Menu items - ADMIN vê tudo, EXPEDICAO vê Dashboard/Retirada/Relatórios, PRODUCAO vê Dashboard
-  const menuItems = userRole === 'ADMIN' ? [
-    { href: '/', label: 'Dashboard', icon: Home },
-    { href: '/producao', label: 'Produção', icon: Factory },
-    { href: '/expedicao/retirada', label: 'Retirada', icon: Truck },
-    { href: '/admin/relatorios/retiradas', label: 'Relatórios', icon: BarChart3 },
-    { href: '/usuarios', label: 'Usuários', icon: Users },
-    { href: '/setup/tiny', label: 'Configurações', icon: Wrench },
-  ] : userRole === 'PRODUCAO' ? [
-    { href: '/', label: 'Dashboard', icon: Home },
-    { href: '/producao', label: 'Produção', icon: Factory },
-    { href: '/producao/conferencia', label: 'Conferência', icon: BarChart3 },
-  ] : [
-    { href: '/', label: 'Dashboard', icon: Home },
-    { href: '/expedicao/retirada', label: 'Retirada', icon: Truck },
-    { href: '/admin/relatorios/retiradas', label: 'Relatórios', icon: BarChart3 },
-  ]
+  // Menu items baseado no role do usuário
+  const getMenuItems = () => {
+    if (userRole === 'ADMIN') {
+      return [
+        { href: '/', label: 'Dashboard', icon: Home },
+        { href: '/producao', label: 'Produção', icon: Factory },
+        { href: '/expedicao/retirada', label: 'Retirada', icon: Truck },
+        { href: '/admin/relatorios/retiradas', label: 'Relatórios', icon: BarChart3 },
+        { href: '/usuarios', label: 'Usuários', icon: Users },
+        { href: '/setup/tiny', label: 'Configurações', icon: Wrench },
+      ]
+    } else if (userRole === 'CORTE_SOLDA') {
+      return [
+        { href: '/', label: 'Dashboard', icon: Home },
+        { href: '/producao', label: 'Produção', icon: Factory },
+        { href: '/producao/conferencia', label: 'Conferência', icon: BarChart3 },
+      ]
+    } else if (userRole === 'EXPEDICAO' || userRole === 'ESTOQUE') {
+      return [
+        { href: '/', label: 'Dashboard', icon: Home },
+        { href: '/expedicao/retirada', label: 'Retirada', icon: Truck },
+        { href: '/admin/relatorios/retiradas', label: 'Relatórios', icon: BarChart3 },
+      ]
+    } else if (userRole === 'VENDAS' || userRole === 'FINANCEIRO') {
+      return [
+        { href: '/', label: 'Dashboard', icon: Home },
+        { href: '/admin/relatorios/retiradas', label: 'Relatórios', icon: BarChart3 },
+      ]
+    } else if (userRole === 'EXTRUSORA') {
+      return [
+        { href: '/', label: 'Dashboard', icon: Home },
+      ]
+    }
+    return [
+      { href: '/', label: 'Dashboard', icon: Home },
+    ]
+  }
+  
+  const menuItems = getMenuItems()
 
   return (
     <div className="min-h-screen bg-[#F9FAFB]">
@@ -197,7 +219,14 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     {userEmail || 'Usuário'}
                   </div>
                   <div className="text-[10px] text-zinc-500">
-                    {userRole === 'ADMIN' ? 'Administrador' : userRole === 'PRODUCAO' ? 'Produção' : userRole === 'EXPEDICAO' ? 'Expedição' : 'Carregando...'}
+                    {userRole === 'ADMIN' ? 'Administrador' 
+                      : userRole === 'CORTE_SOLDA' ? 'Corte e Solda' 
+                      : userRole === 'EXTRUSORA' ? 'Extrusora'
+                      : userRole === 'ESTOQUE' ? 'Estoque'
+                      : userRole === 'VENDAS' ? 'Vendas'
+                      : userRole === 'FINANCEIRO' ? 'Financeiro'
+                      : userRole === 'EXPEDICAO' ? 'Expedição' 
+                      : 'Carregando...'}
                   </div>
                 </div>
               </div>

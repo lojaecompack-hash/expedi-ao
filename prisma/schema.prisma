@@ -27,19 +27,26 @@ enum SyncJobStatus {
 enum UserRole {
   ADMIN
   EXPEDICAO
-  PRODUCAO
+  CORTE_SOLDA
+  EXTRUSORA
+  ESTOQUE
+  VENDAS
+  FINANCEIRO
 }
 
 enum ModulePermission {
   ADMIN
   SETTINGS
   EXPEDICAO
-  PRODUCAO
+  CORTE_SOLDA
+  EXTRUSORA
+  ESTOQUE
+  VENDAS
+  FINANCEIRO
 }
 
 enum ProductionOperatorType {
   CORTE_SOLDA
-  EXTRUSORA
 }
 
 enum ProductionOrderStatus {

@@ -6,11 +6,13 @@ import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeft, Edit, Key, Trash2 } from 'lucide-react'
 import ProductionOperatorsSection from './production-operators-section'
 
+type UserRole = 'ADMIN' | 'EXPEDICAO' | 'CORTE_SOLDA' | 'EXTRUSORA' | 'ESTOQUE' | 'VENDAS' | 'FINANCEIRO'
+
 interface User {
   id: string
   email: string
   name: string
-  role: 'ADMIN' | 'EXPEDICAO' | 'PRODUCAO'
+  role: UserRole
   isActive: boolean
 }
 
@@ -25,7 +27,7 @@ interface Operator {
 interface ProductionOperator {
   id: string
   name: string
-  type: 'CORTE_SOLDA' | 'EXTRUSORA'
+  type: 'CORTE_SOLDA'
   email: string | null
   phone: string | null
   isActive: boolean
@@ -42,7 +44,7 @@ export default function UserDetailPage() {
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
-  const [editForm, setEditForm] = useState({ name: '', role: '' as 'ADMIN' | 'EXPEDICAO' | 'PRODUCAO' })
+  const [editForm, setEditForm] = useState({ name: '', role: '' as UserRole })
   const [saving, setSaving] = useState(false)
 
   // Form state para criar operador
@@ -231,11 +233,25 @@ export default function UserDetailPage() {
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                 user.role === 'ADMIN' 
                   ? 'bg-purple-100 text-purple-800' 
-                  : user.role === 'PRODUCAO'
+                  : user.role === 'CORTE_SOLDA'
                   ? 'bg-orange-100 text-orange-800'
+                  : user.role === 'EXTRUSORA'
+                  ? 'bg-amber-100 text-amber-800'
+                  : user.role === 'ESTOQUE'
+                  ? 'bg-teal-100 text-teal-800'
+                  : user.role === 'VENDAS'
+                  ? 'bg-green-100 text-green-800'
+                  : user.role === 'FINANCEIRO'
+                  ? 'bg-pink-100 text-pink-800'
                   : 'bg-blue-100 text-blue-800'
               }`}>
-                {user.role === 'ADMIN' ? 'Administrador' : user.role === 'PRODUCAO' ? 'Produção' : 'Expedição'}
+                {user.role === 'ADMIN' ? 'Administrador' 
+                  : user.role === 'CORTE_SOLDA' ? 'Corte e Solda' 
+                  : user.role === 'EXTRUSORA' ? 'Extrusora'
+                  : user.role === 'ESTOQUE' ? 'Estoque'
+                  : user.role === 'VENDAS' ? 'Vendas'
+                  : user.role === 'FINANCEIRO' ? 'Financeiro'
+                  : 'Expedição'}
               </span>
             </div>
             <div>
@@ -271,8 +287,8 @@ export default function UserDetailPage() {
           </div>
         </div>
 
-        {/* Operadores - Apenas para usuários EXPEDIÇÃO */}
-        {user.role === 'EXPEDICAO' && (
+        {/* Operadores - Para usuários EXPEDIÇÃO, ESTOQUE, VENDAS e FINANCEIRO */}
+        {(user.role === 'EXPEDICAO' || user.role === 'ESTOQUE' || user.role === 'VENDAS' || user.role === 'FINANCEIRO') && (
           <>
             <div className="bg-white rounded-xl shadow-sm border border-zinc-200 overflow-hidden">
               <div className="px-6 py-4 border-b border-zinc-200 flex items-center justify-between">
@@ -411,8 +427,8 @@ export default function UserDetailPage() {
           </>
         )}
 
-        {/* Operadores de Produção - Apenas para usuários PRODUCAO */}
-        {user.role === 'PRODUCAO' && (
+        {/* Operadores de Produção - Apenas para usuários CORTE_SOLDA */}
+        {user.role === 'CORTE_SOLDA' && (
           <ProductionOperatorsSection
             userId={userId}
             operators={productionOperators}
@@ -442,12 +458,16 @@ export default function UserDetailPage() {
                 <label className="block text-sm font-medium text-zinc-700 mb-2">Tipo</label>
                 <select
                   value={editForm.role}
-                  onChange={(e) => setEditForm({ ...editForm, role: e.target.value as 'ADMIN' | 'EXPEDICAO' | 'PRODUCAO' })}
+                  onChange={(e) => setEditForm({ ...editForm, role: e.target.value as UserRole })}
                   className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-[#FFD700] focus:border-transparent"
                 >
                   <option value="ADMIN">Administrador</option>
                   <option value="EXPEDICAO">Expedição</option>
-                  <option value="PRODUCAO">Produção</option>
+                  <option value="CORTE_SOLDA">Corte e Solda</option>
+                  <option value="EXTRUSORA">Extrusora</option>
+                  <option value="ESTOQUE">Estoque</option>
+                  <option value="VENDAS">Vendas</option>
+                  <option value="FINANCEIRO">Financeiro</option>
                 </select>
               </div>
             </div>
