@@ -1,7 +1,9 @@
 -- ============================================
--- MIGRAÇÃO: NOVOS TIPOS DE USUÁRIO
+-- MIGRAÇÃO: NOVOS TIPOS DE USUÁRIO - ETAPA 1
 -- ============================================
--- Execute em: https://supabase.com/dashboard/project/rlmjrholbksljnuevtcu/sql
+-- Execute PRIMEIRO em: https://supabase.com/dashboard/project/rlmjrholbksljnuevtcu/sql
+
+-- IMPORTANTE: Execute esta etapa PRIMEIRO, depois execute a ETAPA 2 em uma query separada
 
 -- 1. Adicionar novos valores ao enum UserRole
 ALTER TYPE "UserRole" ADD VALUE IF NOT EXISTS 'CORTE_SOLDA';
@@ -17,8 +19,7 @@ ALTER TYPE "ModulePermission" ADD VALUE IF NOT EXISTS 'ESTOQUE';
 ALTER TYPE "ModulePermission" ADD VALUE IF NOT EXISTS 'VENDAS';
 ALTER TYPE "ModulePermission" ADD VALUE IF NOT EXISTS 'FINANCEIRO';
 
--- 3. Migrar usuários existentes de PRODUCAO para CORTE_SOLDA
-UPDATE "User" SET role = 'CORTE_SOLDA' WHERE role = 'PRODUCAO';
-
--- 4. Verificar resultado
-SELECT id, email, name, role FROM "User" ORDER BY role, name;
+-- ============================================
+-- AGUARDE 5 SEGUNDOS APÓS EXECUTAR A ETAPA 1
+-- DEPOIS EXECUTE A ETAPA 2 ABAIXO EM UMA NOVA QUERY
+-- ============================================
