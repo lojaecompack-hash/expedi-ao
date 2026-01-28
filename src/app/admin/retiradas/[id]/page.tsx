@@ -696,7 +696,7 @@ export default function DetalhesRetirada() {
                                 <img 
                                   src={ret.photo} 
                                   alt="Foto da retirada"
-                                  className="max-w-xs max-h-64 rounded-lg object-contain"
+                                  className="w-auto h-auto max-w-2xl max-h-[600px] rounded-lg object-contain"
                                 />
                                 <button
                                   onClick={() => window.open(ret.photo!, '_blank')}
@@ -936,23 +936,25 @@ export default function DetalhesRetirada() {
                 </div>
                 
                 <div className="space-y-4 mb-6">
-                  {/* Tipo de Ocorrência */}
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-700 mb-1">
-                      Tipo de Ocorrência <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={tipoOcorrencia}
-                      onChange={(e) => setTipoOcorrencia(e.target.value as 'INFORMACAO' | 'RETORNO_PRODUTO')}
-                      className="w-full px-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-[#FFD700] focus:border-transparent bg-white"
-                    >
-                      <option value="INFORMACAO">📝 Informação / Outros</option>
-                      <option value="RETORNO_PRODUTO">📦 Retorno de Produto</option>
-                    </select>
-                  </div>
+                  {/* Tipo de Ocorrência - só aparece se não houver linha aberta */}
+                  {!linhaAberta && (
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-700 mb-1">
+                        Tipo de Ocorrência <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={tipoOcorrencia}
+                        onChange={(e) => setTipoOcorrencia(e.target.value as 'INFORMACAO' | 'RETORNO_PRODUTO')}
+                        className="w-full px-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-[#FFD700] focus:border-transparent bg-white"
+                      >
+                        <option value="INFORMACAO">📝 Informação / Outros</option>
+                        <option value="RETORNO_PRODUTO">📦 Retorno de Produto</option>
+                      </select>
+                    </div>
+                  )}
 
-                  {/* Motivo do Retorno (aparece apenas se tipo = RETORNO_PRODUTO) */}
-                  {tipoOcorrencia === 'RETORNO_PRODUTO' && (
+                  {/* Motivo do Retorno (aparece apenas se tipo = RETORNO_PRODUTO e não há linha aberta) */}
+                  {!linhaAberta && tipoOcorrencia === 'RETORNO_PRODUTO' && (
                     <div>
                       <label className="block text-sm font-medium text-zinc-700 mb-1">
                         Motivo do Retorno <span className="text-red-500">*</span>
