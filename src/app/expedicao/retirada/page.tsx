@@ -138,7 +138,9 @@ function RetiradaPageContent() {
 
     setLoadingOrder(true)
     try {
-      const url = `/api/order-details?number=${encodeURIComponent(number)}`
+      // Adicionar parâmetro reRetirada se for uma re-retirada
+      const reRetiradaParam = isReRetirada ? '&reRetirada=true' : ''
+      const url = `/api/order-details?number=${encodeURIComponent(number)}${reRetiradaParam}`
       console.log('[Client] Chamando API:', url)
       
       const res = await fetch(url)
@@ -162,11 +164,15 @@ function RetiradaPageContent() {
       console.log('[Client] Definindo orderDetails:', details)
       console.log('[Client] Status do pedido:', details.situacao)
       
-      // Verificar se o status está bloqueado
+      // Verificar se o status está bloqueado (exceto para re-retiradas)
       const statusLower = (details.situacao || '').toLowerCase()
       const isBlocked = BLOCKED_STATUS.some(blocked => statusLower.includes(blocked))
       
-      if (isBlocked) {
+      // Para re-retiradas, permitir status "enviado" pois é o estado esperado
+      const isEnviado = statusLower.includes('enviado')
+      const shouldBlock = isBlocked && !(isReRetirada && isEnviado)
+      
+      if (shouldBlock) {
         console.log('[Client] Pedido bloqueado por status:', statusLower)
         const message = BLOCKED_STATUS_MESSAGES[statusLower] || 
           `Este pedido está com status "${details.situacao}" e não pode ser processado para retirada.`
@@ -175,6 +181,10 @@ function RetiradaPageContent() {
         setShowBlockedModal(true)
         setOrderDetails(null)
         return
+      }
+      
+      if (isReRetirada && isEnviado) {
+        console.log('[Client] Re-retirada permitida para pedido com status enviado')
       }
       
       setOrderDetails(details)
