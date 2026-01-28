@@ -43,47 +43,79 @@ export async function POST(req: Request) {
       )
     }
 
-    const operatorId = body.operatorId || null
-    const cpfLast4 = cpfDigits.slice(-4)
+    const cpf = String(body.cpf ?? '').trim()
+    const retrieverName = String(body.retrieverName ?? '').trim()
+    const trackingCode = String(body.trackingCode ?? '').trim()
+    const transportadora = String(body.transportadora ?? '').trim()
+    const photo = body.photo || null
 
-    // Buscar nome do operador se operatorId foi fornecido
+    // Verificar se é uma re-retirada (reenvio após retorno) ANTES de buscar na Tiny
+    const isReRetirada = !!body.retiradaAnteriorId
+    console.log('[Pickups] É re-retirada?', isReRetirada)
+    console.log('[Pickups] Dados recebidos:', { orderNumber, cpf, retrieverName, trackingCode, transportadora, isReRetirada })
+
+    // Buscar operador se fornecido
     let operatorName: string | null = null
-    if (operatorId) {
+    if (body.operatorId) {
       const operator = await prisma.operator.findUnique({
-        where: { id: operatorId },
+        where: { id: body.operatorId },
         select: { name: true }
       })
       operatorName = operator?.name || null
     }
 
-    console.log('[Pickups] Buscando pedido no Tiny:', orderNumber)
-    let pedido
-    try {
-      pedido = await getTinyOrder(orderNumber)
-      console.log('[Pickups] getTinyOrder retornou:', pedido ? 'pedido encontrado' : 'undefined')
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : 'Unknown error'
-      console.error('[Pickups] Erro ao buscar pedido:', msg)
-      throw error
-    }
+    // Se for re-retirada, buscar pedido no banco de dados ao invés da Tiny
+    let tinyOrderId: string
     
-    if (!pedido || !pedido.id) {
-      console.error('[Pickups] Pedido não encontrado ou sem ID')
-      return NextResponse.json(
-        {
-          ok: false,
-          error: 'Pedido não encontrado no Tiny para este número',
-        },
-        { status: 404 },
-      )
+    if (isReRetirada) {
+      console.log('[Pickups] Re-retirada detectada - buscando pedido no banco de dados')
+      
+      // Buscar pelo número do pedido no banco
+      const existingOrder = await prisma.order.findFirst({
+        where: { orderNumber },
+        select: { id: true, tinyOrderId: true, orderNumber: true }
+      })
+      
+      if (!existingOrder) {
+        console.error('[Pickups] Pedido não encontrado no banco de dados para re-retirada')
+        return NextResponse.json(
+          { ok: false, error: 'Pedido não encontrado no sistema para re-retirada' },
+          { status: 404 }
+        )
+      }
+      
+      tinyOrderId = existingOrder.tinyOrderId
+      console.log('[Pickups] Pedido encontrado no banco, ID Tiny:', tinyOrderId)
+    } else {
+      // Primeira retirada - buscar na Tiny normalmente
+      console.log('[Pickups] Primeira retirada - buscando pedido no Tiny:', orderNumber)
+      let pedido
+      try {
+        pedido = await getTinyOrder(orderNumber)
+        console.log('[Pickups] getTinyOrder retornou:', pedido ? 'pedido encontrado' : 'undefined')
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : 'Unknown error'
+        console.error('[Pickups] Erro ao buscar pedido:', msg)
+        throw error
+      }
+      
+      if (!pedido || !pedido.id) {
+        console.error('[Pickups] Pedido não encontrado ou sem ID')
+        return NextResponse.json(
+          {
+            ok: false,
+            error: 'Pedido não encontrado no Tiny para este número',
+          },
+          { status: 404 },
+        )
+      }
+
+      tinyOrderId = String(pedido.id)
+      console.log('[Pickups] Pedido encontrado, ID:', tinyOrderId)
     }
 
-    const tinyOrderId = String(pedido.id)
-    console.log('[Pickups] Pedido encontrado, ID:', tinyOrderId)
-
-    // Verificar se é uma re-retirada (reenvio após retorno)
-    const isReRetirada = !!body.retiradaAnteriorId
-    console.log('[Pickups] É re-retirada?', isReRetirada)
+    const operatorId = body.operatorId || null
+    const cpfLast4 = cpfDigits.slice(-4)
 
     // Verificar se pedido já foi retirado (banco de dados)
     const existingOrder = await prisma.order.findUnique({
@@ -160,16 +192,23 @@ export async function POST(req: Request) {
       where: { orderId: order.id }
     })
 
-    // Buscar detalhes completos do pedido para obter vendedor
+    // Buscar detalhes completos do pedido para obter vendedor e dados do cliente
     let vendedorNome: string | null = null
-    try {
-      const detalhes = await getTinyOrderDetails(orderNumber)
-      if (detalhes) {
-        vendedorNome = detalhes.vendedor !== 'Não informado' ? detalhes.vendedor : null
-        console.log('[Pickups] Vendedor:', vendedorNome)
+    let customerName: string | null = body.retrieverName || null
+    const customerCpfCnpj: string | null = cpfDigits || null
+    
+    if (!isReRetirada) {
+      // Apenas buscar detalhes na Tiny se for primeira retirada
+      try {
+        const detalhes = await getTinyOrderDetails(orderNumber)
+        if (detalhes) {
+          vendedorNome = detalhes.vendedor !== 'Não informado' ? detalhes.vendedor : null
+          customerName = detalhes.clienteNome || body.retrieverName || null
+          console.log('[Pickups] Vendedor:', vendedorNome)
+        }
+      } catch (err) {
+        console.log('[Pickups] Erro ao buscar detalhes:', err)
       }
-    } catch (err) {
-      console.log('[Pickups] Erro ao buscar detalhes:', err)
     }
     
     // Usar transportadora enviada pelo frontend
@@ -185,8 +224,8 @@ export async function POST(req: Request) {
           cpfLast4,
           operatorId,
           operatorName,
-          customerName: pedido.cliente?.nome || body.retrieverName || null,
-          customerCpfCnpj: pedido.cliente?.cpf_cnpj || cpfDigits || null,
+          customerName,
+          customerCpfCnpj,
           retrieverName: body.retrieverName || null,
           trackingCode: body.trackingCode || existingPickup.trackingCode || null,
           transportadora: typeof transportadoraNome === 'string' ? transportadoraNome : existingPickup.transportadora || null,
@@ -211,8 +250,8 @@ export async function POST(req: Request) {
           cpfLast4,
           operatorId,
           operatorName,
-          customerName: pedido.cliente?.nome || body.retrieverName || null,
-          customerCpfCnpj: pedido.cliente?.cpf_cnpj || cpfDigits || null,
+          customerName,
+          customerCpfCnpj,
           retrieverName: body.retrieverName || null,
           trackingCode: body.trackingCode || null,
           transportadora: typeof transportadoraNome === 'string' ? transportadoraNome : null,
