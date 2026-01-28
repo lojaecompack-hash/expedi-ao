@@ -203,6 +203,10 @@ model Pickup {
   // Campos para re-retirada (quando produto retorna)
   retiradaAnteriorId String?  // ID da retirada anterior (se for uma re-retirada)
   numeroRetirada     Int      @default(1) // 1 = primeira, 2 = segunda, etc.
+  
+  // Histórico de rastreio
+  previousTrackingCode String?   // Rastreio anterior (quando atualizado)
+  trackingUpdatedAt    DateTime? // Data da última atualização do rastreio
 
   order         Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
   operator      Operator?    @relation(fields: [operatorId], references: [id])

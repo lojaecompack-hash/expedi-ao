@@ -26,10 +26,27 @@ export async function PATCH(
       )
     }
     
-    // Atualizar apenas o trackingCode
+    // Preparar dados para atualização
+    // Se já existe um rastreio e estamos mudando, salvar o anterior
+    const updateData: {
+      trackingCode: string | null
+      previousTrackingCode?: string | null
+      trackingUpdatedAt?: Date
+    } = {
+      trackingCode: trackingCode || null
+    }
+    
+    // Se tinha rastreio anterior e o novo é diferente, salvar histórico
+    if (existingPickup.trackingCode && existingPickup.trackingCode !== trackingCode) {
+      updateData.previousTrackingCode = existingPickup.trackingCode
+      updateData.trackingUpdatedAt = new Date()
+      console.log('[Retirada PATCH API] Salvando rastreio anterior:', existingPickup.trackingCode)
+    }
+    
+    // Atualizar o pickup
     const updatedPickup = await prisma.pickup.update({
       where: { id },
-      data: { trackingCode: trackingCode || null }
+      data: updateData
     })
     
     console.log('[Retirada PATCH API] Rastreio atualizado:', updatedPickup.id)
