@@ -198,6 +198,8 @@ export default function DetalhesRetirada() {
       if (data.ok) {
         setRetirada({ ...retirada, trackingCode: trackingCode.trim() })
         setTrackingSaved(true)
+        // Limpar campo de input após salvar
+        setTrackingCode('')
         // Recarregar dados para atualizar histórico
         fetchRetirada()
         // Esconder mensagem após 3 segundos
