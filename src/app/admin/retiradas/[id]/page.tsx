@@ -108,6 +108,9 @@ export default function DetalhesRetirada() {
   const [setorAtual, setSetorAtual] = useState("")
   const [selectedSetorDestino, setSelectedSetorDestino] = useState("")
   
+  // Estado para foto expandida no histórico
+  const [fotoExpandida, setFotoExpandida] = useState<string | null>(null)
+  
   // Estados para tipo de ocorrência e motivo de retorno
   const [tipoOcorrencia, setTipoOcorrencia] = useState<'INFORMACAO' | 'RETORNO_PRODUTO'>('INFORMACAO')
   const [motivoRetorno, setMotivoRetorno] = useState('')
@@ -634,15 +637,31 @@ export default function DetalhesRetirada() {
                           </div>
                         )}
                         {ret.photo && (
-                          <div>
+                          <div className="relative">
                             <p className="text-zinc-500">Foto</p>
                             <button
-                              onClick={() => window.open(ret.photo!, '_blank')}
+                              onClick={() => setFotoExpandida(fotoExpandida === ret.id ? null : ret.id)}
                               className="text-blue-600 hover:underline font-medium flex items-center gap-1"
                             >
                               <ImageIcon className="w-3 h-3" />
-                              Ver foto
+                              {fotoExpandida === ret.id ? 'Fechar' : 'Ver foto'}
                             </button>
+                            {/* Popover da foto */}
+                            {fotoExpandida === ret.id && (
+                              <div className="absolute z-50 mt-2 p-2 bg-white border border-zinc-200 rounded-xl shadow-xl">
+                                <img 
+                                  src={ret.photo} 
+                                  alt="Foto da retirada"
+                                  className="max-w-xs max-h-64 rounded-lg object-contain"
+                                />
+                                <button
+                                  onClick={() => window.open(ret.photo!, '_blank')}
+                                  className="mt-2 text-xs text-blue-600 hover:underline w-full text-center"
+                                >
+                                  Abrir em tela cheia ↗
+                                </button>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
