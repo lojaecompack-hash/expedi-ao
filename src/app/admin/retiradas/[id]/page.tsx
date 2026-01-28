@@ -1047,42 +1047,6 @@ export default function DetalhesRetirada() {
             </div>
           )}
 
-          {/* Foto */}
-          {retirada.photo && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="bg-white rounded-2xl border border-zinc-200 p-8"
-            >
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center">
-                  <ImageIcon className="w-5 h-5 text-blue-600" />
-                </div>
-                <h2 className="text-xl font-bold text-zinc-900">Foto do Produto/Documento</h2>
-              </div>
-
-              <div className="rounded-xl overflow-hidden border border-zinc-200">
-                <img 
-                  src={retirada.photo} 
-                  alt="Foto da retirada" 
-                  className="w-full h-auto object-contain max-h-96"
-                />
-              </div>
-            </motion.div>
-          )}
-
-          {!retirada.photo && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="bg-white rounded-2xl border border-zinc-200 p-8 text-center"
-            >
-              <ImageIcon className="w-12 h-12 text-zinc-400 mx-auto mb-4" />
-              <p className="text-zinc-600">Nenhuma foto foi tirada nesta retirada</p>
-            </motion.div>
-          )}
         </div>
       </div>
     </div>
