@@ -275,6 +275,9 @@ export default function DetalhesRetirada() {
   // Obter linha do tempo aberta (se existir)
   const linhaAberta = linhasDoTempo.find(l => l.status === 'ABERTA')
   
+  // Debug: log para verificar estado das linhas
+  console.log('[Debug] linhasDoTempo:', linhasDoTempo.length, 'linhaAberta:', linhaAberta ? linhaAberta.id : 'NENHUMA')
+  
   // Linhas encerradas
   const linhasEncerradas = linhasDoTempo.filter(l => l.status === 'ENCERRADA')
 
