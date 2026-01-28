@@ -53,6 +53,8 @@ export default function LoginPage() {
           window.location.href = '/expedicao/retirada'
         } else if (userData.role === 'CORTE_SOLDA') {
           window.location.href = '/producao'
+        } else if (userData.role === 'VENDAS' || userData.role === 'FINANCEIRO') {
+          window.location.href = '/admin/relatorios/retiradas'
         } else {
           window.location.href = nextPath
         }

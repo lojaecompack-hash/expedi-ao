@@ -94,8 +94,10 @@ export async function POST(
       return NextResponse.json({ ok: false, error: 'Usuário não encontrado' }, { status: 404 })
     }
 
-    if (targetUser.role !== 'EXPEDICAO') {
-      return NextResponse.json({ ok: false, error: 'Operadores só podem ser vinculados a usuários EXPEDIÇÃO' }, { status: 400 })
+    // Aceitar EXPEDICAO, VENDAS e FINANCEIRO para operadores
+    const rolesPermitidos = ['EXPEDICAO', 'VENDAS', 'FINANCEIRO']
+    if (!rolesPermitidos.includes(targetUser.role)) {
+      return NextResponse.json({ ok: false, error: 'Operadores só podem ser vinculados a usuários de Expedição, Vendas ou Financeiro' }, { status: 400 })
     }
 
     // Hash da senha
