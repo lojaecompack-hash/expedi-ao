@@ -241,13 +241,16 @@ export default function DetalhesRetirada() {
   // Buscar usuários de um tipo específico
   const fetchUsuariosPorTipo = async (tipo: string) => {
     try {
+      console.log('[fetchUsuariosPorTipo] Buscando usuários do tipo:', tipo)
       const res = await fetch('/api/users')
       const data = await res.json()
+      console.log('[fetchUsuariosPorTipo] Resposta da API:', data)
       if (data.ok) {
         // Filtrar usuários pelo tipo (role)
         const usuariosFiltrados = data.users.filter((u: {role: string, isActive: boolean}) => 
           u.role === tipo && u.isActive
         )
+        console.log('[fetchUsuariosPorTipo] Usuários filtrados:', usuariosFiltrados)
         setUsuariosPorTipo(usuariosFiltrados)
       }
     } catch (error) {
