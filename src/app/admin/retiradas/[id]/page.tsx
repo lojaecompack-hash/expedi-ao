@@ -103,10 +103,14 @@ export default function DetalhesRetirada() {
   const [validandoOperador, setValidandoOperador] = useState(false)
   const [authError, setAuthError] = useState("")
   
-  // Estados para setor destino
-  const [setores, setSetores] = useState<{id: string, nome: string}[]>([])
-  const [setorAtual, setSetorAtual] = useState("")
-  const [selectedSetorDestino, setSelectedSetorDestino] = useState("")
+  // Estados para seleção em cascata de destino
+  const [tiposUsuario] = useState<string[]>(['VENDAS', 'FINANCEIRO', 'EXPEDIÇÃO'])
+  const [selectedTipoUsuario, setSelectedTipoUsuario] = useState("")
+  const [usuariosPorTipo, setUsuariosPorTipo] = useState<{id: string, name: string, role: string}[]>([])
+  const [selectedUsuarioId, setSelectedUsuarioId] = useState("")
+  const [operadoresDoUsuario, setOperadoresDoUsuario] = useState<Operador[]>([])
+  const [selectedOperadorDestinoId, setSelectedOperadorDestinoId] = useState("") // Operador do usuário de destino (opcional)
+  const [selectedSetorDestino, setSelectedSetorDestino] = useState("") // Mantido para compatibilidade
   
   // Estado para foto expandida no histórico
   const [fotoExpandida, setFotoExpandida] = useState<string | null>(null)
@@ -121,6 +125,37 @@ export default function DetalhesRetirada() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
+
+  // Quando seleciona tipo de usuário, buscar usuários daquele tipo
+  useEffect(() => {
+    if (selectedTipoUsuario) {
+      fetchUsuariosPorTipo(selectedTipoUsuario)
+      setSelectedUsuarioId("")
+      setSelectedOperadorDestinoId("")
+      setOperadoresDoUsuario([])
+    } else {
+      setUsuariosPorTipo([])
+      setSelectedUsuarioId("")
+      setSelectedOperadorDestinoId("")
+      setOperadoresDoUsuario([])
+    }
+  }, [selectedTipoUsuario])
+
+  // Quando seleciona usuário, buscar operadores dele
+  useEffect(() => {
+    if (selectedUsuarioId) {
+      fetchOperadoresDoUsuario(selectedUsuarioId)
+      setSelectedOperadorDestinoId("")
+      // Definir o destino como o nome do usuário selecionado
+      const usuario = usuariosPorTipo.find(u => u.id === selectedUsuarioId)
+      if (usuario) {
+        setSelectedSetorDestino(usuario.name)
+      }
+    } else {
+      setOperadoresDoUsuario([])
+      setSelectedOperadorDestinoId("")
+    }
+  }, [selectedUsuarioId, usuariosPorTipo])
 
   const fetchRetirada = async () => {
     setLoading(true)
@@ -203,17 +238,34 @@ export default function DetalhesRetirada() {
     }
   }
 
-  // Buscar setores disponíveis
-  const fetchSetores = async () => {
+  // Buscar usuários de um tipo específico
+  const fetchUsuariosPorTipo = async (tipo: string) => {
     try {
-      const res = await fetch('/api/setores')
+      const res = await fetch('/api/users')
       const data = await res.json()
       if (data.ok) {
-        setSetores(data.setores)
-        setSetorAtual(data.setorAtual)
+        // Filtrar usuários pelo tipo (role)
+        const usuariosFiltrados = data.users.filter((u: {role: string, isActive: boolean}) => 
+          u.role === tipo && u.isActive
+        )
+        setUsuariosPorTipo(usuariosFiltrados)
       }
     } catch (error) {
-      console.error('Erro ao buscar setores:', error)
+      console.error('Erro ao buscar usuários:', error)
+    }
+  }
+
+  // Buscar operadores de um usuário específico
+  const fetchOperadoresDoUsuario = async (usuarioId: string) => {
+    try {
+      const res = await fetch(`/api/users/${usuarioId}/operators`)
+      const data = await res.json()
+      if (data.ok) {
+        setOperadoresDoUsuario(data.operators || [])
+      }
+    } catch (error) {
+      console.error('Erro ao buscar operadores do usuário:', error)
+      setOperadoresDoUsuario([])
     }
   }
 
@@ -248,15 +300,7 @@ export default function DetalhesRetirada() {
 
   // Abrir modal de autenticação do operador
   const handleAdicionarClick = () => {
-    if (!novaOcorrencia.trim() || !linhaAberta) return
     fetchOperadores()
-    fetchSetores()
-    setSelectedSetorDestino("")
-    setSelectedOperadorId("")
-    setOperadorSenha("")
-    setAuthError("")
-    setTipoOcorrencia('INFORMACAO')
-    setMotivoRetorno('')
     setShowAuthModal(true)
   }
 
@@ -266,8 +310,8 @@ export default function DetalhesRetirada() {
       setAuthError("Selecione o motivo do retorno")
       return
     }
-    if (!selectedSetorDestino) {
-      setAuthError("Selecione o setor de destino da ocorrência")
+    if (!selectedTipoUsuario || !selectedUsuarioId) {
+      setAuthError("Selecione o tipo de usuário e o usuário de destino")
       return
     }
     if (!selectedOperadorId || !operadorSenha) {
@@ -304,7 +348,7 @@ export default function DetalhesRetirada() {
         body: JSON.stringify({ 
           descricao: novaOcorrencia.trim(),
           operadorNome: validarData.operador.name,
-          setorOrigem: setorAtual,
+          setorOrigem: retirada?.operatorName || 'Expedição', // Setor de origem é o operador da retirada
           setorDestino: selectedSetorDestino,
           tipoOcorrencia,
           motivoRetorno: tipoOcorrencia === 'RETORNO_PRODUTO' ? motivoRetorno : null
@@ -929,24 +973,61 @@ export default function DetalhesRetirada() {
                     </div>
                   )}
 
+                  {/* Seleção em cascata: Tipo -> Usuário -> Operador */}
                   <div>
                     <label className="block text-sm font-medium text-zinc-700 mb-1">
-                      Destino da Ocorrência <span className="text-red-500">*</span>
+                      Tipo de Usuário <span className="text-red-500">*</span>
                     </label>
                     <select
-                      value={selectedSetorDestino}
-                      onChange={(e) => setSelectedSetorDestino(e.target.value)}
+                      value={selectedTipoUsuario}
+                      onChange={(e) => setSelectedTipoUsuario(e.target.value)}
                       className="w-full px-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-[#FFD700] focus:border-transparent bg-white"
                     >
-                      <option value="">Selecione o setor...</option>
-                      {setores.map((setor) => (
-                        <option key={setor.id} value={setor.nome}>{setor.nome}</option>
+                      <option value="">Selecione o tipo...</option>
+                      {tiposUsuario.map((tipo) => (
+                        <option key={tipo} value={tipo}>{tipo}</option>
                       ))}
                     </select>
                   </div>
 
+                  {selectedTipoUsuario && (
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-700 mb-1">
+                        Usuário <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={selectedUsuarioId}
+                        onChange={(e) => setSelectedUsuarioId(e.target.value)}
+                        className="w-full px-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-[#FFD700] focus:border-transparent bg-white"
+                      >
+                        <option value="">Selecione o usuário...</option>
+                        {usuariosPorTipo.map((usuario) => (
+                          <option key={usuario.id} value={usuario.id}>{usuario.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {selectedUsuarioId && operadoresDoUsuario.length > 0 && (
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-700 mb-1">
+                        Operador de Destino (opcional)
+                      </label>
+                      <select
+                        value={selectedOperadorDestinoId}
+                        onChange={(e) => setSelectedOperadorDestinoId(e.target.value)}
+                        className="w-full px-4 py-3 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-[#FFD700] focus:border-transparent bg-white"
+                      >
+                        <option value="">Nenhum operador específico</option>
+                        {operadoresDoUsuario.map((op) => (
+                          <option key={op.id} value={op.id}>{op.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
                   <div>
-                    <label className="block text-sm font-medium text-zinc-700 mb-1">Operador</label>
+                    <label className="block text-sm font-medium text-zinc-700 mb-1">Operador Responsável <span className="text-red-500">*</span></label>
                     <select
                       value={selectedOperadorId}
                       onChange={(e) => setSelectedOperadorId(e.target.value)}
