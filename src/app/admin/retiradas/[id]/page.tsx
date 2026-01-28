@@ -572,6 +572,48 @@ export default function DetalhesRetirada() {
               </div>
             </div>
 
+            {/* Rastreio - Editável até ser retirado */}
+            <div className="mt-6 pt-6 border-t border-zinc-200">
+              <p className="text-sm text-zinc-600 mb-2">Rastreio</p>
+              {retirada.status === 'AGUARDANDO_RETIRADA' ? (
+                <div className="flex items-center gap-3">
+                  <input
+                    type="text"
+                    value={trackingCode}
+                    onChange={(e) => setTrackingCode(e.target.value)}
+                    placeholder="Digite o código de rastreio ou URL..."
+                    className="flex-1 px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-[#FFD700] focus:border-transparent"
+                  />
+                  <button
+                    onClick={saveTrackingCode}
+                    disabled={savingTracking || trackingCode === (retirada.trackingCode || '')}
+                    className="px-4 py-2 bg-[#FFD700] text-zinc-900 rounded-lg hover:bg-[#FFC700] font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    {savingTracking ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
+                    Salvar
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  {retirada.trackingCode ? (
+                    retirada.trackingCode.startsWith('http') ? (
+                      <a href={retirada.trackingCode} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">
+                        {retirada.trackingCode} ↗
+                      </a>
+                    ) : (
+                      <p className="font-medium text-zinc-900">{retirada.trackingCode}</p>
+                    )
+                  ) : (
+                    <p className="text-zinc-400 italic">Sem rastreio</p>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Produtos do Pedido */}
             {retirada.itens && (() => {
               try {
