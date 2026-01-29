@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Bell, X, Eye, AlertTriangle } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -24,12 +24,16 @@ export default function NotificacaoOcorrencia() {
   const [ocorrencias, setOcorrencias] = useState<Ocorrencia[]>([])
   const [showPopup, setShowPopup] = useState(false)
   const [ocorrenciaAtual, setOcorrenciaAtual] = useState<Ocorrencia | null>(null)
+  const isShowingRef = useRef(false) // Ref para controlar se está mostrando
 
-  // Polling simples - roda apenas uma vez ao montar e depois a cada 10s
+  // Polling simples
   useEffect(() => {
     let isMounted = true
     
     const buscarNotificacoes = async () => {
+      // Se já está mostrando popup, não buscar novas
+      if (isShowingRef.current) return
+      
       try {
         const res = await fetch('/api/ocorrencias/novas')
         if (!res.ok) return
@@ -42,14 +46,15 @@ export default function NotificacaoOcorrencia() {
           // Filtrar apenas as que ainda não foram vistas
           const novas = data.ocorrencias.filter((o: Ocorrencia) => !idsVistos.has(o.id))
           
-          if (novas.length > 0 && !showPopup) {
+          if (novas.length > 0) {
+            isShowingRef.current = true
             setOcorrencias(novas)
             setOcorrenciaAtual(novas[0])
             setShowPopup(true)
           }
         }
       } catch {
-        // Silencioso - não quebrar a UI
+        // Silencioso
       }
     }
 
@@ -63,11 +68,12 @@ export default function NotificacaoOcorrencia() {
       isMounted = false
       clearInterval(timer)
     }
-  }, []) // Sem dependências - roda apenas ao montar
+  }, [])
 
   const handleVerDetalhes = () => {
     if (ocorrenciaAtual) {
       idsVistos.add(ocorrenciaAtual.id)
+      isShowingRef.current = false // Liberar para buscar novas
       setShowPopup(false)
       if (ocorrenciaAtual.pickupId) {
         router.push(`/admin/retiradas/${ocorrenciaAtual.pickupId}`)
@@ -86,6 +92,7 @@ export default function NotificacaoOcorrencia() {
       setOcorrencias(restantes)
       setOcorrenciaAtual(restantes[0])
     } else {
+      isShowingRef.current = false // Liberar para buscar novas
       setShowPopup(false)
       setOcorrenciaAtual(null)
     }
