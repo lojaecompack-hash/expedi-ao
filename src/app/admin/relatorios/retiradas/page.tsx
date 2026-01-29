@@ -215,7 +215,7 @@ export default function RelatorioRetiradas() {
                 <option value="TODOS">Todos os Status</option>
                 <option value="AGUARDANDO_RETIRADA">⏳ Aguardando Retirada</option>
                 <option value="RETIRADO">✓ Retirado</option>
-                <option value="RETORNADO">📦 Retornado / Aguardando Re-Retirada</option>
+                <option value="RETORNADO">📦 Retornado / Aguardando Reenvio</option>
               </select>
             </div>
             <div className="flex flex-col">
