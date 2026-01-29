@@ -69,19 +69,11 @@ export async function GET() {
       where: whereCondition,
       orderBy: { createdAt: 'desc' },
       take: 10,
-      select: {
-        id: true,
-        descricao: true,
-        operadorNome: true,
-        setorOrigem: true,
-        setorDestino: true,
-        createdAt: true,
-        remetenteId: true,
+      include: {
         linhaTempo: {
-          select: {
+          include: {
             pickup: {
-              select: {
-                id: true,
+              include: {
                 order: {
                   select: {
                     orderNumber: true
