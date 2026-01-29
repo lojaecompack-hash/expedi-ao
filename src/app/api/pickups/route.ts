@@ -19,6 +19,7 @@ export async function POST(req: Request) {
       trackingCode?: string
       transportadora?: string
       photo?: string
+      photo2?: string
       dryRun?: boolean
       retiradaAnteriorId?: string  // ID da retirada anterior (se for uma re-retirada)
     }
@@ -48,8 +49,9 @@ export async function POST(req: Request) {
     const trackingCode = String(body.trackingCode ?? '').trim()
     const transportadora = String(body.transportadora ?? '').trim()
     const photo = body.photo || null
+    const photo2 = body.photo2 || null
 
-    console.log('[Pickups] Dados recebidos:', { orderNumber, cpf, retrieverName, trackingCode, transportadora })
+    console.log('[Pickups] Dados recebidos:', { orderNumber, cpf, retrieverName, trackingCode, transportadora, hasPhoto: !!photo, hasPhoto2: !!photo2 })
 
     // Buscar responsável (usuário ou operador) se fornecido
     let operatorName: string | null = null
@@ -312,6 +314,7 @@ export async function POST(req: Request) {
           vendedor: typeof vendedorNome === 'string' ? vendedorNome : null,
           status: 'RETIRADO',
           photo: body.photo || null,
+          photo2: body.photo2 || null,
           retiradaAnteriorId: body.retiradaAnteriorId || null,
           numeroRetirada,
           itens: itensJson || null,  // Salvar itens do pedido

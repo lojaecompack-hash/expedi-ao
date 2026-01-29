@@ -67,8 +67,9 @@ function RetiradaPageContent() {
   // Estados para conferência
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({})
   
-  // Estados para foto
-  const [photo, setPhoto] = useState<string | null>(null)
+  // Estados para fotos (foto1 obrigatória, foto2 opcional)
+  const [photo1, setPhoto1] = useState<string | null>(null)
+  const [photo2, setPhoto2] = useState<string | null>(null)
   const [showCamera, setShowCamera] = useState(false)
   
   // Estados para responsáveis (usuários + operadores)
@@ -391,9 +392,11 @@ function RetiradaPageContent() {
   }
 
   // Capturar foto via input file (com compressão)
-  const handlePhotoCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoCapture = async (e: React.ChangeEvent<HTMLInputElement>, photoNumber: 1 | 2) => {
     const file = e.target.files?.[0]
     if (!file) return
+
+    const setPhoto = photoNumber === 1 ? setPhoto1 : setPhoto2
 
     try {
       // Comprimir imagem para max 800px largura e 60% qualidade
@@ -411,8 +414,12 @@ function RetiradaPageContent() {
   }
 
   // Limpar foto
-  const clearPhoto = () => {
-    setPhoto(null)
+  const clearPhoto = (photoNumber: 1 | 2) => {
+    if (photoNumber === 1) {
+      setPhoto1(null)
+    } else {
+      setPhoto2(null)
+    }
   }
 
   // Salvar rastreio parcialmente (antes da retirada completa)
@@ -530,10 +537,10 @@ function RetiradaPageContent() {
       return
     }
 
-    // Foto é obrigatória
-    if (!photo) {
+    // Foto 1 é obrigatória
+    if (!photo1) {
       setSuccess(false)
-      setResult("❌ Tire uma foto do produto/documento")
+      setResult("❌ Tire a foto principal do produto/documento")
       setTimeout(() => setResult(""), 10000)
       return
     }
@@ -574,7 +581,8 @@ function RetiradaPageContent() {
           operatorId: operatorId,
           retrieverName: retrieverName.trim(),
           transportadora: transportadoraSelecionada.trim(),
-          photo: photo || null,
+          photo: photo1 || null,
+          photo2: photo2 || null,
           retiradaAnteriorId: retiradaAnteriorId || null,
         }),
       })
@@ -612,7 +620,8 @@ function RetiradaPageContent() {
           setRetrieverName("")
           setOrderDetails(null)
           setCheckedItems({})
-          setPhoto(null)
+          setPhoto1(null)
+          setPhoto2(null)
           setResult("")
         }, 3000)
       } else {
@@ -845,33 +854,80 @@ function RetiradaPageContent() {
                   )}
                 </div>
 
-                {/* Campo de Foto */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-zinc-900">Foto do Produto/Documento *</label>
-                  <div className="space-y-3">
-                    <label className="w-full bg-[#FFD700] text-zinc-900 font-semibold py-3 px-6 rounded-xl hover:bg-[#FFC700] transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer">
-                      <span className="text-2xl">📷</span>
-                      <span>{photo ? 'Tirar nova foto' : 'Tirar foto'}</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        capture="environment"
-                        onChange={handlePhotoCapture}
-                        className="hidden"
-                      />
+                {/* Campos de Fotos */}
+                <div className="space-y-4">
+                  {/* Foto 1 - Obrigatória */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-zinc-900">
+                      📷 Foto Principal *
+                      <span className="text-xs text-zinc-500 ml-2">(obrigatória)</span>
                     </label>
-                    {photo && (
-                      <div className="relative">
-                        <img src={photo} alt="Preview" className="w-full h-48 object-cover rounded-lg border border-zinc-200" />
-                        <button
-                          type="button"
-                          onClick={clearPhoto}
-                          className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 transition-colors"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    )}
+                    <div className="space-y-3">
+                      <label className={`w-full font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer ${
+                        photo1 
+                          ? 'bg-green-100 text-green-800 hover:bg-green-200 border-2 border-green-400' 
+                          : 'bg-[#FFD700] text-zinc-900 hover:bg-[#FFC700]'
+                      }`}>
+                        <span className="text-2xl">{photo1 ? '✅' : '📷'}</span>
+                        <span>{photo1 ? 'Foto 1 ✓ (trocar)' : 'Tirar foto 1'}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          onChange={(e) => handlePhotoCapture(e, 1)}
+                          className="hidden"
+                        />
+                      </label>
+                      {photo1 && (
+                        <div className="relative">
+                          <img src={photo1} alt="Foto 1" className="w-full h-40 object-cover rounded-lg border-2 border-green-400" />
+                          <button
+                            type="button"
+                            onClick={() => clearPhoto(1)}
+                            className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 transition-colors"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Foto 2 - Opcional */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-zinc-900">
+                      📷 Foto Adicional
+                      <span className="text-xs text-zinc-500 ml-2">(opcional)</span>
+                    </label>
+                    <div className="space-y-3">
+                      <label className={`w-full font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer ${
+                        photo2 
+                          ? 'bg-blue-100 text-blue-800 hover:bg-blue-200 border-2 border-blue-400' 
+                          : 'bg-zinc-200 text-zinc-700 hover:bg-zinc-300'
+                      }`}>
+                        <span className="text-2xl">{photo2 ? '✅' : '📷'}</span>
+                        <span>{photo2 ? 'Foto 2 ✓ (trocar)' : 'Tirar foto 2'}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          onChange={(e) => handlePhotoCapture(e, 2)}
+                          className="hidden"
+                        />
+                      </label>
+                      {photo2 && (
+                        <div className="relative">
+                          <img src={photo2} alt="Foto 2" className="w-full h-40 object-cover rounded-lg border-2 border-blue-400" />
+                          <button
+                            type="button"
+                            onClick={() => clearPhoto(2)}
+                            className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 transition-colors"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 

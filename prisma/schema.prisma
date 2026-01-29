@@ -196,6 +196,7 @@ model Pickup {
   vendedor        String?   // Nome do vendedor do pedido (vem do Tiny)
   status          String    @default("RETIRADO") // AGUARDANDO_RETIRADA, RETIRADO ou RETORNADO
   photo           String?   @db.Text
+  photo2          String?   @db.Text
   createdAt       DateTime  @default(now())
   
   // Itens do pedido (JSON) - salvos da Tiny para re-retiradas
