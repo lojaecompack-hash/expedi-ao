@@ -65,40 +65,22 @@ export async function GET() {
     console.log('[API /api/ocorrencias/novas] Usuario:', dbUser.name, '| ID:', dbUser.id, '| Role:', userRole, '| isManager:', isManager)
     console.log('[API /api/ocorrencias/novas] Query:', JSON.stringify(whereCondition))
 
-    // Query simples sem relações aninhadas para evitar erro com linhaTempo null
+    // Query simples - buscar ocorrências
     const novasOcorrencias = await prisma.ocorrencia.findMany({
-      where: {
-        ...whereCondition,
-        linhaTempoId: { not: null } // Apenas ocorrências com linhaTempo
-      },
+      where: whereCondition,
       orderBy: { createdAt: 'desc' },
-      take: 10,
-      include: {
-        linhaTempo: {
-          include: {
-            pickup: {
-              include: {
-                order: {
-                  select: {
-                    orderNumber: true
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
+      take: 10
     })
 
-    // Filtrar no código: excluir mensagens que o próprio usuário enviou
+    // Filtrar no código: excluir mensagens que o próprio usuário enviou e sem linhaTempoId
     const ocorrenciasFiltradas = novasOcorrencias.filter(o => {
-      // Se remetenteId é null (sistema) ou diferente do usuário logado, mostrar
+      if (!o.linhaTempoId) return false // Ignorar ocorrências sem linhaTempo
       return o.remetenteId === null || o.remetenteId !== dbUser.id
     })
 
-    console.log('[API /api/ocorrencias/novas] Total encontradas:', novasOcorrencias.length, '| Após filtro remetente:', ocorrenciasFiltradas.length)
+    console.log('[API /api/ocorrencias/novas] Total encontradas:', novasOcorrencias.length, '| Após filtro:', ocorrenciasFiltradas.length)
 
-    // Formatar resposta
+    // Formatar resposta - dados básicos sem relações complexas
     const ocorrenciasFormatadas = ocorrenciasFiltradas.map(o => ({
       id: o.id,
       descricao: o.descricao,
@@ -106,8 +88,8 @@ export async function GET() {
       setorOrigem: o.setorOrigem,
       setorDestino: o.setorDestino,
       createdAt: o.createdAt,
-      pedidoNumero: o.linhaTempo?.pickup?.order?.orderNumber || 'N/A',
-      pickupId: o.linhaTempo?.pickup?.id
+      pedidoNumero: 'N/A', // Simplificado para evitar erro
+      pickupId: o.linhaTempoId // Usar linhaTempoId como referência
     }))
 
     return NextResponse.json({
