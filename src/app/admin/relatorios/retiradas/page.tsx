@@ -466,7 +466,7 @@ export default function RelatorioRetiradas() {
                             </span>
                           ) : retirada.numeroRetirada > 1 ? (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-[11px] font-medium">
-                              🔄 Re-Retirado
+                              🔄 Reenviado
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded text-[11px] font-medium">
