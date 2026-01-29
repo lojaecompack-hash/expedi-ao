@@ -65,8 +65,12 @@ export async function GET() {
     console.log('[API /api/ocorrencias/novas] Usuario:', dbUser.name, '| ID:', dbUser.id, '| Role:', userRole, '| isManager:', isManager)
     console.log('[API /api/ocorrencias/novas] Query:', JSON.stringify(whereCondition))
 
+    // Query simples sem relações aninhadas para evitar erro com linhaTempo null
     const novasOcorrencias = await prisma.ocorrencia.findMany({
-      where: whereCondition,
+      where: {
+        ...whereCondition,
+        linhaTempoId: { not: null } // Apenas ocorrências com linhaTempo
+      },
       orderBy: { createdAt: 'desc' },
       take: 10,
       include: {
