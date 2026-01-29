@@ -14,11 +14,12 @@ export async function GET() {
   try {
     const responsaveis: Responsavel[] = []
 
-    // 1. Buscar usuários do tipo EXPEDICAO que estão ativos
+    // 1. Buscar usuários do tipo EXPEDICAO que estão ativos E NÃO possuem operadores vinculados
     const usuarios = await prisma.user.findMany({
       where: {
         role: 'EXPEDICAO',
-        isActive: true
+        isActive: true,
+        operators: { none: {} } // Excluir usuários que têm operadores
       },
       select: {
         id: true,

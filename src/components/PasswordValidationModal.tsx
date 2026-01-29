@@ -55,7 +55,7 @@ export default function PasswordValidationModal({
               <Lock className="w-5 h-5 text-[#FFD700]" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-zinc-900">Validar Operador</h3>
+              <h3 className="text-lg font-semibold text-zinc-900">Validar Responsável</h3>
               <p className="text-sm text-zinc-600">{operatorName}</p>
             </div>
           </div>
