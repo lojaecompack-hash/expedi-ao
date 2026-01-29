@@ -399,7 +399,8 @@ export async function POST(req: Request) {
                 operadorNome: 'Sistema',
                 tipoOcorrencia: 'INFORMACAO',
                 statusOcorrencia: 'PENDENTE', // PENDENTE para aparecer na lista de notificações
-                destinatarioId: participanteId
+                destinatarioId: participanteId,
+                remetenteId: 'SISTEMA' // Identificador fixo para mensagens do sistema
               }
             })
           }
