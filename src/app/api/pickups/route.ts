@@ -51,14 +51,34 @@ export async function POST(req: Request) {
 
     console.log('[Pickups] Dados recebidos:', { orderNumber, cpf, retrieverName, trackingCode, transportadora })
 
-    // Buscar operador se fornecido
+    // Buscar responsável (usuário ou operador) se fornecido
     let operatorName: string | null = null
+    let operatorId: string | null = null
+    
     if (body.operatorId) {
-      const operator = await prisma.operator.findUnique({
-        where: { id: body.operatorId },
-        select: { name: true }
-      })
-      operatorName = operator?.name || null
+      const isUser = body.operatorId.startsWith('user_')
+      const isOperator = body.operatorId.startsWith('op_')
+      const realId = isUser ? body.operatorId.replace('user_', '') : 
+                     isOperator ? body.operatorId.replace('op_', '') : 
+                     body.operatorId
+      
+      if (isUser) {
+        // É um usuário - buscar nome do usuário, operatorId fica NULL (não tem FK para User)
+        const user = await prisma.user.findUnique({
+          where: { id: realId },
+          select: { name: true }
+        })
+        operatorName = user?.name || null
+        operatorId = null // Não salvar FK para operador
+      } else {
+        // É um operador - buscar nome e salvar ID real
+        const operator = await prisma.operator.findUnique({
+          where: { id: realId },
+          select: { name: true }
+        })
+        operatorName = operator?.name || null
+        operatorId = realId // Salvar ID real do operador
+      }
     }
 
     // NOVA ABORDAGEM: Verificar se existe pickup anterior com status RETORNADO
