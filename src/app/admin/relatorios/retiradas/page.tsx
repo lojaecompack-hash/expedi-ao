@@ -184,13 +184,11 @@ export default function RelatorioRetiradas() {
       transportadoraFilter === "TODOS" || 
       r.transportadora === transportadoraFilter
     
-    // Filtro de ocorrências
+    // Filtro de ocorrências (focado em comunicação)
     const matchesOcorrencia = 
       ocorrenciaFilter === "TODOS" || 
       (ocorrenciaFilter === "COM_ABERTA" && r.ocorrenciasAbertas > 0) ||
-      (ocorrenciaFilter === "SEM_OCORRENCIA" && r.totalOcorrencias === 0) ||
-      (ocorrenciaFilter === "COM_RETORNO" && r.status === "RETORNADO") ||
-      (ocorrenciaFilter === "AGUARDANDO_RERETIRADA" && r.status === "RETORNADO")
+      (ocorrenciaFilter === "SEM_OCORRENCIA" && r.totalOcorrencias === 0)
     
     return matchesSearch && matchesStatus && matchesVendedor && matchesTransportadora && matchesOcorrencia
   })
@@ -215,9 +213,9 @@ export default function RelatorioRetiradas() {
                 className="px-3 py-2 text-tiny border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent bg-white min-w-[160px]"
               >
                 <option value="TODOS">Todos os Status</option>
-                <option value="AGUARDANDO_RETIRADA">Aguardando Retirada</option>
-                <option value="RETIRADO">Retirado</option>
-                <option value="RETORNADO">📦 Retornado</option>
+                <option value="AGUARDANDO_RETIRADA">⏳ Aguardando Retirada</option>
+                <option value="RETIRADO">✓ Retirado</option>
+                <option value="RETORNADO">📦 Retornado / Aguardando Re-Retirada</option>
               </select>
             </div>
             <div className="flex flex-col">
@@ -254,10 +252,8 @@ export default function RelatorioRetiradas() {
                 className="px-3 py-2 text-tiny border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent bg-white min-w-[160px]"
               >
                 <option value="TODOS">Todas</option>
-                <option value="COM_ABERTA">Com Ocorrência Aberta</option>
-                <option value="SEM_OCORRENCIA">Sem Ocorrência</option>
-                <option value="COM_RETORNO">📦 Com Retorno</option>
-                <option value="AGUARDANDO_RERETIRADA">🔄 Aguardando Re-Retirada</option>
+                <option value="COM_ABERTA">🔴 Com Ocorrência Aberta</option>
+                <option value="SEM_OCORRENCIA">⚪ Sem Ocorrência</option>
               </select>
             </div>
             <div className="flex flex-col">
