@@ -323,36 +323,20 @@ export async function POST(req: Request) {
       })
       console.log('[Pickups] Pickup criado com status RETIRADO:', pickup.id, 'Retirada #' + numeroRetirada, body.retiradaAnteriorId ? '(re-retirada de ' + body.retiradaAnteriorId + ')' : '')
       
-      // AUTO-ENCERRAMENTO: Se é re-retirada, encerrar linha aberta do pickup anterior e notificar participantes
+      // AUTO-ENCERRAMENTO: Se é re-retirada, encerrar TODAS as linhas abertas do pickup anterior
       if (isReRetirada && existingPickupWithReturn) {
-        console.log('[Pickups] Iniciando auto-encerramento da ocorrência anterior...')
+        console.log('[Pickups] Iniciando auto-encerramento das ocorrências anteriores...')
         
-        // Buscar linha aberta do pickup anterior
-        const linhaAberta = await prisma.linhaTempoOcorrencia.findFirst({
+        // Buscar TODAS as linhas abertas do pickup anterior
+        const linhasAbertas = await prisma.linhaTempoOcorrencia.findMany({
           where: {
             pickupId: existingPickupWithReturn.id,
             status: 'ABERTA'
-          },
-          include: {
-            ocorrencias: {
-              select: {
-                remetenteId: true,
-                destinatarioId: true
-              }
-            }
           }
         })
         
-        if (linhaAberta) {
-          console.log('[Pickups] Linha aberta encontrada:', linhaAberta.id, '- Encerrando...')
-          
-          // Coletar participantes únicos (remetentes e destinatários)
-          const participantesSet = new Set<string>()
-          linhaAberta.ocorrencias.forEach(oc => {
-            if (oc.remetenteId) participantesSet.add(oc.remetenteId)
-            if (oc.destinatarioId) participantesSet.add(oc.destinatarioId)
-          })
-          const participantes = Array.from(participantesSet)
+        if (linhasAbertas.length > 0) {
+          console.log('[Pickups]', linhasAbertas.length, 'linha(s) aberta(s) encontrada(s) - Encerrando...')
           
           // Formatar data/hora
           const dataFormatada = new Date().toLocaleString('pt-BR', {
@@ -363,13 +347,13 @@ export async function POST(req: Request) {
             minute: '2-digit'
           })
           
-          // Mensagem de encerramento
+          // Mensagem de encerramento (será criada apenas UMA VEZ na primeira linha)
           const mensagemEncerramento = `✅ REENVIO REALIZADO\n\nLiberado por: ${operatorName || 'Sistema'}\nData: ${dataFormatada}\n\nCaso encerrado automaticamente.`
           
-          // Criar ocorrência de encerramento na linha
+          // Criar ocorrência de encerramento APENAS na primeira linha
           await prisma.ocorrencia.create({
             data: {
-              linhaTempoId: linhaAberta.id,
+              linhaTempoId: linhasAbertas[0].id,
               descricao: mensagemEncerramento,
               operadorNome: 'Sistema',
               tipoOcorrencia: 'INFORMACAO',
@@ -377,9 +361,12 @@ export async function POST(req: Request) {
             }
           })
           
-          // Encerrar a linha do tempo
-          await prisma.linhaTempoOcorrencia.update({
-            where: { id: linhaAberta.id },
+          // Encerrar TODAS as linhas do tempo (silenciosamente, sem criar mais ocorrências)
+          await prisma.linhaTempoOcorrencia.updateMany({
+            where: {
+              pickupId: existingPickupWithReturn.id,
+              status: 'ABERTA'
+            },
             data: {
               status: 'ENCERRADA',
               encerradoEm: new Date(),
@@ -387,25 +374,7 @@ export async function POST(req: Request) {
             }
           })
           
-          // Notificar cada participante (exceto quem fez o reenvio, se tiver ID)
-          for (const participanteId of participantes) {
-            // Não notificar quem fez o reenvio
-            if (operatorId && participanteId === operatorId) continue
-            
-            await prisma.ocorrencia.create({
-              data: {
-                linhaTempoId: linhaAberta.id,
-                descricao: mensagemEncerramento,
-                operadorNome: 'Sistema',
-                tipoOcorrencia: 'INFORMACAO',
-                statusOcorrencia: 'PENDENTE', // PENDENTE para aparecer na lista de notificações
-                destinatarioId: participanteId,
-                remetenteId: 'SISTEMA' // Identificador fixo para mensagens do sistema
-              }
-            })
-          }
-          
-          console.log('[Pickups] Linha encerrada e', participantes.length, 'participantes notificados')
+          console.log('[Pickups] Todas as', linhasAbertas.length, 'linha(s) encerrada(s) com UMA mensagem de reenvio')
         } else {
           console.log('[Pickups] Nenhuma linha aberta encontrada para encerrar')
         }

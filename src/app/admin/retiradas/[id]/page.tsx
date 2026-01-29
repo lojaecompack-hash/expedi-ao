@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { Package, Truck, User, Calendar, ArrowLeft, Image as ImageIcon, Edit2, Save, X, Loader2, AlertTriangle, CheckCircle, Plus, ChevronDown, ChevronUp, RotateCcw } from "lucide-react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
+import NotificacaoOcorrencia from "@/components/NotificacaoOcorrencia"
 
 interface Operador {
   id: string
@@ -1081,6 +1082,7 @@ export default function DetalhesRetirada() {
 
         </div>
       </div>
+      <NotificacaoOcorrencia />
     </div>
   )
 }
