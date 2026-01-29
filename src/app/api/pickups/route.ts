@@ -153,7 +153,6 @@ export async function POST(req: Request) {
       console.log('[Pickups] Pedido encontrado, ID:', tinyOrderId)
     }
 
-    const operatorId = body.operatorId || null
     const cpfLast4 = cpfDigits.slice(-4)
 
     // Verificar se pedido já foi retirado (banco de dados)
