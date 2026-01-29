@@ -832,10 +832,11 @@ export default function DetalhesRetirada() {
                         </div>
                       )}
 
-                      {/* Botão de Ocorrência - DENTRO de cada card, apenas se status NÃO é RETORNADO */}
-                      {ret.status !== 'RETORNADO' && usuarioLogado && usuarioLogado.email !== 'expedicao@ecompack.com.br' && (
-                        <div className="mt-4 pt-4 border-t border-zinc-200 flex justify-center">
-                          {ret.linhasDoTempo?.some(l => l.status === 'ABERTA') ? (
+                      {/* Botão de Ocorrência - DENTRO de cada card */}
+                      {/* Aparece se: tem linha ABERTA (continuar conversa) OU (não é RETORNADO e não tem linha aberta = criar primeira) */}
+                      {usuarioLogado && usuarioLogado.email !== 'expedicao@ecompack.com.br' && (
+                        ret.linhasDoTempo?.some(l => l.status === 'ABERTA') ? (
+                          <div className="mt-4 pt-4 border-t border-zinc-200 flex justify-center">
                             <button
                               onClick={handleAdicionarClick}
                               className="px-5 py-2.5 bg-[#FFD700] text-zinc-900 rounded-xl hover:bg-[#FFC700] font-medium flex items-center gap-2 shadow-md text-sm"
@@ -843,7 +844,9 @@ export default function DetalhesRetirada() {
                               <Plus className="w-4 h-4" />
                               Adicionar Ocorrência
                             </button>
-                          ) : (
+                          </div>
+                        ) : ret.status !== 'RETORNADO' ? (
+                          <div className="mt-4 pt-4 border-t border-zinc-200 flex justify-center">
                             <button
                               onClick={handleAdicionarClick}
                               className="px-5 py-2.5 bg-[#FFD700] text-zinc-900 rounded-xl hover:bg-[#FFC700] font-medium flex items-center gap-2 shadow-md text-sm"
@@ -851,8 +854,8 @@ export default function DetalhesRetirada() {
                               <Plus className="w-4 h-4" />
                               Registrar Primeira Ocorrência
                             </button>
-                          )}
-                        </div>
+                          </div>
+                        ) : null
                       )}
                     </div>
                   </div>
