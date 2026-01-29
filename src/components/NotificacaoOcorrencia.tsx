@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Bell, X, Eye, AlertTriangle } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -21,52 +21,52 @@ export default function NotificacaoOcorrencia() {
   const [ocorrencias, setOcorrencias] = useState<Ocorrencia[]>([])
   const [showPopup, setShowPopup] = useState(false)
   const [ocorrenciaAtual, setOcorrenciaAtual] = useState<Ocorrencia | null>(null)
-  const ocorrenciasVistasRef = useRef<Set<string>>(new Set())
+  const [ultimaVerificacao, setUltimaVerificacao] = useState<string | null>(null)
+  const [ocorrenciasVistas, setOcorrenciasVistas] = useState<Set<string>>(new Set())
 
-  const verificarNovasOcorrencias = useCallback(async () => {
-    try {
-      console.log('[Notificacao] Verificando novas ocorrências...')
-      
-      const res = await fetch('/api/ocorrencias/novas')
-      const data = await res.json()
-
-      console.log('[Notificacao] Resposta API:', data)
-
-      if (data.ok && data.ocorrencias && data.ocorrencias.length > 0) {
-        // Filtrar ocorrências que ainda não foram vistas
-        const novas = data.ocorrencias.filter((o: Ocorrencia) => !ocorrenciasVistasRef.current.has(o.id))
-        
-        console.log('[Notificacao] Ocorrências novas (não vistas):', novas.length)
-        
-        if (novas.length > 0) {
-          setOcorrencias(novas)
-          setOcorrenciaAtual(novas[0])
-          setShowPopup(true)
-          console.log('[Notificacao] Mostrando popup com:', novas[0])
-        }
-      } else {
-        console.log('[Notificacao] Nenhuma ocorrência encontrada ou API retornou erro')
-      }
-    } catch (error) {
-      console.error('[Notificacao] Erro ao verificar ocorrências:', error)
-    }
-  }, [])
-
-  // Polling para verificar novas ocorrências
+  // Polling para verificar novas ocorrências a cada 30 segundos
   useEffect(() => {
+    const verificarNovasOcorrencias = async () => {
+      try {
+        let url = '/api/ocorrencias/novas'
+        if (ultimaVerificacao) {
+          url += `?desde=${encodeURIComponent(ultimaVerificacao)}`
+        }
+
+        const res = await fetch(url)
+        const data = await res.json()
+
+        if (data.ok && data.ocorrencias.length > 0) {
+          // Filtrar ocorrências que ainda não foram vistas
+          const novas = data.ocorrencias.filter((o: Ocorrencia) => !ocorrenciasVistas.has(o.id))
+          
+          if (novas.length > 0) {
+            setOcorrencias(novas)
+            setOcorrenciaAtual(novas[0])
+            setShowPopup(true)
+          }
+        }
+
+        // Atualizar timestamp da última verificação
+        setUltimaVerificacao(new Date().toISOString())
+      } catch (error) {
+        console.error('Erro ao verificar ocorrências:', error)
+      }
+    }
+
     // Verificar imediatamente ao montar
     verificarNovasOcorrencias()
 
-    // Configurar polling a cada 15 segundos (mais frequente para debug)
-    const interval = setInterval(verificarNovasOcorrencias, 15000)
+    // Configurar polling a cada 30 segundos
+    const interval = setInterval(verificarNovasOcorrencias, 30000)
 
     return () => clearInterval(interval)
-  }, [verificarNovasOcorrencias])
+  }, [ultimaVerificacao, ocorrenciasVistas])
 
   const handleVerDetalhes = () => {
     if (ocorrenciaAtual?.pickupId) {
       // Marcar como vista
-      ocorrenciasVistasRef.current.add(ocorrenciaAtual.id)
+      setOcorrenciasVistas(prev => new Set([...prev, ocorrenciaAtual.id]))
       setShowPopup(false)
       router.push(`/admin/retiradas/${ocorrenciaAtual.pickupId}`)
     }
@@ -75,7 +75,7 @@ export default function NotificacaoOcorrencia() {
   const handleFechar = () => {
     if (ocorrenciaAtual) {
       // Marcar como vista
-      ocorrenciasVistasRef.current.add(ocorrenciaAtual.id)
+      setOcorrenciasVistas(prev => new Set([...prev, ocorrenciaAtual.id]))
     }
     
     // Se houver mais ocorrências, mostrar a próxima
