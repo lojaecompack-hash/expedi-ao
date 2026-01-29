@@ -837,7 +837,7 @@ export default function DetalhesRetirada() {
             </div>
 
             {/* Botão para Registrar Nova Ocorrência - oculto para usuários EXPEDICAO */}
-            {usuarioLogado?.role !== 'EXPEDICAO' && (
+            {usuarioLogado && usuarioLogado.role !== 'EXPEDICAO' && (
               <div className="mt-6 flex justify-center">
                 {linhaAberta ? (
                   <button
