@@ -104,7 +104,7 @@ export default function DetalhesRetirada() {
   const [authError, setAuthError] = useState("")
   
   // Estados para seleção em cascata de destino
-  const [tiposUsuario] = useState<string[]>(['VENDAS', 'FINANCEIRO'])
+  const [tiposUsuario] = useState<string[]>(['VENDAS', 'FINANCEIRO', 'EXPEDICAO'])
   const [selectedTipoUsuario, setSelectedTipoUsuario] = useState("")
   const [usuariosPorTipo, setUsuariosPorTipo] = useState<{id: string, name: string, role: string}[]>([])
   const [selectedUsuarioId, setSelectedUsuarioId] = useState("")

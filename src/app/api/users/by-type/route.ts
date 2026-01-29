@@ -25,10 +25,14 @@ export async function GET(req: Request) {
     console.log('[API /api/users/by-type] Usuário autenticado:', authUser.email)
 
     // Buscar usuários do tipo especificado que estão ativos
+    // Excluir o email expedicao@ecompack.com.br (usuário de leitura apenas)
     const usuarios = await prisma.user.findMany({
       where: {
         role: tipo as 'VENDAS' | 'FINANCEIRO' | 'EXPEDICAO',
-        isActive: true
+        isActive: true,
+        email: {
+          not: 'expedicao@ecompack.com.br'
+        }
       },
       select: {
         id: true,
