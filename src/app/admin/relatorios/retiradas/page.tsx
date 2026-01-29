@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Package, Truck, User, Search, Eye, AlertTriangle, Trash2, X } from "lucide-react"
 import Link from "next/link"
 import MainLayout from "@/components/MainLayout"
+import HelpDrawer from "@/components/HelpDrawer"
 import { useRouter } from "next/navigation"
 
 interface Retirada {
@@ -197,9 +198,12 @@ export default function RelatorioRetiradas() {
     <MainLayout>
       <div className="space-y-8">
         {/* Header */}
-        <div>
-          <h1 className="text-lg font-bold text-zinc-900">Relatório de Retiradas</h1>
-          <p className="text-xs text-zinc-600 mt-1">Visualize todas as retiradas realizadas</p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-lg font-bold text-zinc-900">Relatório de Retiradas</h1>
+            <p className="text-xs text-zinc-600 mt-1">Visualize todas as retiradas realizadas</p>
+          </div>
+          <HelpDrawer context="relatorios" />
         </div>
 
           {/* Filters */}

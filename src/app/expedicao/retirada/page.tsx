@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { CheckCircle, AlertCircle, User, Settings, Package, Truck, Camera, X, RotateCcw } from "lucide-react"
 import MainLayout from "@/components/MainLayout"
 import PasswordValidationModal from "@/components/PasswordValidationModal"
+import HelpDrawer from "@/components/HelpDrawer"
 import { Html5Qrcode } from "html5-qrcode"
 import { useSearchParams } from "next/navigation"
 
@@ -740,7 +741,10 @@ function RetiradaPageContent() {
             className="max-w-2xl mx-auto space-y-8"
           >
             {/* Header Section */}
-            <div className="text-center space-y-4">
+            <div className="text-center space-y-4 relative">
+              <div className="absolute top-0 right-0">
+                <HelpDrawer context="retirada" />
+              </div>
               <div className="w-16 h-16 bg-[#FFD700]/20 rounded-2xl flex items-center justify-center mx-auto">
                 <Truck className="w-8 h-8 text-[#FFD700]" />
               </div>
