@@ -100,11 +100,20 @@ export default function MainLayout({ children }: MainLayoutProps) {
         { href: '/producao/conferencia', label: 'Conferência', icon: BarChart3 },
       ]
     } else if (userRole === 'EXPEDICAO' || userRole === 'ESTOQUE') {
-      return [
+      // Apenas expedicao@ecompack.com.br pode ver o menu Retirada
+      const canAccessRetirada = userEmail === 'expedicao@ecompack.com.br'
+      
+      const items = [
         { href: '/', label: 'Dashboard', icon: Home },
-        { href: '/expedicao/retirada', label: 'Retirada', icon: Truck },
-        { href: '/admin/relatorios/retiradas', label: 'Relatórios', icon: BarChart3 },
       ]
+      
+      if (canAccessRetirada) {
+        items.push({ href: '/expedicao/retirada', label: 'Retirada', icon: Truck })
+      }
+      
+      items.push({ href: '/admin/relatorios/retiradas', label: 'Relatórios', icon: BarChart3 })
+      
+      return items
     } else if (userRole === 'VENDAS' || userRole === 'FINANCEIRO') {
       return [
         { href: '/', label: 'Dashboard', icon: Home },
