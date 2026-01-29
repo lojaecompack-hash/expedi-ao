@@ -11,16 +11,11 @@ CREATE INDEX IF NOT EXISTS "Ocorrencia_remetenteId_idx" ON "Ocorrencia"("remeten
 CREATE INDEX IF NOT EXISTS "Ocorrencia_destinatarioId_idx" ON "Ocorrencia"("destinatarioId");
 CREATE INDEX IF NOT EXISTS "Ocorrencia_destinatarioTipo_idx" ON "Ocorrencia"("destinatarioTipo");
 
--- 3. Marcar os gerentes (Patrícia, Soraia e Rodrigo)
-UPDATE "User" SET "isManager" = true WHERE name = 'Patrícia Esteves';
-UPDATE "User" SET "isManager" = true WHERE name = 'Soraia Mello';
-UPDATE "User" SET "isManager" = true WHERE name = 'Rodrigo';
-
--- 4. Verificar se os gerentes foram marcados corretamente
-SELECT name, email, role, "isManager" FROM "User" WHERE "isManager" = true;
-
--- 5. Verificar se as colunas foram adicionadas
+-- 3. Verificar se as colunas foram adicionadas
 SELECT column_name, data_type 
 FROM information_schema.columns 
 WHERE table_name = 'Ocorrencia' 
 AND column_name IN ('remetenteId', 'destinatarioId', 'destinatarioTipo');
+
+-- NOTA: Os gerentes agora são gerenciados dinamicamente pela interface!
+-- Acesse /usuarios e clique no botão "Gerente" para marcar/desmarcar usuários.

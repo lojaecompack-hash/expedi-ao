@@ -13,6 +13,7 @@ interface User {
   name: string
   role: UserRole
   isActive: boolean
+  isManager: boolean
 }
 
 export default function UsuariosPage() {
@@ -130,6 +131,27 @@ export default function UsuariosPage() {
     }
   }
 
+  const handleToggleManager = async (userId: string, currentValue: boolean) => {
+    try {
+      const res = await fetch(`/api/users/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isManager: !currentValue })
+      })
+
+      const data = await res.json()
+
+      if (data.ok) {
+        fetchUsers()
+      } else {
+        alert(data.error || 'Erro ao atualizar usuário')
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar usuário:', error)
+      alert('Erro ao atualizar usuário')
+    }
+  }
+
   return (
     <MainLayout>
       <div className="space-y-8">
@@ -153,6 +175,9 @@ export default function UsuariosPage() {
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">
                         Tipo
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                        Gerente
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">
                         Status
@@ -202,6 +227,18 @@ export default function UsuariosPage() {
                               : user.role === 'FINANCEIRO' ? 'Financeiro'
                               : 'Expedição'}
                           </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <button
+                            onClick={() => handleToggleManager(user.id, user.isManager)}
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer transition-colors ${
+                              user.isManager 
+                                ? 'bg-purple-100 text-purple-800 hover:bg-purple-200' 
+                                : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200'
+                            }`}
+                          >
+                            {user.isManager ? '⭐ Sim' : 'Não'}
+                          </button>
                         </td>
                         <td className="px-6 py-4">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${

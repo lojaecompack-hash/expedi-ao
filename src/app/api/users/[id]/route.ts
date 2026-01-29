@@ -74,14 +74,15 @@ export async function PATCH(
 
     const { id: userId } = await params
     const body = await request.json()
-    const { name, role } = body
+    const { name, role, isManager } = body
 
     // Atualizar usuário
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: {
         ...(name && { name }),
-        ...(role && { role })
+        ...(role && { role }),
+        ...(typeof isManager === 'boolean' && { isManager })
       },
       select: {
         id: true,
