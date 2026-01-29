@@ -32,29 +32,51 @@ export default function NotificacaoOcorrencia() {
     
     const buscarNotificacoes = async () => {
       // Se já está mostrando popup, não buscar novas
-      if (isShowingRef.current) return
+      if (isShowingRef.current) {
+        console.log('[NotificacaoOcorrencia] Popup já aberto, aguardando...')
+        return
+      }
+      
+      console.log('[NotificacaoOcorrencia] Buscando notificações...')
       
       try {
         const res = await fetch('/api/ocorrencias/novas')
-        if (!res.ok) return
+        
+        console.log('[NotificacaoOcorrencia] Status HTTP:', res.status)
+        
+        if (!res.ok) {
+          console.log('[NotificacaoOcorrencia] Resposta não OK:', res.status)
+          return
+        }
         
         const data = await res.json()
+        
+        console.log('[NotificacaoOcorrencia] Dados recebidos:', data)
         
         if (!isMounted) return
         
         if (data.ok && data.ocorrencias && Array.isArray(data.ocorrencias)) {
+          console.log('[NotificacaoOcorrencia] Total de ocorrências:', data.ocorrencias.length)
+          
           // Filtrar apenas as que ainda não foram vistas
           const novas = data.ocorrencias.filter((o: Ocorrencia) => !idsVistos.has(o.id))
           
+          console.log('[NotificacaoOcorrencia] Novas (não vistas):', novas.length)
+          
           if (novas.length > 0) {
+            console.log('[NotificacaoOcorrencia] MOSTRANDO POPUP!')
             isShowingRef.current = true
             setOcorrencias(novas)
             setOcorrenciaAtual(novas[0])
             setShowPopup(true)
+          } else {
+            console.log('[NotificacaoOcorrencia] Todas já foram vistas')
           }
+        } else {
+          console.log('[NotificacaoOcorrencia] Resposta inválida ou sem ocorrências')
         }
-      } catch {
-        // Silencioso
+      } catch (err) {
+        console.error('[NotificacaoOcorrencia] Erro:', err)
       }
     }
 
