@@ -36,10 +36,12 @@ const BLOCKED_STATUS_MESSAGES: Record<string, string> = {
   'faturado': 'Pedido não embalado',
 }
 
-interface Operator {
+interface Responsavel {
   id: string
   name: string
-  isActive: boolean
+  type: 'USUARIO' | 'OPERADOR'
+  role?: string
+  isManager?: boolean
 }
 
 function RetiradaPageContent() {
@@ -69,8 +71,8 @@ function RetiradaPageContent() {
   const [photo, setPhoto] = useState<string | null>(null)
   const [showCamera, setShowCamera] = useState(false)
   
-  // Estados para operadores
-  const [operators, setOperators] = useState<Operator[]>([])
+  // Estados para responsáveis (usuários + operadores)
+  const [responsaveis, setResponsaveis] = useState<Responsavel[]>([])
   
   // Estados para validação de senha
   const [showPasswordModal, setShowPasswordModal] = useState(false)
@@ -95,7 +97,7 @@ function RetiradaPageContent() {
   const [blockedMessage, setBlockedMessage] = useState<string>("")
   
   useEffect(() => {
-    fetchOperators()
+    fetchResponsaveis()
     
     // Verificar se veio de uma re-retirada
     const pedidoParam = searchParams.get('pedido')
@@ -115,16 +117,16 @@ function RetiradaPageContent() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   
-  const fetchOperators = async () => {
+  const fetchResponsaveis = async () => {
     try {
-      const res = await fetch('/api/operators')
+      const res = await fetch('/api/expedicao/responsaveis')
       const data = await res.json()
       
       if (data.ok) {
-        setOperators(data.operators.filter((op: Operator) => op.isActive))
+        setResponsaveis(data.responsaveis)
       }
     } catch (error) {
-      console.error('Erro ao buscar operadores:', error)
+      console.error('Erro ao buscar responsáveis:', error)
     }
   }
 
@@ -520,10 +522,10 @@ function RetiradaPageContent() {
       return
     }
 
-    // Operador é obrigatório
+    // Responsável é obrigatório
     if (!operatorId) {
       setSuccess(false)
-      setResult("❌ Selecione um operador")
+      setResult("❌ Selecione um responsável")
       setTimeout(() => setResult(""), 10000)
       return
     }
@@ -599,7 +601,7 @@ function RetiradaPageContent() {
       
       if (res.ok && data.ok) {
         setSuccess(true)
-        const operatorName = data.pickup?.operatorId ? operators.find(op => op.id === data.pickup.operatorId)?.name || "Não informado" : "Não informado"
+        const operatorName = data.pickup?.operatorId ? responsaveis.find(r => r.id === data.pickup.operatorId)?.name || "Não informado" : "Não informado"
         setResult(`✅ Retirada registrada com sucesso!\n\nPedido: ${data.order.orderNumber}\nID: ${data.order.tinyOrderId}\nOperador: ${operatorName}\nStatus: ${data.tiny.situacao}`)
         
         // Limpar formulário após 3 segundos
@@ -811,7 +813,7 @@ function RetiradaPageContent() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-zinc-900">Operador *</label>
+                  <label className="block text-sm font-medium text-zinc-900">Responsável *</label>
                   <div className="relative">
                     <Settings className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-400 pointer-events-none" />
                     <select
@@ -819,15 +821,26 @@ function RetiradaPageContent() {
                       onChange={(e) => setOperatorId(e.target.value)}
                       className="w-full pl-10 pr-4 py-3 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:border-transparent transition-all appearance-none bg-white"
                     >
-                      <option value="">Selecione um operador</option>
-                      {operators.map(op => (
-                        <option key={op.id} value={op.id}>{op.name}</option>
-                      ))}
+                      <option value="">Selecione o responsável</option>
+                      {responsaveis.filter(r => r.type === 'USUARIO').length > 0 && (
+                        <optgroup label="👤 USUÁRIOS">
+                          {responsaveis.filter(r => r.type === 'USUARIO').map(r => (
+                            <option key={r.id} value={r.id}>{r.name}</option>
+                          ))}
+                        </optgroup>
+                      )}
+                      {responsaveis.filter(r => r.type === 'OPERADOR').length > 0 && (
+                        <optgroup label="🔧 OPERADORES">
+                          {responsaveis.filter(r => r.type === 'OPERADOR').map(r => (
+                            <option key={r.id} value={r.id}>{r.name}</option>
+                          ))}
+                        </optgroup>
+                      )}
                     </select>
                   </div>
-                  {operators.length === 0 && (
+                  {responsaveis.length === 0 && (
                     <p className="text-xs text-zinc-500">
-                      Nenhum operador cadastrado.
+                      Nenhum responsável cadastrado.
                     </p>
                   )}
                 </div>
@@ -1044,7 +1057,7 @@ function RetiradaPageContent() {
           {showPasswordModal && operatorId && (
             <PasswordValidationModal
               operatorId={operatorId}
-              operatorName={operators.find(op => op.id === operatorId)?.name || 'Operador'}
+              operatorName={responsaveis.find(r => r.id === operatorId)?.name || 'Responsável'}
               onValidate={handlePasswordValidated}
               onCancel={handlePasswordCanceled}
             />
