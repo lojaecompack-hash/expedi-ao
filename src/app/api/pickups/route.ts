@@ -322,6 +322,93 @@ export async function POST(req: Request) {
         select: { id: true, cpfLast4: true, operatorId: true, operatorName: true, customerName: true, customerCpfCnpj: true, retrieverName: true, trackingCode: true, transportadora: true, vendedor: true, status: true, photo: true, createdAt: true, itens: true },
       })
       console.log('[Pickups] Pickup criado com status RETIRADO:', pickup.id, 'Retirada #' + numeroRetirada, body.retiradaAnteriorId ? '(re-retirada de ' + body.retiradaAnteriorId + ')' : '')
+      
+      // AUTO-ENCERRAMENTO: Se é re-retirada, encerrar linha aberta do pickup anterior e notificar participantes
+      if (isReRetirada && existingPickupWithReturn) {
+        console.log('[Pickups] Iniciando auto-encerramento da ocorrência anterior...')
+        
+        // Buscar linha aberta do pickup anterior
+        const linhaAberta = await prisma.linhaTempoOcorrencia.findFirst({
+          where: {
+            pickupId: existingPickupWithReturn.id,
+            status: 'ABERTA'
+          },
+          include: {
+            ocorrencias: {
+              select: {
+                remetenteId: true,
+                destinatarioId: true
+              }
+            }
+          }
+        })
+        
+        if (linhaAberta) {
+          console.log('[Pickups] Linha aberta encontrada:', linhaAberta.id, '- Encerrando...')
+          
+          // Coletar participantes únicos (remetentes e destinatários)
+          const participantesSet = new Set<string>()
+          linhaAberta.ocorrencias.forEach(oc => {
+            if (oc.remetenteId) participantesSet.add(oc.remetenteId)
+            if (oc.destinatarioId) participantesSet.add(oc.destinatarioId)
+          })
+          const participantes = Array.from(participantesSet)
+          
+          // Formatar data/hora
+          const dataFormatada = new Date().toLocaleString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          })
+          
+          // Mensagem de encerramento
+          const mensagemEncerramento = `✅ REENVIO REALIZADO\n\nLiberado por: ${operatorName || 'Sistema'}\nData: ${dataFormatada}\n\nCaso encerrado automaticamente.`
+          
+          // Criar ocorrência de encerramento na linha
+          await prisma.ocorrencia.create({
+            data: {
+              linhaTempoId: linhaAberta.id,
+              descricao: mensagemEncerramento,
+              operadorNome: 'Sistema',
+              tipoOcorrencia: 'INFORMACAO',
+              statusOcorrencia: 'RESOLVIDO'
+            }
+          })
+          
+          // Encerrar a linha do tempo
+          await prisma.linhaTempoOcorrencia.update({
+            where: { id: linhaAberta.id },
+            data: {
+              status: 'ENCERRADA',
+              encerradoEm: new Date(),
+              encerradoPor: `${operatorName || 'Sistema'} - Reenvio`
+            }
+          })
+          
+          // Notificar cada participante (exceto quem fez o reenvio, se tiver ID)
+          for (const participanteId of participantes) {
+            // Não notificar quem fez o reenvio
+            if (operatorId && participanteId === operatorId) continue
+            
+            await prisma.ocorrencia.create({
+              data: {
+                linhaTempoId: linhaAberta.id,
+                descricao: mensagemEncerramento,
+                operadorNome: 'Sistema',
+                tipoOcorrencia: 'INFORMACAO',
+                statusOcorrencia: 'PENDENTE', // PENDENTE para aparecer na lista de notificações
+                destinatarioId: participanteId
+              }
+            })
+          }
+          
+          console.log('[Pickups] Linha encerrada e', participantes.length, 'participantes notificados')
+        } else {
+          console.log('[Pickups] Nenhuma linha aberta encontrada para encerrar')
+        }
+      }
     }
 
     return NextResponse.json({

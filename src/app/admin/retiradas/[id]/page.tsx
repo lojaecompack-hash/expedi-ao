@@ -819,7 +819,7 @@ export default function DetalhesRetirada() {
                                 </div>
                                 {linha.ocorrencias.map((oc) => (
                                   <div key={oc.id} className="pl-3 border-l-2 border-zinc-300 py-1">
-                                    <p className="text-zinc-700">{oc.descricao}</p>
+                                    <p className="text-zinc-700 whitespace-pre-line">{oc.descricao}</p>
                                     <p className="text-xs text-zinc-500">
                                       {new Date(oc.createdAt).toLocaleString('pt-BR')} 
                                       {oc.operadorNome && ` - ${oc.operadorNome}`}
@@ -831,34 +831,34 @@ export default function DetalhesRetirada() {
                           </div>
                         </div>
                       )}
+
+                      {/* Botão de Ocorrência - DENTRO de cada card, apenas se status NÃO é RETORNADO */}
+                      {ret.status !== 'RETORNADO' && usuarioLogado && usuarioLogado.email !== 'expedicao@ecompack.com.br' && (
+                        <div className="mt-4 pt-4 border-t border-zinc-200 flex justify-center">
+                          {ret.linhasDoTempo?.some(l => l.status === 'ABERTA') ? (
+                            <button
+                              onClick={handleAdicionarClick}
+                              className="px-5 py-2.5 bg-[#FFD700] text-zinc-900 rounded-xl hover:bg-[#FFC700] font-medium flex items-center gap-2 shadow-md text-sm"
+                            >
+                              <Plus className="w-4 h-4" />
+                              Adicionar Ocorrência
+                            </button>
+                          ) : (
+                            <button
+                              onClick={handleAdicionarClick}
+                              className="px-5 py-2.5 bg-[#FFD700] text-zinc-900 rounded-xl hover:bg-[#FFC700] font-medium flex items-center gap-2 shadow-md text-sm"
+                            >
+                              <Plus className="w-4 h-4" />
+                              Registrar Primeira Ocorrência
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )
               })}
             </div>
-
-            {/* Botão para Registrar Nova Ocorrência - oculto apenas para expedicao@ecompack.com.br */}
-            {usuarioLogado && usuarioLogado.email !== 'expedicao@ecompack.com.br' && (
-              <div className="mt-6 flex justify-center">
-                {linhaAberta ? (
-                  <button
-                    onClick={handleAdicionarClick}
-                    className="px-6 py-3 bg-[#FFD700] text-zinc-900 rounded-xl hover:bg-[#FFC700] font-medium flex items-center gap-2 shadow-md"
-                  >
-                    <Plus className="w-5 h-5" />
-                    Adicionar Ocorrência
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleAdicionarClick}
-                    className="px-6 py-3 bg-[#FFD700] text-zinc-900 rounded-xl hover:bg-[#FFC700] font-medium flex items-center gap-2 shadow-md"
-                  >
-                    <Plus className="w-5 h-5" />
-                    Registrar Primeira Ocorrência
-                  </button>
-                )}
-              </div>
-            )}
           </motion.div>
 
           {/* Modal de Autenticação do Operador */}
