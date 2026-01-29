@@ -118,7 +118,7 @@ export default function DetalhesRetirada() {
   const [motivoRetorno, setMotivoRetorno] = useState('')
   
   // Estado para usuário logado (remetente automático)
-  const [usuarioLogado, setUsuarioLogado] = useState<{id: string, name: string, role: string} | null>(null)
+  const [usuarioLogado, setUsuarioLogado] = useState<{id: string, name: string, role: string, email: string} | null>(null)
 
   // Quando seleciona tipo de usuário, buscar usuários daquele tipo
   useEffect(() => {
@@ -225,7 +225,8 @@ export default function DetalhesRetirada() {
         setUsuarioLogado({
           id: data.user.id,
           name: data.user.name,
-          role: data.user.role
+          role: data.user.role,
+          email: data.user.email
         })
       }
     } catch (error) {
@@ -836,8 +837,8 @@ export default function DetalhesRetirada() {
               })}
             </div>
 
-            {/* Botão para Registrar Nova Ocorrência - oculto para usuários EXPEDICAO */}
-            {usuarioLogado && usuarioLogado.role !== 'EXPEDICAO' && (
+            {/* Botão para Registrar Nova Ocorrência - oculto apenas para expedicao@ecompack.com.br */}
+            {usuarioLogado && usuarioLogado.email !== 'expedicao@ecompack.com.br' && (
               <div className="mt-6 flex justify-center">
                 {linhaAberta ? (
                   <button
