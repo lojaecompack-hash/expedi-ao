@@ -8,17 +8,37 @@ import { prisma } from '@/lib/prisma'
 // - Gerente (isManager=true): vê TODAS mensagens onde destinatarioTipo = seu role (setor)
 export async function GET() {
   try {
-    const supabase = await createSupabaseServerClient()
-    const { data: { user: authUser } } = await supabase.auth.getUser()
+    console.log('[API /api/ocorrencias/novas] Iniciando...')
+    
+    let supabase
+    try {
+      supabase = await createSupabaseServerClient()
+      console.log('[API /api/ocorrencias/novas] Supabase client criado')
+    } catch (supabaseError) {
+      console.error('[API /api/ocorrencias/novas] Erro ao criar Supabase client:', supabaseError)
+      return NextResponse.json({ ok: false, error: 'Erro Supabase', details: String(supabaseError) }, { status: 500 })
+    }
+    
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
+    
+    if (authError) {
+      console.error('[API /api/ocorrencias/novas] Erro auth:', authError)
+      return NextResponse.json({ ok: false, error: 'Erro auth', details: authError.message }, { status: 500 })
+    }
 
     if (!authUser) {
+      console.log('[API /api/ocorrencias/novas] Usuario nao autenticado')
       return NextResponse.json({ ok: false, error: 'Não autenticado' }, { status: 401 })
     }
+    
+    console.log('[API /api/ocorrencias/novas] Usuario autenticado:', authUser.email)
 
     // Buscar usuário no banco com todas as informações necessárias
     const dbUser = await prisma.user.findUnique({
       where: { email: authUser.email! }
     })
+    
+    console.log('[API /api/ocorrencias/novas] dbUser encontrado:', dbUser?.name)
 
     if (!dbUser) {
       return NextResponse.json({ ok: false, error: 'Usuário não encontrado' }, { status: 404 })
