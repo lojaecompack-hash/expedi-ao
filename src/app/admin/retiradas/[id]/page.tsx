@@ -42,6 +42,7 @@ interface RetiradaHistorico {
   transportadora: string | null
   status: string | null
   photo: string | null
+  photo2: string | null
   createdAt: string
   numeroRetirada: number
   itens: string | null
@@ -764,30 +765,41 @@ export default function DetalhesRetirada() {
                             </div>
                           )}
                         </div>
-                        {ret.photo && (
+                        {(ret.photo || ret.photo2) && (
                           <div className="relative">
-                            <p className="text-zinc-500">Foto</p>
+                            <p className="text-zinc-500">Foto{ret.photo && ret.photo2 ? 's' : ''}</p>
                             <button
                               onClick={() => setFotoExpandida(fotoExpandida === ret.id ? null : ret.id)}
                               className="text-blue-600 hover:underline font-medium flex items-center gap-1"
                             >
                               <ImageIcon className="w-3 h-3" />
-                              {fotoExpandida === ret.id ? 'Fechar' : 'Ver foto'}
+                              {fotoExpandida === ret.id ? 'Fechar' : `Ver foto${ret.photo && ret.photo2 ? 's' : ''}`}
                             </button>
-                            {/* Popover da foto */}
+                            {/* Popover das fotos */}
                             {fotoExpandida === ret.id && (
-                              <div className="absolute z-50 mt-2 p-2 bg-white border border-zinc-200 rounded-xl shadow-xl">
-                                <img 
-                                  src={ret.photo} 
-                                  alt="Foto da retirada"
-                                  className="w-auto h-auto max-w-2xl max-h-[600px] rounded-lg object-contain"
-                                />
-                                <button
-                                  onClick={() => window.open(ret.photo!, '_blank')}
-                                  className="mt-2 text-xs text-blue-600 hover:underline w-full text-center"
-                                >
-                                  Abrir em tela cheia ↗
-                                </button>
+                              <div className="absolute z-50 mt-2 p-2 bg-white border border-zinc-200 rounded-xl shadow-xl max-w-4xl">
+                                <div className="flex gap-4">
+                                  {ret.photo && (
+                                    <div className="flex flex-col items-center">
+                                      <span className="text-xs text-zinc-500 mb-1">Foto 1</span>
+                                      <img 
+                                        src={ret.photo} 
+                                        alt="Foto 1 da retirada"
+                                        className="w-auto h-auto max-w-md max-h-96 rounded-lg object-contain"
+                                      />
+                                    </div>
+                                  )}
+                                  {ret.photo2 && (
+                                    <div className="flex flex-col items-center">
+                                      <span className="text-xs text-zinc-500 mb-1">Foto 2</span>
+                                      <img 
+                                        src={ret.photo2} 
+                                        alt="Foto 2 da retirada"
+                                        className="w-auto h-auto max-w-md max-h-96 rounded-lg object-contain"
+                                      />
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             )}
                           </div>

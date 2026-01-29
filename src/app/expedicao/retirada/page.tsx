@@ -44,8 +44,15 @@ interface Responsavel {
   isManager?: boolean
 }
 
+// Email autorizado para acessar o módulo de retirada
+const AUTHORIZED_EMAIL = 'expedicao@ecompack.com.br'
+
 function RetiradaPageContent() {
   const searchParams = useSearchParams()
+  
+  // Estado para verificar acesso autorizado
+  const [accessGranted, setAccessGranted] = useState<boolean | null>(null)
+  const [checkingAccess, setCheckingAccess] = useState(true)
   
   const [orderNumber, setOrderNumber] = useState("")
   const [cpf, setCpf] = useState("")
@@ -110,7 +117,35 @@ function RetiradaPageContent() {
     }
   }
   
+  // Verificar acesso autorizado ao carregar a página
   useEffect(() => {
+    const checkAccess = async () => {
+      try {
+        const res = await fetch('/api/user/me')
+        const data = await res.json()
+        
+        if (data.ok && data.user) {
+          // Verificar se o email é o autorizado
+          const isAuthorized = data.user.email === AUTHORIZED_EMAIL
+          setAccessGranted(isAuthorized)
+        } else {
+          setAccessGranted(false)
+        }
+      } catch (error) {
+        console.error('Erro ao verificar acesso:', error)
+        setAccessGranted(false)
+      } finally {
+        setCheckingAccess(false)
+      }
+    }
+    
+    checkAccess()
+  }, [])
+  
+  useEffect(() => {
+    // Só executa se tiver acesso
+    if (accessGranted !== true) return
+    
     fetchResponsaveis()
     
     // Verificar se veio de uma re-retirada
@@ -129,7 +164,7 @@ function RetiradaPageContent() {
       searchOrder(pedidoParam, isRe)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [accessGranted])
 
   // Função para buscar detalhes do pedido via API
   // forceReRetirada é usado quando chamado do useEffect (estado ainda não atualizado)
@@ -654,6 +689,46 @@ function RetiradaPageContent() {
     if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`
     if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`
     return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9, 11)}`
+  }
+
+  // Tela de loading enquanto verifica acesso
+  if (checkingAccess) {
+    return (
+      <MainLayout>
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <div className="w-12 h-12 border-4 border-[#FFD700] border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <p className="text-zinc-600">Verificando acesso...</p>
+          </div>
+        </div>
+      </MainLayout>
+    )
+  }
+
+  // Tela de acesso negado
+  if (accessGranted === false) {
+    return (
+      <MainLayout>
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-2xl border border-red-200 p-8 max-w-md text-center shadow-lg"
+          >
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-8 h-8 text-red-500" />
+            </div>
+            <h2 className="text-2xl font-bold text-zinc-900 mb-2">Acesso Negado</h2>
+            <p className="text-zinc-600 mb-6">
+              Você não tem permissão para acessar o módulo de Retirada.
+            </p>
+            <p className="text-sm text-zinc-500">
+              Este módulo é restrito ao usuário autorizado.
+            </p>
+          </motion.div>
+        </div>
+      </MainLayout>
+    )
   }
 
   return (
