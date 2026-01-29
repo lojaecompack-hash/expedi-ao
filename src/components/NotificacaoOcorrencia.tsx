@@ -16,66 +16,68 @@ interface Ocorrencia {
   pickupId: string | null
 }
 
+// IDs já vistos (persistente durante a sessão)
+const idsVistos = new Set<string>()
+
 export default function NotificacaoOcorrencia() {
   const router = useRouter()
   const [ocorrencias, setOcorrencias] = useState<Ocorrencia[]>([])
   const [showPopup, setShowPopup] = useState(false)
   const [ocorrenciaAtual, setOcorrenciaAtual] = useState<Ocorrencia | null>(null)
-  const [ultimaVerificacao, setUltimaVerificacao] = useState<string | null>(null)
-  const [ocorrenciasVistas, setOcorrenciasVistas] = useState<Set<string>>(new Set())
 
-  // Polling para verificar novas ocorrências a cada 30 segundos
+  // Polling simples - roda apenas uma vez ao montar e depois a cada 10s
   useEffect(() => {
-    const verificarNovasOcorrencias = async () => {
+    let isMounted = true
+    
+    const buscarNotificacoes = async () => {
       try {
-        let url = '/api/ocorrencias/novas'
-        if (ultimaVerificacao) {
-          url += `?desde=${encodeURIComponent(ultimaVerificacao)}`
-        }
-
-        const res = await fetch(url)
+        const res = await fetch('/api/ocorrencias/novas')
+        if (!res.ok) return
+        
         const data = await res.json()
-
-        if (data.ok && data.ocorrencias.length > 0) {
-          // Filtrar ocorrências que ainda não foram vistas
-          const novas = data.ocorrencias.filter((o: Ocorrencia) => !ocorrenciasVistas.has(o.id))
+        
+        if (!isMounted) return
+        
+        if (data.ok && data.ocorrencias && Array.isArray(data.ocorrencias)) {
+          // Filtrar apenas as que ainda não foram vistas
+          const novas = data.ocorrencias.filter((o: Ocorrencia) => !idsVistos.has(o.id))
           
-          if (novas.length > 0) {
+          if (novas.length > 0 && !showPopup) {
             setOcorrencias(novas)
             setOcorrenciaAtual(novas[0])
             setShowPopup(true)
           }
         }
-
-        // Atualizar timestamp da última verificação
-        setUltimaVerificacao(new Date().toISOString())
-      } catch (error) {
-        console.error('Erro ao verificar ocorrências:', error)
+      } catch {
+        // Silencioso - não quebrar a UI
       }
     }
 
-    // Verificar imediatamente ao montar
-    verificarNovasOcorrencias()
+    // Buscar imediatamente
+    buscarNotificacoes()
 
-    // Configurar polling a cada 30 segundos
-    const interval = setInterval(verificarNovasOcorrencias, 30000)
+    // Polling a cada 10 segundos
+    const timer = setInterval(buscarNotificacoes, 10000)
 
-    return () => clearInterval(interval)
-  }, [ultimaVerificacao, ocorrenciasVistas])
+    return () => {
+      isMounted = false
+      clearInterval(timer)
+    }
+  }, []) // Sem dependências - roda apenas ao montar
 
   const handleVerDetalhes = () => {
-    if (ocorrenciaAtual?.pickupId) {
-      // Marcar como vista
-      setOcorrenciasVistas(prev => new Set([...prev, ocorrenciaAtual.id]))
+    if (ocorrenciaAtual) {
+      idsVistos.add(ocorrenciaAtual.id)
       setShowPopup(false)
-      router.push(`/admin/retiradas/${ocorrenciaAtual.pickupId}`)
+      if (ocorrenciaAtual.pickupId) {
+        router.push(`/admin/retiradas/${ocorrenciaAtual.pickupId}`)
+      }
     }
   }
 
   const handleFechar = () => {
     if (ocorrenciaAtual) {
-      // Marcar como vista
-      setOcorrenciasVistas(prev => new Set([...prev, ocorrenciaAtual.id]))
+      idsVistos.add(ocorrenciaAtual.id)
     }
     
     // Se houver mais ocorrências, mostrar a próxima
