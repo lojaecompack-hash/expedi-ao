@@ -32,7 +32,7 @@ export async function GET() {
       )
     }
 
-    return NextResponse.json(dbUser)
+    return NextResponse.json({ ok: true, user: dbUser })
   } catch (error) {
     console.error('Erro ao buscar usuário:', error)
     return NextResponse.json(
