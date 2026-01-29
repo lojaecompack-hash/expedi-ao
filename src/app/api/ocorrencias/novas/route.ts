@@ -97,9 +97,11 @@ export async function GET() {
 
   } catch (error) {
     console.error('[API /api/ocorrencias/novas] Erro:', error)
+    const errorMessage = error instanceof Error ? error.message : String(error)
     return NextResponse.json({
       ok: false,
-      error: 'Erro ao buscar ocorrências'
+      error: 'Erro ao buscar ocorrências',
+      details: errorMessage
     }, { status: 500 })
   }
 }
