@@ -64,6 +64,7 @@ export async function GET() {
           name: true,
           role: true,
           isActive: true,
+          isManager: true,
           createdAt: true
         },
         orderBy: {

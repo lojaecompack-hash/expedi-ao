@@ -96,6 +96,19 @@ function RetiradaPageContent() {
   const [blockedStatus, setBlockedStatus] = useState<string>("")
   const [blockedMessage, setBlockedMessage] = useState<string>("")
   
+  const fetchResponsaveis = async () => {
+    try {
+      const res = await fetch('/api/expedicao/responsaveis')
+      const data = await res.json()
+      
+      if (data.ok) {
+        setResponsaveis(data.responsaveis)
+      }
+    } catch (error) {
+      console.error('Erro ao buscar responsáveis:', error)
+    }
+  }
+  
   useEffect(() => {
     fetchResponsaveis()
     
@@ -116,19 +129,6 @@ function RetiradaPageContent() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-  
-  const fetchResponsaveis = async () => {
-    try {
-      const res = await fetch('/api/expedicao/responsaveis')
-      const data = await res.json()
-      
-      if (data.ok) {
-        setResponsaveis(data.responsaveis)
-      }
-    } catch (error) {
-      console.error('Erro ao buscar responsáveis:', error)
-    }
-  }
 
   // Função para buscar detalhes do pedido via API
   // forceReRetirada é usado quando chamado do useEffect (estado ainda não atualizado)
