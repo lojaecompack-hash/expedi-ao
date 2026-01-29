@@ -39,31 +39,49 @@ export async function GET(request: Request) {
     if (isManager) {
       // Gerente vê todas do seu setor OU direcionadas especificamente a ele
       whereCondition = {
-        OR: [
-          { destinatarioTipo: userRole },
-          { destinatarioId: dbUser.id },
-          { setorDestino: dbUser.name } // Compatibilidade com mensagens antigas
-        ],
-        statusOcorrencia: 'PENDENTE',
-        remetenteId: { not: dbUser.id } // Não mostrar mensagens que ele mesmo enviou
+        AND: [
+          {
+            OR: [
+              { destinatarioTipo: userRole },
+              { destinatarioId: dbUser.id },
+              { setorDestino: dbUser.name } // Compatibilidade com mensagens antigas
+            ]
+          },
+          { statusOcorrencia: 'PENDENTE' },
+          {
+            OR: [
+              { remetenteId: { not: dbUser.id } },
+              { remetenteId: null } // Incluir mensagens do sistema
+            ]
+          }
+        ]
       }
     } else {
       // Usuário comum vê apenas mensagens direcionadas a ele
       whereCondition = {
-        OR: [
-          { destinatarioId: dbUser.id },
-          { setorDestino: dbUser.name } // Compatibilidade com mensagens antigas
-        ],
-        statusOcorrencia: 'PENDENTE',
-        remetenteId: { not: dbUser.id } // Não mostrar mensagens que ele mesmo enviou
+        AND: [
+          {
+            OR: [
+              { destinatarioId: dbUser.id },
+              { setorDestino: dbUser.name } // Compatibilidade com mensagens antigas
+            ]
+          },
+          { statusOcorrencia: 'PENDENTE' },
+          {
+            OR: [
+              { remetenteId: { not: dbUser.id } },
+              { remetenteId: null } // Incluir mensagens do sistema
+            ]
+          }
+        ]
       }
     }
 
-    // Se tiver data de última verificação, buscar apenas as mais recentes
+    // Se tiver data de última verificação, adicionar ao AND
     if (ultimaVerificacao) {
-      whereCondition.createdAt = {
-        gt: new Date(ultimaVerificacao)
-      }
+      (whereCondition.AND as Array<Record<string, unknown>>).push({
+        createdAt: { gt: new Date(ultimaVerificacao) }
+      })
     }
 
     const novasOcorrencias = await prisma.ocorrencia.findMany({
