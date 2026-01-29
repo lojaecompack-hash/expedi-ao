@@ -499,10 +499,12 @@ export default function DetalhesRetirada() {
             <Package className="w-5 h-5" />
             <span className="font-medium">Dashboard</span>
           </Link>
-          <Link href="/expedicao/retirada" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-zinc-100 text-zinc-700 transition-colors">
-            <Truck className="w-5 h-5" />
-            <span className="font-medium">Retirada</span>
-          </Link>
+          {usuarioLogado?.email === 'expedicao@ecompack.com.br' && (
+            <Link href="/expedicao/retirada" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-zinc-100 text-zinc-700 transition-colors">
+              <Truck className="w-5 h-5" />
+              <span className="font-medium">Retirada</span>
+            </Link>
+          )}
           <Link href="/admin/relatorios/retiradas" className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[#FFD700] text-zinc-900">
             <Package className="w-5 h-5" />
             <span className="font-medium">Relatórios</span>
